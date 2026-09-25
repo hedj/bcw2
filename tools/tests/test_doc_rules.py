@@ -376,7 +376,7 @@ class DottedWordsTest(unittest.TestCase):
 
     def test_a_dotted_word_in_a_requirement_is_a_finding_on_its_line(self):
         for word in ["Q8.4", "9.09", "v1.2", "e.g.", "i.e.", "a.k.a.", "check.py",
-                     "etc.", "Etc.", "vs.", "cf.", "approx.", "incl.", "esp.", "resp."]:
+                     "etc.", "Etc.", "vs.", "cf.", "approx.", "incl.", "esp.", "resp.", "ca.", "Ca."]:
             with self.subTest(word=word):
                 text = with_requirement(f"The core shall give\nthe turn, {word} to each thread.")
                 self.assertEqual(only("dotted-words", text),
@@ -391,7 +391,8 @@ class DottedWordsTest(unittest.TestCase):
     def test_a_full_stop_that_ends_a_sentence_passes(self):
         for sentence in ["The core shall give the turn to thread *t* + 1.",
                          "The core shall give the turn to each thread, the next one etch.",
-                         "The core shall give the turn to the TVs."]:
+                         "The core shall give the turn to the TVs.",
+                         "The core shall give the turn to Africa."]:
             with self.subTest(sentence=sentence):
                 self.assertEqual(only("dotted-words", with_requirement(sentence)), [])
 

@@ -144,8 +144,8 @@ text inside it.
 {rule=doc.quotation parent=doc.one-reading}
 
 **DEFINITION.** A **dotted word** is a word with a full stop between two letters or digits,
-such as `Q8.4`, `9.09` or `e.g.`. The words `etc.`, `vs.`, `cf.`, `approx.`, `incl.`, `esp.`
-and `resp.` are dotted words too.
+such as `Q8.4`, `9.09` or `e.g.`. The words `etc.`, `vs.`, `cf.`, `approx.`, `incl.`, `esp.`,
+`resp.` and `ca.` are dotted words too.
 {rule=doc.dotted-word parent=doc.one-reading}
 
 **REQUIREMENT.** Where a rule is a REQUIREMENT, the rule shall hold each dotted word inside a
