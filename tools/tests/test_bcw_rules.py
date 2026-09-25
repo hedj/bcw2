@@ -1078,6 +1078,35 @@ class FragmentTest:
         assert "a twin stays whole" in next(f for f in book.findings if f.check == "whole-twins").fix
 
 
+class ContinuationTest:
+    """doc.continuations"""
+
+    CASES = {
+        "the last line of a fragment": (SKELETON + source(":core.pair-logic", "assign b = a + \\"), "a + \\"),
+        "a line before a fragment use": (
+            source("build/rtl/core/pair.v", "module pair (input wire a, output wire b);", "    assign b = a + \\",
+                   "    <<:core.pair-logic>>", "endmodule") + FRAGMENT, "a + \\"),
+        "the last line of a block of a file": (source("build/model/b.py", "RESULT = 1 + \\")
+                                               + source("build/model/b.py", "    1"), "1 + \\"),
+    }
+
+    @pytest.mark.parametrize("case", CASES)
+    def test_a_line_that_ends_in_a_backslash_at_an_edge_is_a_finding_on_its_line(self, case):
+        extra, needle = self.CASES[case]
+        text = GOOD + extra
+        assert findings(text) == [(line(text, needle), "continuations", None)]
+
+    def test_the_last_line_of_a_twin_is_a_finding_with_the_anchor_of_its_rule(self):
+        text = GOOD.replace("return {'next': turn + 1}", "return {'next': turn + 1} \\")
+        assert text != GOOD
+        assert findings(text) == [(line(text, "turn + 1} \\"), "continuations", "core.rotation")]
+
+    def test_a_line_that_ends_in_a_backslash_inside_a_block_passes(self):
+        text = GOOD + source("build/model/b.py", "RESULT = 1 + \\", "    1") + SKELETON + source(
+            ":core.pair-logic", "assign b = a + \\", "    1'b0;")
+        assert findings(text) == []
+
+
 class TangleTest:
     """The tangle writes each file of a twin or a source, with a marker before each block."""
 
@@ -1160,7 +1189,8 @@ class FragmentTangleTest:
         assert f"    # bcw: book/core/core.rst:{line(text, 'y = x + 1')}\n    y = x + 1\n    return y\n" in tangled
 
     # A line that ends in a backslash goes on in the next line, in Python and in a
-    # Verilog macro, so no marker can stand between the two.
+    # Verilog macro, so no marker can stand between the two. doc.continuations makes
+    # each case a finding, but the tangle still writes working code.
     BACKSLASH = {
         "a fragment ends in a backslash": (
             source("build/model/b.py", "def f(x):", "    <<:core.sum>>", "        1", "    return total", "",

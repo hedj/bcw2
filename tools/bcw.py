@@ -1133,6 +1133,23 @@ def check_whole_twins(documents):
                                   "put the code of the fragment in the twin, because a twin stays whole")
 
 
+# implements: doc.continuations
+def check_continuations(documents):
+    for document in documents:
+        for block in document.blocks:
+            if block.kind not in ("twin", "source"):
+                continue
+            lines = block.text.splitlines()
+            for offset, text in enumerate(lines):
+                last = offset + 1 == len(lines)
+                if text.endswith("\\") and (last or (block.kind == "source" and USE.match(lines[offset + 1]))):
+                    yield Finding(document.path, block.first + offset, "continuations",
+                                  block.chunk.anchor if block.chunk else None,
+                                  "the line ends in a backslash, but the next line of the tangled file comes "
+                                  "from another place, so no marker can name its chapter line",
+                                  "join the line with the next line, or move both into one code block")
+
+
 def crowded(documents):
     """The number of rules with more than two parents."""
     return sum(1 for document in documents for chunk in document.chunks
@@ -1173,6 +1190,7 @@ def check(documents, retired=(), tools=(), general=None):
     findings += check_fragments_used(documents)
     findings += check_fragment_cycles(documents)
     findings += check_whole_twins(documents)
+    findings += check_continuations(documents)
     if general is not None:
         findings += check_known_words(documents, general)
         findings += check_general_words(documents, general)
