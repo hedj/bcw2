@@ -77,6 +77,10 @@ hash of its label, a space and its English.
 DEFINITION, RATIONALE, DISCUSSION, TARGET or OPEN.
 {rule=doc.labels parent=doc.rules-apart}
 
+**REQUIREMENT.** Each chunk shall hold `shall` exactly once if it is a REQUIREMENT, and not at
+all otherwise.
+{rule=doc.one-shall parent=doc.one-reading,doc.rules-apart}
+
 **REQUIREMENT.** Where a chunk is a rule or a GOAL, the chunk shall carry a unique anchor
 that is not retired.
 {rule=doc.anchors parent=doc.traceable}

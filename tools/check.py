@@ -165,21 +165,25 @@ def check_labels(chunk):
         yield Finding(chunk.path, chunk.line, "labels", chunk.anchor,
                       f"{chunk.label} is not a label",
                       "use one of " + ", ".join(sorted(LABELS)))
-    elif chunk.label == "REQUIREMENT" and not SHALL.search(CODE_SPAN.sub("", chunk.english)):
-        yield Finding(chunk.path, chunk.line, "labels", chunk.anchor,
-                      "the REQUIREMENT contains no \"shall\"",
-                      "state it with \"shall\", or relabel it DEFINITION")
 
 
+# implements: doc.one-shall
 def check_one_shall(chunk):
+    allowed = 1 if chunk.label == "REQUIREMENT" else 0
     count = 0
     for offset, line in enumerate(chunk.lines):
         count += len(SHALL.findall(CODE_SPAN.sub("", line)))
-        if count > 1:
-            yield Finding(chunk.path, chunk.line + offset, "one-shall", chunk.anchor,
-                          "the chunk holds more than one \"shall\"",
-                          "split the chunk at the sentence with the second \"shall\"")
+        if count > allowed:
+            message = ("the REQUIREMENT holds more than one \"shall\"" if allowed else
+                       f"the {chunk.label} holds \"shall\", which only a REQUIREMENT can")
+            yield Finding(chunk.path, chunk.line + offset, "one-shall", chunk.anchor, message,
+                          "split the REQUIREMENT at its second \"shall\"" if allowed else
+                          "relabel it REQUIREMENT, or state it without \"shall\"")
             return
+    if count < allowed:
+        yield Finding(chunk.path, chunk.line, "one-shall", chunk.anchor,
+                      "the REQUIREMENT holds no \"shall\"",
+                      "state it with \"shall\", or relabel it DEFINITION")
 
 
 # implements: doc.anchors

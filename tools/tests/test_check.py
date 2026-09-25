@@ -88,23 +88,34 @@ class LabelsTest(unittest.TestCase):
         text = GOOD.replace("**RATIONALE.**", "**REASON.**")
         self.assertEqual(findings(text), [(line(text, "**REASON.**"), "labels", None)])
 
-    def test_a_requirement_without_shall_is_a_finding(self):
-        text = GOOD.replace("The core shall give", "The core gives")
-        self.assertIn((line(text, "**REQUIREMENT.**"), "labels", "core.rotation"), findings(text))
-
-    def test_shall_inside_a_code_span_does_not_count(self):
-        text = GOOD.replace("The core shall give", "The core `shall` give")
-        self.assertIn((line(text, "**REQUIREMENT.**"), "labels", "core.rotation"), findings(text))
 
 
 class OneShallTest(unittest.TestCase):
+    """doc.one-shall"""
+
+    def test_a_requirement_without_shall_is_a_finding(self):
+        text = GOOD.replace("The core shall give", "The core gives")
+        self.assertIn((line(text, "**REQUIREMENT.**"), "one-shall", "core.rotation"), findings(text))
+
+    def test_shall_inside_a_code_span_does_not_count(self):
+        text = GOOD.replace("The core shall give", "The core `shall` give")
+        self.assertIn((line(text, "**REQUIREMENT.**"), "one-shall", "core.rotation"), findings(text))
+
     def test_a_second_shall_is_a_finding_on_its_line(self):
         text = GOOD.replace("*t* + 1.", "*t* + 1 and shall not stall.")
         self.assertIn((line(text, "shall not stall"), "one-shall", "core.rotation"), findings(text))
 
-    def test_two_shalls_in_two_chunks_are_not_a_finding(self):
+    def test_a_shall_in_a_definition_is_a_finding_on_its_line(self):
         text = GOOD.replace("A **turn** is", "A **turn** shall be")
-        self.assertNotIn("one-shall", [f[1] for f in findings(text)])
+        self.assertEqual(findings(text), [(line(text, "A **turn** shall"), "one-shall", "core.turn")])
+
+    def test_a_shall_in_a_rationale_is_a_finding(self):
+        text = GOOD.replace("eight cycles apart.", "eight cycles apart, and shall stay so.")
+        self.assertEqual(findings(text), [(line(text, "shall stay so"), "one-shall", None)])
+
+    def test_a_shall_inside_a_code_span_of_another_chunk_passes(self):
+        text = GOOD.replace("A **turn** is", "A **turn**, not a `shall`, is")
+        self.assertEqual(findings(text), [])
 
 
 class AnchorsTest(unittest.TestCase):
