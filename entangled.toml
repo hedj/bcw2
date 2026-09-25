@@ -1,0 +1,7 @@
+version = "2.0"
+watch_list = ["book/**/*.md"]
+
+[[languages]]
+name = "Verilog"
+identifiers = ["verilog"]
+comment = { open = "//" }
