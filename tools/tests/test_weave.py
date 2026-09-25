@@ -82,6 +82,11 @@ class NumberingTest(unittest.TestCase):
         self.assertIn('title="previous chapter"><span class="section-number">2. </span>Design',
                       self.book.output["core/core.html"])
 
+    def test_the_contents_of_the_pdf_are_titled_contents_not_after_the_first_part(self):
+        tex = weave(BOOK, "latex").output["book.tex"]
+        self.assertTrue(after(tex, r"\begin{document}", r"\renewcommand{\contentsname}{Contents}\sphinxtableofcontents"),
+                        tex)
+
     def test_the_pdf_shows_chapter_numbers_in_numerals(self):
         tex = weave(BOOK, "latex").output["book.tex"]
         self.assertNotIn("fncychap", tex)

@@ -275,7 +275,11 @@ STATIC = Path(__file__).resolve().parent / "static"
 
 def configure(app, config):
     # No fncychap: LaTeX then heads each chapter with its number in numerals, as the HTML does.
-    config.latex_elements = {"fontpkg": FONTS, "fncychap": "", **config.latex_elements}
+    # Sphinx names the contents after the caption of the first toctree, which is
+    # the first part. The name is set back here, after Sphinx sets it.
+    config.latex_elements = {"fontpkg": FONTS, "fncychap": "",
+                             "tableofcontents": r"\renewcommand{\contentsname}{Contents}\sphinxtableofcontents",
+                             **config.latex_elements}
     config.html_static_path = [*config.html_static_path, str(STATIC)]
 
 
