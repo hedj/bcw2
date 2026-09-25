@@ -66,6 +66,28 @@ that holds the code. So each location that make check prints is a line in
 book/.
 
 
+Fragments
+---------
+
+A source directive whose argument is a name, such as core.pair-logic, and
+not a file, defines a fragment. A line that holds only <<core.pair-logic>>
+in another source directive uses the fragment. make tangle puts the
+fragment in place of that line, with the indentation of the line:
+
+    .. source:: build/rtl/core/pair.v
+
+       module pair (input wire a, output wire b);
+           <<core.pair-logic>>
+       endmodule
+
+    .. source:: core.pair-logic
+
+       assign b = a;
+
+So the code of a rule can stand next to the rule, and a skeleton elsewhere
+can put a module in order. A marker before each fragment keeps each line of
+the tangled file traceable to its chapter line. The rules of fragments are in
+the section Fragments of book/doc/doc.rst.
 The tools
 ---------
 
