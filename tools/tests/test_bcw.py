@@ -152,6 +152,7 @@ class Book:
                 self.resolved = {name: app.env.get_and_resolve_doctree(name, app.builder)
                                  for name in sorted(app.env.found_docs)}
             self.findings = app.env.bcw_findings
+            self.values = app.env.bcw_values
             for finding in self.findings:
                 finding.path = finding.path.replace(str(self.root) + "/", "")
             self.documents = [app.env.bcw_documents[name] for name in sorted(app.env.bcw_documents)]

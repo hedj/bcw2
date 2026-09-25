@@ -3,6 +3,8 @@
 a
 after
 all
+allow
+alone
 alphabetical
 also
 alter
@@ -19,6 +21,7 @@ at
 author
 be
 before
+belong
 between
 block
 book
@@ -58,9 +61,12 @@ engineer
 english
 enough
 entry
+evaluate
 every
 exactly
 explanation
+exponent
+expression
 failing
 fewer
 field
@@ -74,6 +80,7 @@ form
 formal
 from
 full
+function
 generated
 give
 goal
@@ -92,6 +99,7 @@ in
 inline
 inside
 instruction
+integer
 is
 issue
 it
@@ -100,6 +108,7 @@ keep
 kind
 label
 labelled
+less
 letter
 level
 list
@@ -110,6 +119,7 @@ machine
 meaning
 measure
 measured
+minus
 modulo
 more
 most
@@ -124,6 +134,7 @@ once
 one
 only
 open
+operator
 option
 or
 order
@@ -134,6 +145,7 @@ own
 paragraph
 parameter
 parent
+parentheses
 part
 path
 plain
@@ -166,6 +178,8 @@ serve
 set
 sha-256
 shall
+side
+sign
 small
 so
 space
@@ -199,6 +213,7 @@ too
 trace
 tutorial
 two
+underscore
 unique
 up
 upper
@@ -217,3 +232,4 @@ with
 within
 without
 word
+written

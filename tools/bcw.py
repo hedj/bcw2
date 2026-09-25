@@ -34,8 +34,10 @@ Configuration values, which tools/conf.py sets:
     bcw_summary          True to print a line of counts on standard output
 """
 
+import ast
 import hashlib
 import heapq
+import operator
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -64,6 +66,7 @@ SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
 NUMBERED = re.compile(r"\d+(?:\.\d+)*\.?(?:\s|$)")
 WORD = re.compile(r"[^\W\d_][^\W_]*(?:['’-][^\W_]+)*")
 ENDINGS = ("", "s", "es", "'s", "’s")
+CITATIONS = ["rule", "param"]
 IMPLEMENTS = re.compile(r"^[ \t]*# implements: (\S+)[ \t]*$", re.MULTILINE)
 
 logger = logging.getLogger(__name__)
@@ -126,7 +129,7 @@ class Document:
     kind: str
     chunks: list = field(default_factory=list)
     blocks: list = field(default_factory=list)
-    citations: list = field(default_factory=list)  # (line, anchor)
+    citations: list = field(default_factory=list)  # (line, anchor, role)
     sections: list = field(default_factory=list)  # (title line, level, title)
     strays: list = field(default_factory=list)  # lines of text outside the title's section
     titles: list = field(default_factory=list)  # the line of each top-level title
@@ -176,7 +179,7 @@ def chunk_directive(label, anchored, options, titled=False):
 CHUNK_DIRECTIVES = {
     "goal": chunk_directive("GOAL", True, ["parent"]),
     "requirement": chunk_directive("REQUIREMENT", True, ["parent", "impl"]),
-    "parameter": chunk_directive("PARAMETER", True, ["parent"]),
+    "parameter": chunk_directive("PARAMETER", True, ["parent", "value", "unit"]),
     "definition": chunk_directive("DEFINITION", True, ["parent", "never"]),
     "rationale": chunk_directive("RATIONALE", False, []),
     "discussion": chunk_directive("DISCUSSION", False, []),
@@ -225,15 +228,21 @@ class CheckDirective(CodeDirective):
     kind = "check"
 
 
-class RuleRole(SphinxRole):
-    """:rule:`anchor`, a citation: a link to the label of the anchor, around a literal.
+class CitationRole(SphinxRole):
+    """A citation: a link to the label of an anchor, around a literal.
 
-    The link does not warn when it finds no label, because doc.references
-    reports each citation of an anchor that is not in the book.
+    :rule:`anchor` cites a chunk, and :param:`anchor` cites the value of a
+    PARAMETER, which the weave shows. The literal carries the name of the role
+    as its class. The link does not warn when it finds no label, because
+    doc.references reports each citation of an anchor that is not in the book.
     """
 
+    def __init__(self, kind):
+        super().__init__()
+        self.kind = kind
+
     def run(self):
-        literal = nodes.literal(self.rawtext, self.text, classes=["rule"])
+        literal = nodes.literal(self.rawtext, self.text, classes=[self.kind])
         literal["anchor"] = self.text
         literal["line"] = self.lineno
         link = addnodes.pending_xref(self.rawtext, literal, refdomain="std", reftype="ref",
@@ -292,8 +301,8 @@ def read_document(app, doctree):
                 if owner is not None:
                     owner.blocks.append(block)
             elif not isinstance(child, nodes.system_message):
-                if isinstance(child, nodes.literal) and "rule" in child["classes"]:
-                    document.citations.append((child["line"], child["anchor"]))
+                if isinstance(child, nodes.literal) and set(child["classes"]) & set(CITATIONS):
+                    document.citations.append((child["line"], child["anchor"], child["classes"][0]))
                 if isinstance(child, nodes.Element):
                     walk(child, level, top, section, owner)
 
@@ -601,7 +610,7 @@ def check_references(documents, anchors, tools):
                     if entry not in anchors:
                         yield Finding(document.path, block.line, "references", None,
                                       f"the :implements: entry {entry!r} is not an anchor in the book", fix)
-        for number, anchor in document.citations:
+        for number, anchor, _ in document.citations:
             if anchor not in anchors:
                 yield Finding(document.path, number, "references", None,
                               f"the citation {anchor} names no anchor in the book", fix)
@@ -781,6 +790,135 @@ def check_chapters_ordered(documents):
                           "or depend on one", "change a parent so that the parents between chapters run one way")
 
 
+# Parameters
+
+
+OPERATORS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
+             ast.FloorDiv: operator.floordiv, ast.Mod: operator.mod, ast.Pow: operator.pow}
+FUNCTIONS = {"clog2": lambda number: max(0, number - 1).bit_length(), "min": min, "max": max}
+
+
+class NoValue(Exception):
+    """A PARAMETER whose value does not evaluate, with the reason as its message."""
+
+
+def constant_name(anchor):
+    """The name of a PARAMETER in the tangled code: its anchor in upper case, with underscores."""
+    return re.sub(r"[.-]", "_", anchor).upper()
+
+
+def compute(node, names):
+    """The integer that an expression node gives, with names mapped to values."""
+    if isinstance(node, ast.Constant) and type(node.value) is int:
+        return node.value
+    if isinstance(node, ast.Name) and node.id in names:
+        return names[node.id]
+    if isinstance(node, ast.BinOp) and type(node.op) in OPERATORS:
+        left, right = compute(node.left, names), compute(node.right, names)
+        if isinstance(node.op, ast.Pow) and abs(right) > 1024:
+            raise NoValue("the exponent is larger than 1024")
+        return OPERATORS[type(node.op)](left, right)
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.USub, ast.UAdd)):
+        value = compute(node.operand, names)
+        return -value if isinstance(node.op, ast.USub) else value
+    if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in FUNCTIONS
+            and not node.keywords):
+        return FUNCTIONS[node.func.id](*[compute(argument, names) for argument in node.args])
+    raise NoValue(f"{ast.unparse(node)!r} is not allowed in a value")
+
+
+def parameter_values(documents):
+    """The value of each PARAMETER that evaluates, and the reason for each that does not.
+
+    A value names another PARAMETER by its anchor. The anchors become Python
+    names before the parse, because Python would read a hyphen as a minus sign.
+    """
+    chunks = {}
+    for document in documents:
+        for chunk in document.chunks:
+            if chunk.label == "PARAMETER" and chunk.anchor is not None:
+                chunks.setdefault(chunk.anchor, chunk)
+    values, failures = {}, {}
+
+    def evaluate(anchor, path):
+        if anchor in values or anchor in failures:
+            return
+        text = chunks[anchor].options.get("value")
+        try:
+            if text is None:
+                raise NoValue("the PARAMETER has no value")
+            names = {}
+
+            def placeholder(match):
+                names[f"_{len(names)}"] = match.group(0)
+                return f"_{len(names) - 1}"
+
+            source = ANCHOR.sub(placeholder, text)
+            tree = ast.parse(source, mode="eval")
+            for other in names.values():
+                if other not in chunks:
+                    raise NoValue(f"{other} is not a PARAMETER in the book")
+                if other in path + [anchor]:
+                    cycle = (path + [anchor])[(path + [anchor]).index(other):]
+                    for member in cycle:
+                        failures.setdefault(member, f"the values of {', '.join(cycle)} form a cycle")
+                    raise NoValue(failures[anchor])
+                evaluate(other, path + [anchor])
+                if other in failures:
+                    raise NoValue(f"the value names {other}, which has no value")
+            result = compute(tree.body, {name: values[other] for name, other in names.items()})
+            if type(result) is not int:
+                raise NoValue(f"the value is {result!r}, which is not an integer")
+            values[anchor] = result
+        except SyntaxError:
+            failures.setdefault(anchor, "the value is not an expression")
+        except NoValue as error:
+            failures.setdefault(anchor, str(error))
+        except (ArithmeticError, TypeError, ValueError) as error:
+            failures.setdefault(anchor, f"the value does not evaluate: {error}")
+
+    for anchor in chunks:
+        evaluate(anchor, [])
+    return values, {anchor: (chunks[anchor], reason) for anchor, reason in failures.items()}
+
+
+# implements: doc.parameter-values
+def check_parameter_values(documents):
+    for anchor, (chunk, reason) in parameter_values(documents)[1].items():
+        yield Finding(chunk.path, chunk.option_line("value"), "parameter-values", anchor, reason,
+                      "write the value as an integer, or an expression of integers, PARAMETER anchors, "
+                      "+ - * // % ** and clog2, min and max, with a space on each side of a minus sign")
+
+
+# implements: doc.constant-names
+def check_constant_names(documents):
+    seen = {}
+    for document in documents:
+        for chunk in document.chunks:
+            if chunk.label != "PARAMETER" or chunk.anchor is None:
+                continue
+            other = seen.setdefault(constant_name(chunk.anchor), chunk.anchor)
+            if other != chunk.anchor:
+                yield Finding(chunk.path, chunk.line, "constant-names", chunk.anchor,
+                              f"the constant name {constant_name(chunk.anchor)} is also the name of {other}",
+                              "choose an anchor whose constant name no other PARAMETER has")
+
+
+# implements: doc.param-citations
+def check_param_citations(documents):
+    labels = {}
+    for document in documents:
+        for chunk in document.chunks:
+            if chunk.anchor is not None:
+                labels.setdefault(chunk.anchor, chunk.label)
+    for document in documents:
+        for number, anchor, kind in document.citations:
+            if kind == "param" and anchor in labels and labels[anchor] != "PARAMETER":
+                yield Finding(document.path, number, "param-citations", None,
+                              f"the param citation names {anchor}, which is a {labels[anchor]}, not a PARAMETER",
+                              "cite it with the role rule, or name a PARAMETER")
+
+
 def crowded(documents):
     """The number of rules with more than two parents."""
     return sum(1 for document in documents for chunk in document.chunks
@@ -812,6 +950,9 @@ def check(documents, retired=(), tools=(), general=None):
     findings += check_ears(documents)
     findings += check_vocabulary(documents)
     findings += check_chapters_ordered(documents)
+    findings += check_parameter_values(documents)
+    findings += check_constant_names(documents)
+    findings += check_param_citations(documents)
     if general is not None:
         findings += check_known_words(documents, general)
         findings += check_general_words(documents, general)
@@ -835,6 +976,7 @@ def check_book(app, env):
         general = {word.lower() for word in listed(config.bcw_general_words)}
     retired = listed(config.bcw_retired_anchors) if config.bcw_retired_anchors is not None else set()
     env.bcw_findings = check(documents, retired, tool_implements(config.bcw_tools), general)
+    env.bcw_values = parameter_values(documents)[0]
     for finding in env.bcw_findings:
         logger.warning(str(finding), location=f"{finding.path}:{finding.line}", type="bcw", subtype=finding.check)
     if config.bcw_summary:
@@ -846,10 +988,11 @@ def check_book(app, env):
 
 
 def tangle(app, exception):
-    """Write each tangled file, with a marker comment before each block."""
+    """Write each tangled file, with a marker comment before each block, and the constants."""
     root = app.config.bcw_tangle_root
     if exception is not None or root is None:
         return
+    tangle_parameters(app, root)
     files = {}
     for name in sorted(app.env.bcw_documents):
         for block in app.env.bcw_documents[name].blocks:
@@ -868,9 +1011,32 @@ def tangle(app, exception):
             path.write_text(text)
 
 
+def tangle_parameters(app, root):
+    """Write each PARAMETER that has a value as a constant, in SystemVerilog and in Python."""
+    constants = []
+    for name in sorted(app.env.bcw_documents):
+        for chunk in app.env.bcw_documents[name].chunks:
+            if chunk.label == "PARAMETER" and chunk.anchor in app.env.bcw_values:
+                constants.append((chunk, constant_name(chunk.anchor), app.env.bcw_values[chunk.anchor]))
+    header = "The PARAMETERs of the book, which tools/bcw.py writes."
+    verilog = [f"// {header}", "package bcw_params;"]
+    python = [f"# {header}"]
+    for chunk, name, value in constants:
+        marker = f"bcw: {chunk.path}:{chunk.option_line('value')}"
+        verilog += [f"// {marker}", f"localparam int {name} = {value};"]
+        python += [f"# {marker}", f"{name} = {value}"]
+    for target, lines in [("build/rtl/bcw_params.sv", verilog + ["endpackage"]), ("build/model/bcw_params.py", python)]:
+        path = Path(root) / target
+        path.parent.mkdir(parents=True, exist_ok=True)
+        text = "\n".join(lines) + "\n"
+        if not path.exists() or path.read_text() != text:
+            path.write_text(text)
+
+
 def init_environment(app):
     if not hasattr(app.env, "bcw_documents"):
         app.env.bcw_documents = {}
+    app.env.bcw_values = {}
 
 
 def setup(app):
@@ -885,7 +1051,8 @@ def setup(app):
     app.add_directive("twin", TwinDirective)
     app.add_directive("source", SourceDirective)
     app.add_directive("check", CheckDirective)
-    app.add_role("rule", RuleRole())
+    for kind in CITATIONS:
+        app.add_role(kind, CitationRole(kind))
     app.connect("builder-inited", init_environment)
     # Before Sphinx's own collectors at 500, so that the weave can add sections that
     # the table of contents then holds.

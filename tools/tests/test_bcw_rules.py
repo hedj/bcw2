@@ -12,6 +12,8 @@ from docutils import nodes
 
 from test_bcw import GENERAL, GOOD, Book, bcw, findings, line, only
 
+import linemap  # noqa: E402
+
 ROTATION = ".. requirement:: core.rotation\n   :parent: core.timing\n"
 IMPLEMENTS = "   :implements: core.rotation\n"
 TURN = ".. definition:: core.turn\n   :parent: core.core\n"
@@ -747,11 +749,140 @@ class CitationLinkTest(unittest.TestCase):
         self.assertEqual([f for f in book.tuples() if f[2] == "known-words"], [])
 
 
+def parameter(anchor, value, parent="core.core", unit=None, text="The number of threads."):
+    """A PARAMETER chunk to add at the end of GOOD. value None leaves out the value option."""
+    lines = [f"\n.. parameter:: {anchor}", f"   :parent: {parent}"]
+    lines += [f"   :value: {value}"] if value is not None else []
+    lines += [f"   :unit: {unit}"] if unit else []
+    return "\n".join(lines) + f"\n\n   {text}\n"
+
+
+THREADS = parameter("core.threads", "8", unit="threads")
+WIDTH = parameter("core.turn-width", "clog2(core.threads)", parent="core.threads", unit="bits",
+                  text="The width of the index of a thread.")
+
+
+class ParameterValuesTest(unittest.TestCase):
+    """doc.parameter-value and doc.parameter-values"""
+
+    def test_a_literal_and_a_derived_value_evaluate(self):
+        book = Book({"core/core.rst": GOOD + THREADS + WIDTH})
+        self.assertEqual(book.tuples(), [])
+        self.assertEqual(book.values, {"core.threads": 8, "core.turn-width": 3})
+
+    def test_each_operator_and_function(self):
+        for value, result in [("core.threads // 3 + core.threads % 3 + 2 ** 2", 8),
+                              ("min(core.threads, 4) * 2 - 1", 7), ("max(1, 2, core.threads)", 8),
+                              ("(core.threads - 1) * -1", -7), ("clog2(1)", 0), ("clog2(5)", 3),
+                              ("clog2(8)", 3), ("clog2(9)", 4)]:
+            with self.subTest(value=value):
+                book = Book({"core/core.rst": GOOD + THREADS + parameter("core.x", value)})
+                self.assertEqual((book.tuples(), book.values["core.x"]), ([], result))
+
+    def test_a_value_that_does_not_evaluate_is_a_finding_on_its_value_line(self):
+        for value in ["8 +", "core.nothing", "core.core", "8 / 2", "8 << 1", "abs(8)", "x", "2 ** -1",
+                      "core.threads.x", "'8'", "1 // 0", "min()", "2 ** 2000"]:
+            with self.subTest(value=value):
+                text = GOOD + THREADS + parameter("core.x", value)
+                book = Book({"core/core.rst": text})
+                self.assertEqual([f for f in book.tuples() if f[2] != "references"],
+                                 [("book/core/core.rst", line(text, f":value: {value}"), "parameter-values", "core.x")])
+                self.assertNotIn("core.x", book.values)
+
+    def test_a_missing_value_is_a_finding_on_the_directive_line(self):
+        text = GOOD + parameter("core.x", None)
+        self.assertEqual(only("parameter-values", text), [(line(text, ".. parameter:: core.x"), "parameter-values",
+                                                           "core.x")])
+
+    def test_a_cycle_is_a_finding_on_each_value_in_it(self):
+        text = GOOD + parameter("core.a", "core.b + 1") + parameter("core.b", "core.a")
+        self.assertEqual(only("parameter-values", text),
+                         [(line(text, ":value: core.b + 1"), "parameter-values", "core.a"),
+                          (line(text, ":value: core.a"), "parameter-values", "core.b")])
+
+    def test_a_value_that_names_a_value_that_fails_is_a_finding(self):
+        text = GOOD + parameter("core.a", "8 +") + parameter("core.b", "core.a")
+        self.assertEqual(only("parameter-values", text),
+                         [(line(text, ":value: 8 +"), "parameter-values", "core.a"),
+                          (line(text, ":value: core.a"), "parameter-values", "core.b")])
+        self.assertIn("core.a", [f.message for f in Book({"core/core.rst": text}).findings
+                                 if f.anchor == "core.b"][0])
+
+    def test_a_value_can_name_a_parameter_of_another_chapter(self):
+        design = DESIGN + "\n.. parameter:: design.threads\n   :parent: design.timing\n   :value: 8\n\n   Text.\n"
+        core = CORE_CHAPTER + parameter("core.x", "design.threads * 2", parent="core.core")
+        self.assertEqual(Book({"core/core.rst": core, "design/design.rst": design}).values["core.x"], 16)
+
+
+class ConstantNamesTest(unittest.TestCase):
+    """doc.constant-name and doc.constant-names"""
+
+    def test_the_constant_name_is_the_anchor_in_upper_case_with_underscores(self):
+        self.assertEqual(bcw.constant_name("core.turn-width"), "CORE_TURN_WIDTH")
+
+    def test_two_parameters_with_one_constant_name_are_a_finding(self):
+        text = GOOD + parameter("core.turn-width", "3") + parameter("core.turn.width", "3")
+        self.assertEqual(only("constant-names", text),
+                         [(line(text, ".. parameter:: core.turn.width"), "constant-names", "core.turn.width")])
+
+
+class ParamCitationTest(unittest.TestCase):
+    """doc.citation and doc.param-citations"""
+
+    def test_a_param_citation_of_a_parameter_passes(self):
+        text = (GOOD + THREADS).replace("eight cycles apart.", "eight cycles apart, of :param:`core.threads`.")
+        self.assertEqual(findings(text), [])
+
+    def test_a_param_citation_of_another_chunk_is_a_finding(self):
+        text = GOOD.replace("eight cycles apart.", "eight cycles apart, as :param:`core.core` says.")
+        self.assertEqual(findings(text), [(line(text, ":param:"), "param-citations", None)])
+
+    def test_a_param_citation_of_no_anchor_is_a_references_finding(self):
+        text = GOOD.replace("eight cycles apart.", "eight cycles apart, as :param:`core.gone` says.")
+        self.assertEqual(findings(text), [(line(text, ":param:"), "references", None)])
+
+    def test_the_word_checks_read_it_as_a_quotation(self):
+        text = (GOOD + THREADS).replace("the timing of another", "the timing of :param:`core.threads` another")
+        self.assertEqual(only("known-words", text, general=GENERAL | {"number", "threads"}), [])
+
+
+class ParameterTangleTest(unittest.TestCase):
+    """The tangle writes each PARAMETER as a constant in a SystemVerilog package and a Python module."""
+
+    def test_each_constant_follows_a_marker_that_names_its_value_line(self):
+        text = GOOD + THREADS + WIDTH
+        files = Book({"core/core.rst": text}, tangle=True).files
+        threads, width = line(text, ":value: 8"), line(text, ":value: clog2")
+        self.assertEqual(files["build/rtl/bcw_params.sv"],
+                         "// The PARAMETERs of the book, which tools/bcw.py writes.\n"
+                         "package bcw_params;\n"
+                         f"// bcw: book/core/core.rst:{threads}\nlocalparam int CORE_THREADS = 8;\n"
+                         f"// bcw: book/core/core.rst:{width}\nlocalparam int CORE_TURN_WIDTH = 3;\n"
+                         "endpackage\n")
+        self.assertEqual(files["build/model/bcw_params.py"],
+                         "# The PARAMETERs of the book, which tools/bcw.py writes.\n"
+                         f"# bcw: book/core/core.rst:{threads}\nCORE_THREADS = 8\n"
+                         f"# bcw: book/core/core.rst:{width}\nCORE_TURN_WIDTH = 3\n")
+
+    def test_the_line_mapper_maps_a_constant_to_its_value_line(self):
+        text = GOOD + THREADS
+        files = Book({"core/core.rst": text}, tangle=True).files
+        with tempfile.TemporaryDirectory() as name:
+            path = Path(name) / "bcw_params.sv"
+            path.write_text(files["build/rtl/bcw_params.sv"])
+            self.assertEqual(linemap.lookup(str(path), 4), ("book/core/core.rst", line(text, ":value: 8")))
+
+
 class TangleTest(unittest.TestCase):
     """The tangle writes each file of a twin or a source, with a marker before each block."""
 
     def test_each_file_holds_its_blocks_after_a_marker_that_names_the_first_line(self):
         files = Book({"core/core.rst": GOOD}, tangle=True).files
+        # The constant files are always written, and here they hold no constant.
+        self.assertEqual(files.pop("build/rtl/bcw_params.sv"),
+                         "// The PARAMETERs of the book, which tools/bcw.py writes.\npackage bcw_params;\nendpackage\n")
+        self.assertEqual(files.pop("build/model/bcw_params.py"),
+                         "# The PARAMETERs of the book, which tools/bcw.py writes.\n")
         self.assertEqual(files, {
             "build/model/core_rotate.py": f"# bcw: book/core/core.rst:{line(GOOD, 'def core_rotate')}\n"
                                           "def core_rotate(turn):\n    return {'next': turn + 1}\n",

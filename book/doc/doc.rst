@@ -19,7 +19,8 @@ The chapters are written in reStructuredText. Each GOAL and each rule is a direc
 ``.. requirement:: core.rotation``, whose argument is its anchor. Its options, such as
 ``:parent:``, stand on the lines below the directive. A twin stands inside its rule as a
 ``twin`` directive. ``tools/bcw.py`` is the Sphinx extension that defines these directives,
-checks the rules and tangles the code. A heading of level 1 has ``=`` above and below it. Level
+checks the rules and tangles the code. The tangle also writes the value of each PARAMETER as a
+constant, which the Verilog and the twins read. A heading of level 1 has ``=`` above and below it. Level
 2 has ``=`` below it, level 3 has ``-`` and level 4 has ``~``.
 
 ``make weave`` builds the reader edition, as HTML and as a PDF. It moves each RATIONALE and
@@ -107,11 +108,17 @@ Terms and marking
    The :dfn:`stamp` of a rule is the first eight hexadecimal digits of the SHA-256 hash of its
    label, a space and its English.
 
+.. definition:: doc.allowed-options
+   :parent: doc.traceable
+
+   The :dfn:`allowed options` of a GOAL are ``parent`` alone. A PARAMETER allows ``parent``,
+   ``value`` and ``unit``, and a REQUIREMENT allows ``parent`` and ``impl``. A DEFINITION allows
+   ``parent`` and ``never``, and no other label allows an option.
+
 .. requirement:: doc.attribute-keys
    :parent: doc.traceable
 
-   Each chunk shall carry only these options: ``parent`` on a GOAL or a PARAMETER, ``parent``
-   and ``impl`` on a REQUIREMENT, and ``parent`` and ``never`` on a DEFINITION.
+   Each chunk shall carry only the allowed options of its label.
 
 .. requirement:: doc.labels
    :parent: doc.rules-apart
@@ -167,7 +174,7 @@ Trace
 .. definition:: doc.citation
    :parent: doc.traceable
 
-   A :dfn:`citation` is a use of the role ``rule``, which names an anchor.
+   A :dfn:`citation` is a use of the role ``rule`` or the role ``param``, which names an anchor.
 
 .. requirement:: doc.references
    :parent: doc.traceable
@@ -363,3 +370,42 @@ Chapters
    The weave numbers the chapters and their sections, so a new section never changes a number
    in the source. The kinds keep tutorial, guide, reference and explanation apart, and the
    trace sets the order within a kind.
+
+Parameters
+==========
+
+.. definition:: doc.parameter-value
+   :parent: doc.one-source
+
+   A :dfn:`parameter value` is the ``value`` option of a PARAMETER. It is an integer, or an
+   expression of integers, the anchors of other PARAMETERs and parentheses. It can use the
+   operators ``+``, ``-``, ``*``, ``//``, ``%`` and ``**``, and the functions ``clog2``, ``min``
+   and ``max``. An exponent is 1024 or less, and a minus sign has a space on each side.
+
+.. requirement:: doc.parameter-values
+   :parent: doc.one-source
+
+   Where a rule is a PARAMETER, the rule shall carry a parameter value that evaluates to an
+   integer.
+
+.. definition:: doc.constant-name
+   :parent: doc.one-source
+
+   The :dfn:`constant name` of a PARAMETER is its anchor in upper case, with each dot and hyphen
+   written as an underscore, such as ``CORE_TURN_WIDTH``.
+
+.. requirement:: doc.constant-names
+   :parent: doc.one-source
+
+   No constant name shall belong to more than one PARAMETER.
+
+.. requirement:: doc.param-citations
+   :parent: doc.traceable
+
+   Where a citation uses the role ``param``, the citation shall name a PARAMETER.
+
+.. rationale::
+
+   The tangle writes each PARAMETER as a constant in ``build/rtl/bcw_params.sv`` and
+   ``build/model/bcw_params.py``, so the Verilog and the twins read one value. The weave shows the
+   value where the text cites it.
