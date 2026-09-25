@@ -242,7 +242,8 @@ Sentences
    :parent: doc.one-reading
 
    A :dfn:`known word` is a general word, or a word that is part of a whole defined term in the
-   text. A known word can also end in ``s``, ``es`` or ``'s``.
+   text. A known word can also take an ending: ``'s``, ``ies`` for a ``y`` at its end, ``es``
+   after ``s``, ``x``, ``z``, ``ch`` or ``sh``, and ``s`` after any other end.
 
 .. requirement:: doc.known-words
    :parent: doc.one-reading
@@ -253,8 +254,7 @@ Sentences
 .. requirement:: doc.general-words
    :parent: doc.one-reading
 
-   No general word shall be a defined term, with or without the ending ``s``, ``es`` or
-   ``'s``.
+   No general word shall be a defined term, with or without the ending of a known word.
 
 .. definition:: doc.quotation
    :parent: doc.one-reading

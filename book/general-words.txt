@@ -172,7 +172,7 @@ retired
 role
 run
 same
-satisfies
+satisfy
 script
 second
 security

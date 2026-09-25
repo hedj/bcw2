@@ -68,7 +68,8 @@ DOTTED = re.compile(r"\b[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)+\.?|\b(?:etc|vs|cf|approx
 SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
 NUMBERED = re.compile(r"\d+(?:\.\d+)*\.?(?:\s|$)")
 WORD = re.compile(r"[^\W\d_][^\W_]*(?:['’-][^\W_]+)*")
-ENDINGS = ("", "s", "es", "'s", "’s")
+# The ends of a word after which an English plural takes es, not s.
+SIBILANTS = ("s", "x", "z", "ch", "sh")
 CITATIONS = ["rule", "param"]
 IMPLEMENTS = re.compile(r"^[ \t]*# implements: (\S+)[ \t]*$", re.MULTILINE)
 
@@ -747,9 +748,24 @@ def check_vocabulary(documents):
                                   f"use the term that {never[match.group(0).lower()]} defines")
 
 
+def bases(word):
+    """The words that word can be, with the ending of an English plural or of 's taken off."""
+    result = {word}
+    for mark in ("'s", "’s"):
+        if word.endswith(mark):
+            result.add(word[:-2])
+    if word.endswith("ies"):
+        result.add(word[:-3] + "y")
+    if word.endswith("es") and word[:-2].endswith(SIBILANTS):
+        result.add(word[:-2])
+    if word.endswith("s") and not word[:-1].endswith(SIBILANTS):
+        result.add(word[:-1])
+    return result
+
+
 def known(word, words):
-    """Whether word is in words, as it stands or with one of ENDINGS."""
-    return any(word.endswith(ending) and word[:len(word) - len(ending)] in words for ending in ENDINGS)
+    """Whether word is in words, as it stands or with the ending of a plural or of 's."""
+    return not bases(word).isdisjoint(words)
 
 
 # implements: doc.known-words

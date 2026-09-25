@@ -534,14 +534,22 @@ class KnownWordsTest(unittest.TestCase):
     def test_a_defined_term_in_upper_case_matches_in_any_case(self):
         self.assertEqual(self.known(GOOD.replace("A :dfn:`turn` is", "A :dfn:`Turn` is")), [])
 
-    def test_the_endings_s_es_and_apostrophe_s_keep_a_word_known(self):
-        self.assertEqual(self.known(GOOD.replace("the timing of", "the timings, core's, turns, toes of")), [])
+    def test_the_endings_of_english_plurals_and_of_apostrophe_s_keep_a_word_known(self):
+        text = GOOD.replace("the timing of", "the timings, core's, core’s, turns, boxes, matches, entries of")
+        self.assertEqual(self.known(text, GENERAL | {"box", "match", "entry"}), [])
 
     def test_other_endings_do_not(self):
-        for word in ["timingly", "cored", "turner", "thready"]:
+        for word in ["timingly", "cored", "turner", "thready", "toes", "turnes", "boxs", "timingies"]:
             with self.subTest(word=word):
                 text = GOOD.replace("the timing of", f"the {word} of")
-                self.assertEqual(self.known(text), [(line(text, word), "known-words", "core.timing")])
+                # box is listed, so that boxs fails for its ending alone.
+                self.assertEqual(self.known(text, GENERAL | {"box"}),
+                                 [(line(text, word), "known-words", "core.timing")])
+
+    def test_the_list_needs_only_the_base_of_a_plural_in_ies(self):
+        text = GOOD.replace("No thread can change the timing of another thread.",
+                            "No thread satisfies the timing of another thread.")
+        self.assertEqual(self.known(text, GENERAL | {"satisfy"}), [])
 
     def test_a_word_of_a_defined_term_is_known_only_inside_the_whole_term(self):
         for sentence, unknown in [("The core shall give the time slot to thread ``t``.", []),
@@ -581,10 +589,13 @@ class GeneralWordsTest(unittest.TestCase):
         return only("general-words", text, general=GENERAL | extra)
 
     def test_a_listed_defined_term_is_a_finding_on_its_definition(self):
-        for word in ["turn", "turns", "turn's", "turnes"]:
+        for word in ["turn", "turns", "turn's"]:
             with self.subTest(word=word):
                 self.assertEqual(self.general(GOOD, {word}),
                                  [(line(GOOD, ".. definition:: core.turn"), "general-words", "core.turn")])
+
+    def test_a_listed_word_that_is_no_form_of_a_defined_term_passes(self):
+        self.assertEqual(self.general(GOOD, {"turnes"}), [])
 
     def test_each_listed_form_is_a_finding(self):
         self.assertEqual(self.general(GOOD, {"turn", "turns"}),
