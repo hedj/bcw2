@@ -70,11 +70,12 @@ def line(text, needle):
                 if needle in content)
 
 
-def findings(text, retired=()):
+def findings(text, retired=(), implemented=()):
     with tempfile.TemporaryDirectory() as name:
         path = Path(name) / "core.md"
         path.write_text(text)
-        return [(f.line, f.check, f.anchor) for f in check.check([str(path)], set(retired))]
+        return [(f.line, f.check, f.anchor)
+                for f in check.check([str(path)], set(retired), set(implemented))]
 
 
 class GoodTest(unittest.TestCase):
@@ -182,23 +183,28 @@ class StampsTest(unittest.TestCase):
             return check.check([str(path)], set())
 
 
-class CommandTest(unittest.TestCase):
-    def run_in(self, text, retired=""):
-        with tempfile.TemporaryDirectory() as name:
-            book = Path(name) / "book" / "core"
-            book.mkdir(parents=True)
-            (book / "core.md").write_text(text)
-            (Path(name) / "book" / "retired-anchors.txt").write_text(retired)
-            return subprocess.run([sys.executable, str(ROOT / "tools" / "check.py")],
-                                  cwd=name, capture_output=True, text=True)
+def run_book(text, retired="", tool=None):
+    """Run tools/check.py on a book of one chapter, with an optional tools/tool.py."""
+    with tempfile.TemporaryDirectory() as name:
+        book = Path(name) / "book" / "core"
+        book.mkdir(parents=True)
+        (book / "core.md").write_text(text)
+        (Path(name) / "book" / "retired-anchors.txt").write_text(retired)
+        if tool is not None:
+            (Path(name) / "tools").mkdir()
+            (Path(name) / "tools" / "tool.py").write_text(tool)
+        return subprocess.run([sys.executable, str(ROOT / "tools" / "check.py")],
+                              cwd=name, capture_output=True, text=True)
 
+
+class CommandTest(unittest.TestCase):
     def test_a_clean_book_exits_0(self):
-        result = self.run_in(GOOD)
+        result = run_book(GOOD)
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertEqual(result.stdout, "check: 1 documents, 0 findings\n")
 
     def test_a_finding_prints_location_check_anchor_and_fix_and_exits_1(self):
-        result = self.run_in(GOOD, retired="# Retired anchors\ncore.turn\n")
+        result = run_book(GOOD, retired="# Retired anchors\ncore.turn\n")
         self.assertEqual(result.returncode, 1)
         self.assertEqual(result.stdout.splitlines()[:2], [
             f"book/core/core.md:{line(GOOD, 'A **turn**')}: [anchors] core.turn: the anchor is retired",

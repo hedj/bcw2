@@ -36,6 +36,7 @@ ATTRIBUTES = re.compile(r"\{([^{}]*)\}\s*")
 ANCHOR = re.compile(r"[a-z][a-z0-9-]*(\.[a-z0-9-]+)+")
 SHALL = re.compile(r"\bshall\b", re.IGNORECASE)
 CODE_SPAN = re.compile(r"`[^`]*`")
+IMPLEMENTS = re.compile(r"^[ \t]*# implements: (\S+)[ \t]*$", re.MULTILINE)
 
 
 @dataclass
@@ -57,6 +58,7 @@ class Document:
     path: str
     chunks: list
     findings: list  # the findings that parsing met
+    blocks: list  # every fenced block at the top level
 
 
 @dataclass
@@ -108,13 +110,14 @@ def fence_attributes(info):
 def parse(path, text):
     """Parse one document into its chunks."""
     source = text.splitlines()
-    chunks, findings, current = [], [], None
+    chunks, findings, blocks, current = [], [], [], None
     for token in MarkdownIt("commonmark").parse(text):
         if token.level != 0 or token.type in ("paragraph_close", "inline"):
             continue
+        if token.type == "fence":
+            blocks.append(Block(token.map[0] + 1, *fence_attributes(token.info)))
         if token.type == "fence" and current is not None:
-            classes, attrs = fence_attributes(token.info)
-            current.blocks.append(Block(token.map[0] + 1, classes, attrs))
+            current.blocks.append(blocks[-1])
             continue
         if token.type == "fence" and "formal" in fence_attributes(token.info)[0]:
             findings.append(Finding(path, token.map[0] + 1, "stamps", None,
@@ -137,7 +140,7 @@ def parse(path, text):
                 attrs[key] = value
         current = Chunk(path, start + 1, match.group(1), lines, attrs)
         chunks.append(current)
-    return Document(path, chunks, findings)
+    return Document(path, chunks, findings, blocks)
 
 
 def read(paths):
@@ -211,16 +214,45 @@ def check_stamps(chunk):
                           f"read the twin against the rule, then set stamp={expected}")
 
 
-def check(paths, retired):
-    """Return every finding in the given documents."""
+def tool_implements(paths):
+    """The anchors that the "# implements:" comments in the given files name."""
+    return {anchor for path in paths for anchor in IMPLEMENTS.findall(Path(path).read_text())}
+
+
+# implements: doc.implemented
+def check_implemented(documents, tools):
+    named = set(tools)
+    for document in documents:
+        for block in document.blocks:
+            if "verilog" in block.classes and "implements" in block.attrs:
+                named.update(block.attrs["implements"].split(","))
+    for document in documents:
+        for chunk in document.chunks:
+            if (chunk.label == "REQUIREMENT" and chunk.anchor is not None
+                    and chunk.anchor not in named and chunk.attrs.get("impl") != "none"):
+                yield Finding(chunk.path, chunk.line, "implemented", chunk.anchor,
+                              "no Verilog block and no check implements the REQUIREMENT",
+                              "name it in an implements= list or an implements: comment, "
+                              "or set impl=none")
+
+
+def check(paths, retired, implemented=()):
+    """Return every finding in the given documents.
+
+    implemented holds the anchors that the tools name in "# implements:" comments.
+    The first pass checks each chunk on its own. The second pass runs the checks
+    that need the whole book.
+    """
+    documents = read(paths)
     findings, seen = [], {}
-    for document in read(paths):
+    for document in documents:
         findings += document.findings
         for chunk in document.chunks:
             findings += check_labels(chunk)
             findings += check_one_shall(chunk)
             findings += check_anchor(chunk, seen, retired)
             findings += check_stamps(chunk)
+    findings += check_implemented(documents, implemented)
     return sorted(findings, key=lambda f: (f.path, f.line, f.check))
 
 
@@ -231,7 +263,7 @@ def main(argv):
     if retired_file.exists():
         retired = {line.strip() for line in retired_file.read_text().splitlines()
                    if line.strip() and not line.startswith("#")}
-    findings = check(paths, retired)
+    findings = check(paths, retired, tool_implements(sorted(Path("tools").glob("*.py"))))
     for finding in findings:
         print(finding)
     print(f"check: {len(paths)} documents, {len(findings)} findings")

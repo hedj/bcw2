@@ -13,7 +13,7 @@ Each GOAL and each rule carries an anchor, such as `core.rotation`, on the attri
 the end of its paragraph. The attribute line also names the parents of the chunk.
 `book/retired-anchors.txt` lists the anchors that no chunk can use again.
 
-Section 2 states the goals. Section 3 defines the terms and states the rules for marking text.
+Section 2 states the goals. The later sections define the terms and state the rules.
 
 ## 2. Goals
 
@@ -84,3 +84,13 @@ that is not retired.
 
 **RATIONALE.** Judgement decides whether a rule is right. A script decides whether the text
 obeys it.
+
+## 4. Trace
+
+**REQUIREMENT.** Where a rule is a REQUIREMENT, the rule shall appear in an `implements=` list
+or `implements:` comment, or carry `impl=none`.
+{rule=doc.implemented parent=doc.traceable}
+
+**RATIONALE.** A Verilog block names the requirements that it implements in its
+`implements=` list. A check in `tools/` names its rule in an `# implements:` comment, so each
+documentation rule traces down to its script.
