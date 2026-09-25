@@ -16,9 +16,9 @@ Three rules run through every phase:
   specification, its RTL, and the tests that verify it.
 
 This document is a plan, not a rule set. The decisions of section 2.2 stay
-open until the author records them in that table. Once the new conventions
-document exists (section 6.5), it holds the rules, and this plan becomes a
-record.
+open until the author records them. A recorded decision moves to section
+2.1. Once the new conventions document exists (section 6.5), it holds the
+rules, and this plan becomes a record.
 
 **How references are written here.** A specification section is named by its
 document's mnemonic and its section number. For example, CAPH 2.9 is section
@@ -54,6 +54,20 @@ reader, and 3 is cosmetic.
 As of 24 September 2026, the frozen repository is `hedj/bcw` (private). Its
 default branch, `claude/plan-review-mab78k`, is at commit `60df9a1`.
 
+Three other branches hold 18 commits that the default branch does not
+contain. The author decided to leave them out of BCW-2 (section 2.1):
+
+- `claude/nucleus-design`, at `3967a7a`: a supervisor design and the Forth
+  port, in 5 commits. It contains the 4 commits of
+  `claude/relaxed-hawking-dlv40u`.
+- `claude/peaceful-archimedes-nolq4s`, at `6f9fea0`: a pilot of the
+  specification as an Alloy model, in 8 commits.
+- `claude/happy-clarke-1mkgxh`, at `03ad7d5`: a trial of four formal
+  languages on one slice, in 5 commits.
+
+The one commit of `claude/friendly-noether-nm0og1` is already on the default
+branch as an equivalent patch.
+
 | What | State |
 |---|---|
 | Specification | 16 documents, `docs/00_*.md` to `docs/15_*.md`. 497 labelled statements, 244 of them REQUIREMENTs. 367 occurrences of "shall". |
@@ -63,6 +77,7 @@ default branch, `claude/plan-review-mab78k`, is at commit `60df9a1`.
 | Specification model | `docs/formal/check.py` (330 lines) and `docs/formal/lifecycle.py` (390 lines): a model of the request lifecycle in Python over the z3 solver. 35 rules formalised, 25 sentences unmodelled, 12 scenarios, traces of 8 steps over 3 threads. Four findings: #296, #310, #311 and #312. |
 | Review queue | `.claude/review-ledger.md`: 315 items and 27 settled decisions. 4 fixed, 63 dropped, 1 half-settled (#32), 247 open. Of the 248 not closed: 17 at severity 1, 102 at severity 2 (with #32), 129 at severity 3 (4 of them design-tagged). |
 | Continuous integration | None. |
+| New repository | `hedj/bcw2`, created on 25 September 2026 and private. It holds this plan and a `CLAUDE.md`. |
 
 ## 2. Decisions
 
@@ -80,12 +95,14 @@ default branch, `claude/plan-review-mab78k`, is at commit `60df9a1`.
 | **One defect list,** a file in `exp/`. | Section 3.16 |
 | **A conservative design gate:** a change to an untwinned rule or to a parameter is a design change. Choice A2 of section 5 extends this, subject to D2. | Section 3.15 |
 | **The documentation requirements are those of section 3.8.** No other BCW-1 convention is applied. | Section 3.8 |
+| **The repository (D1).** BCW-2 lives in `hedj/bcw2`, which the author makes public. On GitHub Free, only public repositories get protected branches and rulesets. Everything that W1 imports and W3 migrates is then public, including the review queue. | Section 6.1 |
+| **BCW-1 ends at `60df9a1`.** The tag `bcw1-final` names the head of the default branch. The three branches of section 1 are not merged, and BCW-2 imports nothing from them. They stay readable in the archived repository. | Sections 6.1, 6.2 |
+| **The twins are Python over z3.** A trial on `claude/happy-clarke-1mkgxh` encoded one slice in z3, Alloy 6, B and Quint. All four found the same faults. Alloy read closest to the English, but its checks took 868 s against 13 s for z3. Its analyser also comes from GitHub, not PyPI. The fast tier, the semantic diff and the network allow-list need z3's speed and installation, so Alloy is declined. | Sections 3.3, 3.12 |
 
 ### 2.2 Needed before starting
 
 | # | Decision | Recommended | Blocks |
 |---|---|---|---|
-| D1 | The new repository's name, and whether it is public | Public, or private with GitHub Pro. On GitHub Free, only public repositories get protected branches and rulesets. | W0 |
 | D2 | Confirm the choices of section 5, A1 to A11. Each names the alternative it replaces. | Yes, all eleven | W2, W3 |
 | D3 | The place-and-route build that recorded Fmax figures use | `yowasp-nextpnr-ecp5==0.11.1.0.post826`, pinned by pip and reproducible in CI. The native 0.11 build differs by 2.7 MHz on identical RTL. Re-measure the recorded figures with the pinned build before comparing new ones with them. `make timing` then uses only the pinned build. | W0 |
 | D4 | Proof scope and engines | Prove beyond the four formal checks: self-composition for Leg 1, and later Leg 2 (section 3.12). This replaces VERI 1.2's "and not elsewhere", and its statement that proof establishes functional correctness and not timing. Yices is the primary engine and z3 the cross-check. Leave github.com off the network allow-list unless ABC is wanted. | P2, and the new `CLAUDE.md` |
@@ -1332,11 +1349,11 @@ about 17 min.
 
 The author:
 
-- Creates the repository (D1).
+- Makes `hedj/bcw2` public (section 2.1).
 - Gives the Claude GitHub App access to it:
   <https://github.com/apps/claude/installations/select_target>.
-- Tags the frozen repository's final commit `bcw1-final`, and archives
-  `hedj/bcw`.
+- Tags `60df9a1`, the head of the frozen repository's default branch,
+  `bcw1-final`, and archives `hedj/bcw`.
 - Gives the new repository its own Claude Code environment, whose setup script
   runs the repository's `tools/setup.sh`.
   - Network access needs PyPI and the Ubuntu archive, and github.com only if D4
