@@ -4,6 +4,7 @@ Each test changes one thing in GOOD from test_bcw.py, and expects exactly the
 findings of the rule that the change breaks.
 """
 
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -856,8 +857,10 @@ class ParameterTangleTest(unittest.TestCase):
         self.assertEqual(files["build/rtl/bcw_params.sv"],
                          "// The PARAMETERs of the book, which tools/bcw.py writes.\n"
                          "package bcw_params;\n"
+                         "/* verilator lint_off UNUSEDPARAM */\n"
                          f"// bcw: book/core/core.rst:{threads}\nlocalparam int CORE_THREADS = 8;\n"
                          f"// bcw: book/core/core.rst:{width}\nlocalparam int CORE_TURN_WIDTH = 3;\n"
+                         "/* verilator lint_on UNUSEDPARAM */\n"
                          "endpackage\n")
         self.assertEqual(files["build/model/bcw_params.py"],
                          "# The PARAMETERs of the book, which tools/bcw.py writes.\n"
@@ -870,7 +873,29 @@ class ParameterTangleTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as name:
             path = Path(name) / "bcw_params.sv"
             path.write_text(files["build/rtl/bcw_params.sv"])
-            self.assertEqual(linemap.lookup(str(path), 4), ("book/core/core.rst", line(text, ":value: 8")))
+            self.assertEqual(linemap.lookup(str(path), 5), ("book/core/core.rst", line(text, ":value: 8")))
+
+    def lint(self, module):
+        """The exit status and messages of Verilator -Wall on the package of GOOD + THREADS + WIDTH and module."""
+        files = Book({"core/core.rst": GOOD + THREADS + WIDTH}, tangle=True).files
+        with tempfile.TemporaryDirectory() as name:
+            package, source = Path(name) / "bcw_params.sv", Path(name) / "count_threads.v"
+            package.write_text(files["build/rtl/bcw_params.sv"])
+            source.write_text(module)
+            result = subprocess.run(["verilator", "--lint-only", "-Wall", str(package), str(source)],
+                                    capture_output=True, text=True)
+        return result.returncode, result.stderr
+
+    COUNT = ("module count_threads\n    import bcw_params::*;\n    (output wire [7:0] n);\n{}"
+             "    assign n = 8'(CORE_THREADS);\nendmodule\n")
+
+    def test_a_module_that_reads_only_some_constants_lints_clean_with_the_package(self):
+        self.assertEqual(self.lint(self.COUNT.format("")), (0, ""))
+
+    def test_an_unused_parameter_of_a_module_still_fails_the_lint(self):
+        status, messages = self.lint(self.COUNT.format("    localparam int SPARE = 1;\n"))
+        self.assertNotEqual(status, 0)
+        self.assertIn("Parameter is not used: 'SPARE'", messages)
 
 
 def target(anchor, value, parent="core.core", unit=None, text="The number of threads."):
@@ -957,7 +982,8 @@ class TangleTest(unittest.TestCase):
         files = Book({"core/core.rst": GOOD}, tangle=True).files
         # The constant files are always written, and here they hold no constant.
         self.assertEqual(files.pop("build/rtl/bcw_params.sv"),
-                         "// The PARAMETERs of the book, which tools/bcw.py writes.\npackage bcw_params;\nendpackage\n")
+                         "// The PARAMETERs of the book, which tools/bcw.py writes.\npackage bcw_params;\n"
+                         "/* verilator lint_off UNUSEDPARAM */\n/* verilator lint_on UNUSEDPARAM */\nendpackage\n")
         self.assertEqual(files.pop("build/model/bcw_params.py"),
                          "# The PARAMETERs of the book, which tools/bcw.py writes.\n")
         self.assertEqual(files, {

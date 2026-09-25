@@ -1063,13 +1063,16 @@ def tangle_parameters(app, root):
             if chunk.label == "PARAMETER" and chunk.anchor in app.env.bcw_values:
                 constants.append((chunk, constant_name(chunk.anchor), app.env.bcw_values[chunk.anchor]))
     header = "The PARAMETERs of the book, which tools/bcw.py writes."
-    verilog = [f"// {header}", "package bcw_params;"]
+    # A module that reads some of the constants is correct, so the package turns off
+    # Verilator's warning on an unused parameter for its own constants only.
+    verilog = [f"// {header}", "package bcw_params;", "/* verilator lint_off UNUSEDPARAM */"]
     python = [f"# {header}"]
     for chunk, name, value in constants:
         marker = f"bcw: {chunk.path}:{chunk.option_line('value')}"
         verilog += [f"// {marker}", f"localparam int {name} = {value};"]
         python += [f"# {marker}", f"{name} = {value}"]
-    for target, lines in [("build/rtl/bcw_params.sv", verilog + ["endpackage"]), ("build/model/bcw_params.py", python)]:
+    verilog += ["/* verilator lint_on UNUSEDPARAM */", "endpackage"]
+    for target, lines in [("build/rtl/bcw_params.sv", verilog), ("build/model/bcw_params.py", python)]:
         path = Path(root) / target
         path.parent.mkdir(parents=True, exist_ok=True)
         text = "\n".join(lines) + "\n"
