@@ -279,6 +279,45 @@ def check_references(documents, anchors, tools):
                               f"the citation {text} names no anchor in the book", fix)
 
 
+def parents(chunk):
+    return [entry for entry in chunk.attrs.get("parent", "").split(",") if entry]
+
+
+# implements: doc.reaches-goal
+def check_reaches_goal(documents):
+    first = {}
+    for document in documents:
+        for chunk in document.chunks:
+            if chunk.anchor is not None:
+                first.setdefault(chunk.anchor, chunk)
+    for anchor, chunk in first.items():
+        if chunk.label == "GOAL":
+            continue
+        if not parents(chunk):
+            yield Finding(chunk.path, chunk.attribute_line, "reaches-goal", anchor,
+                          "the chunk has no parent", "name the goal or rule that it serves in parent=")
+            continue
+        seen, stack, reached, unknown, cycle = set(), parents(chunk), False, False, False
+        while stack and not reached:
+            name = stack.pop()
+            if name == anchor:
+                cycle = True
+            elif name not in seen:
+                seen.add(name)
+                node = first.get(name)
+                if node is None:
+                    unknown = True
+                elif node.label == "GOAL":
+                    reached = True
+                else:
+                    stack.extend(parents(node))
+        if not reached and not unknown:
+            message = "the chunk reaches itself through its parents" if cycle else \
+                "the chunk reaches no GOAL through its parents"
+            yield Finding(chunk.path, chunk.attribute_line, "reaches-goal", anchor, message,
+                          "name a parent that reaches a GOAL")
+
+
 def check(paths, retired, implemented=()):
     """Return every finding in the given documents.
 
@@ -297,6 +336,7 @@ def check(paths, retired, implemented=()):
             findings += check_stamps(chunk)
     findings += check_implemented(documents, implemented)
     findings += check_references(documents, set(seen), implemented)
+    findings += check_reaches_goal(documents)
     return sorted(findings, key=lambda f: (f.path, f.line, f.check))
 
 

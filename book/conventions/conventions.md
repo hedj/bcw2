@@ -102,6 +102,10 @@ word is also the first word of an anchor.
 **REQUIREMENT.** Each reference shall name an anchor in the book.
 {rule=doc.references parent=doc.traceable}
 
+**REQUIREMENT.** Where a chunk carries an anchor and is not a GOAL, the chunk shall reach a
+GOAL through its parents.
+{rule=doc.reaches-goal parent=doc.traceable}
+
 **RATIONALE.** A Verilog block names the requirements that it implements in its
 `implements=` list. A check in `tools/` names its rule in an `# implements:` comment, so each
 documentation rule traces down to its script.

@@ -104,5 +104,51 @@ class ReferencesTest(unittest.TestCase):
         self.assertEqual(findings(GOOD + "\n``` {file=build/x.v}\n`core.nothing`\n```\n"), [])
 
 
+class ReachesGoalTest(unittest.TestCase):
+    """doc.reaches-goal"""
+
+    def test_a_rule_without_a_parent_is_a_finding(self):
+        text = GOOD.replace("{rule=core.rotation parent=design.timing}", "{rule=core.rotation}")
+        self.assertEqual(findings(text), [(line(text, "{rule=core.rotation}"), "reaches-goal", "core.rotation")])
+
+    def test_a_cycle_is_a_finding_on_each_chunk_in_it(self):
+        text = GOOD.replace("{rule=core.core parent=design.timing}", "{rule=core.core parent=core.turn}")
+        self.assertEqual(findings(text), [(line(text, "{rule=core.turn"), "reaches-goal", "core.turn"),
+                                          (line(text, "{rule=core.core"), "reaches-goal", "core.core")])
+
+    def test_the_message_names_the_fault(self):
+        cycle = GOOD.replace("{rule=core.core parent=design.timing}", "{rule=core.core parent=core.turn}")
+        self.assertEqual(self.messages(cycle), ["the chunk reaches itself through its parents"] * 2)
+        short = GOOD.replace("{rule=core.core parent=design.timing}", "{rule=core.core}")
+        self.assertEqual(self.messages(short), ["the chunk reaches no GOAL through its parents",
+                                                "the chunk has no parent"])
+
+    def messages(self, text):
+        with tempfile.TemporaryDirectory() as name:
+            path = Path(name) / "core.md"
+            path.write_text(text)
+            return [f.message for f in check.check([str(path)], set()) if f.check == "reaches-goal"]
+
+    def test_a_chain_that_stops_short_of_a_goal_is_a_finding(self):
+        text = GOOD.replace("{rule=core.core parent=design.timing}", "{rule=core.core parent=core.orphan}")
+        text = text.replace("**Thread.**", "**DEFINITION.** An **orphan** has no parent.\n{rule=core.orphan}\n\n**Thread.**")
+        self.assertEqual(findings(text), [(line(text, "{rule=core.turn"), "reaches-goal", "core.turn"),
+                                          (line(text, "{rule=core.core"), "reaches-goal", "core.core"),
+                                          (line(text, "{rule=core.orphan"), "reaches-goal", "core.orphan")])
+
+    def test_an_anchored_rationale_needs_a_parent(self):
+        text = GOOD.replace("eight cycles apart.", "eight cycles apart.\n{rule=core.why}")
+        self.assertEqual(findings(text), [(line(text, "{rule=core.why}"), "reaches-goal", "core.why")])
+
+    def test_a_goal_can_serve_another_goal(self):
+        text = GOOD.replace("{rule=core.core parent=design.timing}", "{rule=core.core parent=design.sub}")
+        text += "\n**GOAL.** Threads stay apart.\n{rule=design.sub parent=design.timing}\n"
+        self.assertEqual(findings(text), [])
+
+    def test_a_chain_that_meets_an_unknown_anchor_is_left_to_references(self):
+        text = GOOD.replace("{rule=core.core parent=design.timing}", "{rule=core.core parent=core.nothing}")
+        self.assertEqual(findings(text), [(line(text, "{rule=core.core"), "references", "core.core")])
+
+
 if __name__ == "__main__":
     unittest.main()
