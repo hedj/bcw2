@@ -1,6 +1,6 @@
 """Tests of the documentation rules of tools/bcw.py that need the whole book, one class per rule.
 
-Each test changes one thing in GOOD from test_bcw.py, and expects exactly the
+Each test changes one thing in GOOD from tools/tests/book.py, and expects exactly the
 findings of the rule that the change breaks.
 """
 
@@ -11,9 +11,10 @@ from pathlib import Path
 
 from docutils import nodes
 
-from test_bcw import GENERAL, GOOD, Book, bcw, findings, line, only
-
-import linemap  # noqa: E402
+import bcw
+import linemap
+from book import (CORE_CHAPTER, DESIGN, GENERAL, GOOD, THREADS, WIDTH, Book, chapter, findings, line,
+                  only, parameter, target)
 
 ROTATION = ".. requirement:: core.rotation\n   :parent: core.timing\n"
 IMPLEMENTS = "   :implements: core.rotation\n"
@@ -656,15 +657,6 @@ class QuotationAcrossLinesTest(unittest.TestCase):
         self.assertEqual(only("known-words", text, general=GENERAL), [(line(text, "qqq"), "known-words", "core.turn")])
 
 
-def chapter(title, kind="reference", body=""):
-    rule = "=" * len(title)
-    return f":kind: {kind}\n\n{rule}\n{title}\n{rule}\n\nOverview\n========\n\nText.\n{body}"
-
-
-DESIGN = chapter("Design", body="\nGoals\n=====\n\n.. goal:: design.timing\n\n   No thread can change the timing.\n")
-CORE_CHAPTER = GOOD.replace(":parent: core.timing", ":parent: design.timing")
-
-
 class ChapterPathTest(unittest.TestCase):
     """doc.chapter and doc.chapter-path"""
 
@@ -819,19 +811,6 @@ class CitationLinkTest(unittest.TestCase):
         self.assertEqual([f for f in book.tuples() if f[2] == "known-words"], [])
 
 
-def parameter(anchor, value, parent="core.core", unit=None, text="The number of threads."):
-    """A PARAMETER chunk to add at the end of GOOD. value None leaves out the value option."""
-    lines = [f"\n.. parameter:: {anchor}", f"   :parent: {parent}"]
-    lines += [f"   :value: {value}"] if value is not None else []
-    lines += [f"   :unit: {unit}"] if unit else []
-    return "\n".join(lines) + f"\n\n   {text}\n"
-
-
-THREADS = parameter("core.threads", "8", unit="threads")
-WIDTH = parameter("core.turn-width", "clog2(core.threads)", parent="core.threads", unit="bits",
-                  text="The width of the index of a thread.")
-
-
 class ParameterValuesTest(unittest.TestCase):
     """doc.parameter-value and doc.parameter-values"""
 
@@ -965,15 +944,6 @@ class ParameterTangleTest(unittest.TestCase):
         status, messages = self.lint(self.COUNT.format("    localparam int SPARE = 1;\n"))
         self.assertNotEqual(status, 0)
         self.assertIn("Parameter is not used: 'SPARE'", messages)
-
-
-def target(anchor, value, parent="core.core", unit=None, text="The number of threads."):
-    """A TARGET chunk to add at the end of GOOD. value or parent None leaves out that option."""
-    lines = [f"\n.. target:: {anchor}"]
-    lines += [f"   :parent: {parent}"] if parent is not None else []
-    lines += [f"   :value: {value}"] if value is not None else []
-    lines += [f"   :unit: {unit}"] if unit else []
-    return "\n".join(lines) + f"\n\n   {text}\n"
 
 
 class TargetTest(unittest.TestCase):

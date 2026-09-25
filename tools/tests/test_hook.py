@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from test_bcw import ROOT
+from book import ROOT
 
 HOOK = ROOT / "tools" / "hooks" / "pre-push"
 ZERO = "0" * 40

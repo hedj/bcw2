@@ -7,11 +7,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from test_bcw import ROOT, Book, line
-
-sys.path.insert(0, str(ROOT / "tools"))
-
-import linemap  # noqa: E402
+import linemap
+from book import ROOT, Book, line
 
 CHAPTER = """\
 :kind: reference

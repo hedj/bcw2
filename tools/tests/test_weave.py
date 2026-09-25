@@ -7,8 +7,7 @@ HTML or LaTeX that Sphinx writes.
 import re
 import unittest
 
-from test_bcw import GENERAL, GOOD, Book, deprecations
-from test_bcw_rules import CORE_CHAPTER, DESIGN, chapter, parameter, target
+from book import CORE_CHAPTER, DESIGN, GENERAL, GOOD, Book, chapter, deprecations, parameter, target
 
 INDEX = "Book\n====\n\n.. chapters::\n"
 LATEX = [("index", "book.tex", "Book", "Author", "manual")]
