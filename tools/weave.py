@@ -17,8 +17,8 @@ and checks nothing itself. It orders and reshapes what bcw.py reads:
   last section, Implementation, and starts each kind with an unnumbered part.
 - The HTML numbers the chapters through the whole book, as LaTeX does.
 - The HTML links static/weave.css, which sets each chunk apart.
-- Each :param: citation shows the value and unit of its PARAMETER, and each
-  PARAMETER shows its value on its first line.
+- Each :param: citation shows the value and unit of its PARAMETER or TARGET,
+  and each PARAMETER and TARGET shows its value on its first line.
 """
 
 import html
@@ -115,7 +115,7 @@ def link(anchor, docname):
 def container(chunk, docname):
     """The chunk as a container of standard nodes."""
     result = nodes.container(classes=["chunk", chunk["label"].lower()], ids=chunk["ids"])
-    if chunk["label"] == "PARAMETER":
+    if chunk["label"] in bcw.VALUED:
         result["anchor"], result["value"] = chunk["anchor"], chunk["options"].get("value")
     head = nodes.paragraph(classes=["chunk-label"])
     head += nodes.strong(text=chunk["label"])
@@ -263,11 +263,11 @@ def weave_latex(app, doctree, docname):
 
 def units(env):
     return {chunk.anchor: chunk.options.get("unit") for document in env.bcw_documents.values()
-            for chunk in document.chunks if chunk.label == "PARAMETER"}
+            for chunk in document.chunks if chunk.label in bcw.VALUED}
 
 
 def show_values(env, doctree):
-    """Show the value of each cited PARAMETER, and the value on each PARAMETER's first line."""
+    """Show the value of each cited PARAMETER or TARGET, and the value on the first line of each."""
     values, unit = env.bcw_values, units(env)
 
     def shown(anchor):
@@ -277,7 +277,7 @@ def show_values(env, doctree):
         if "param" in literal["classes"] and literal.get("anchor") in values:
             swap(literal, nodes.inline(text=shown(literal["anchor"]), classes=["param"]))
     for box in doctree.findall(nodes.container):
-        if "parameter" in box["classes"] and box.get("anchor") in values:
+        if "value" in box and box.get("anchor") in values:
             anchor = box["anchor"]
             derived = box["value"].strip() != str(values[anchor])
             box[0] += nodes.Text(f" = {box['value'].strip()} = {shown(anchor)}" if derived else f" = {shown(anchor)}")

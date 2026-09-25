@@ -8,7 +8,7 @@ import re
 import unittest
 
 from test_bcw import GENERAL, GOOD, Book
-from test_bcw_rules import CORE_CHAPTER, DESIGN, chapter, parameter
+from test_bcw_rules import CORE_CHAPTER, DESIGN, chapter, parameter, target
 
 INDEX = "Book\n====\n\n.. chapters::\n"
 LATEX = [("index", "book.tex", "Book", "Author", "manual")]
@@ -215,6 +215,35 @@ class ValueTest(unittest.TestCase):
         core = weave({**BOOK, "core/core.rst": text}, "html").output["core/core.html"]
         self.assertRegex(core, r'one for each of <a class="reference internal" href="#core\.threads"><code[^>]*>'
                                r'<span class="pre">core\.threads</span></code></a>')
+
+
+TARGETED = VALUED.replace("A thread's instructions", "The aim is :param:`core.aim`. A thread's instructions") + \
+    target("core.aim", "core.threads * 2", parent="core.threads", unit="threads", text="The aim of the core.")
+TARGETED_BOOK = {**BOOK, "core/core.rst": TARGETED}
+
+
+class TargetValueTest(unittest.TestCase):
+    """The weave shows the value of a TARGET as it shows the value of a PARAMETER."""
+
+    def setUp(self):
+        self.core = weave(TARGETED_BOOK, "html").output["core/core.html"]
+
+    def test_a_target_is_a_container_whose_id_is_its_anchor(self):
+        self.assertRegex(self.core, r'<div class="chunk target[^"]*" id="core\.aim">')
+
+    def test_the_first_line_shows_the_value(self):
+        self.assertRegex(self.core, r'<strong>TARGET</strong> <code[^>]*><span class="pre">core\.aim</span></code>'
+                                    r' = core\.threads \* 2 = 16 threads</p>')
+
+    def test_a_citation_shows_the_value_and_unit_as_a_link_to_the_target(self):
+        self.assertIn('The aim is <a class="reference internal" href="#core.aim">'
+                      '<span class="param">16 threads</span></a>.', self.core)
+
+    def test_the_latex_shows_the_values_too(self):
+        tex = weave(TARGETED_BOOK, "latex").output["book.tex"]
+        self.assertIn(r"The aim is {\hyperref[\detokenize{core/core:core.aim}]"
+                      r"{\sphinxcrossref{\DUrole{param}{16 threads}}}}", tex)
+        self.assertIn(r"\sphinxcode{\sphinxupquote{core.aim}} = core.threads * 2 = 16 threads", tex)
 
 
 class ChecksTest(unittest.TestCase):
