@@ -18,7 +18,8 @@
 }
 
 .chunk > p.chunk-serves,
-p.chunk-why {
+p.chunk-why,
+p.fragment-uses {
     font-size: 0.9em;
     color: #555555;
 }

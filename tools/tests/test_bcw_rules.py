@@ -1124,9 +1124,9 @@ class FragmentTangleTest:
         text = (GOOD + SKELETON.replace("<<core.pair-logic>>", "<<core.outer>>")
                 + source("core.outer", "begin", "    <<core.pair-logic>>", "end") + FRAGMENT)
         tangled = Book({"core/core.rst": text}, tangle=True).files["build/rtl/core/pair.v"]
+        end = line(text, "end", after="<<core.pair-logic>>")
         assert (f"    begin\n        // bcw: book/core/core.rst:{line(text, 'assign b = a;')}\n"
-                f"        assign b = a;\n    // bcw: book/core/core.rst:{line(text, 'end', after='<<core.pair-logic>>')}\n"
-                "    end\n") in tangled
+                f"        assign b = a;\n    // bcw: book/core/core.rst:{end}\n    end\n") in tangled
 
     def test_the_indentation_makes_working_python(self):
         text = GOOD + source("build/model/body.py", "def f(x):", "    <<core.body>>", "", "RESULT = f(1)") + source(

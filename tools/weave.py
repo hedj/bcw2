@@ -16,6 +16,8 @@ and checks nothing itself. It orders and reshapes what bcw.py reads:
   <details>. The LaTeX prints each twin in small text, moves each source to a
   last section, Implementation, and starts each kind with an unnumbered part.
 - The HTML numbers the chapters through the whole book, as LaTeX does.
+- A source block that uses fragments gets a line Uses: with a link to each
+  fragment, and the first block of each fragment is its target.
 - The HTML links static/weave.css, which sets each chunk apart. The LaTeX
   gives each chunk a box with the bar colour and background of its label in
   weave.css, so the PDF shows the same colours.
@@ -170,11 +172,29 @@ def swap(old, new):
     old.parent.replace(old, new)
 
 
+def link_uses(doctree, docname):
+    """Put a line Uses: after each source block that uses fragments, with a link to each fragment."""
+    for block in list(doctree.findall(nodes.literal_block)):
+        if block.get("bcw") != "source":
+            continue
+        names = dict.fromkeys(match["name"] for text in block.astext().splitlines() if (match := bcw.USE.match(text)))
+        if not names:
+            continue
+        uses = nodes.paragraph(classes=["fragment-uses"])
+        uses += nodes.Text("Uses: ")
+        for number, name in enumerate(names):
+            if number:
+                uses += nodes.Text(", ")
+            uses += bcw.citation_link("", nodes.literal(text=name), "fragment-" + name, docname)
+        block.parent.insert(block.parent.index(block) + 1, uses)
+
+
 def reshape(app, doctree):
-    """Make each chunk a container, and move each argument to the Explanation section."""
+    """Make each chunk a container, link the uses of fragments, and move each argument to the Explanation section."""
     docname = app.env.docname
     if docname == app.config.root_doc:
         return
+    link_uses(doctree, docname)
     moved = []
     for chunk in list(doctree.findall(bcw.chunk)):
         box = container(chunk, docname)
@@ -199,6 +219,8 @@ def reshape(app, doctree):
 def summary(block):
     if block["bcw"] == "twin":
         return "Formal twin"
+    if bcw.ANCHOR.fullmatch(block["target"]):
+        return f"Fragment: {block['target']}"
     kind = "Verilog" if block["target"].endswith((".v", ".sv")) else "Source"
     return f"{kind}: {block['target']}"
 

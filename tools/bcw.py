@@ -325,7 +325,7 @@ def read_document(app, doctree):
                 walk(child, level + 1, tops[0] if level + 1 == 2 else top,
                      title if 2 <= level + 1 <= 4 else section, owner)
             elif isinstance(child, chunk):
-                label(app, docname, child)
+                label(app, docname, child, child["anchor"])
                 item = Chunk(path, document.name, child.line, child["label"], child["anchor"], child["options"],
                              child["option_lines"], [], top=top, section=section)
                 for paragraph in child.children:
@@ -342,6 +342,8 @@ def read_document(app, doctree):
                 block = Block(path, child.line, child.get("bcw"), child.get("options", {}), child.get("target"),
                               child.get("first", child.line), child.astext(), owner)
                 document.blocks.append(block)
+                if is_fragment(block):
+                    label(app, docname, child, "fragment-" + block.target)
                 if owner is not None:
                     owner.blocks.append(block)
             elif not isinstance(child, nodes.system_message):
@@ -358,16 +360,17 @@ def read_document(app, doctree):
     app.env.bcw_documents[docname] = document
 
 
-def label(app, docname, node):
-    """Make the anchor of a chunk its id, and a label that a citation can link to.
+def label(app, docname, node, name):
+    """Make name the id of node, and a label that a citation can link to.
 
-    Only the first chunk with an anchor gets it: doc.anchors reports the others.
+    name is the anchor of a chunk, or fragment-<name> for the first block of a
+    fragment. Only the first node with a name gets it: doc.anchors reports the
+    other chunks, and the other blocks of a fragment join the first.
     """
-    anchor = node["anchor"]
     std = app.env.domains.standard_domain
-    if anchor is not None and anchor not in std.anonlabels:
-        node["ids"].append(anchor)
-        std.note_hyperlink_target(anchor, docname, anchor, anchor)
+    if name is not None and name not in std.anonlabels:
+        node["ids"].append(name)
+        std.note_hyperlink_target(name, docname, name, name)
 
 
 def paragraph_prose(paragraph):
