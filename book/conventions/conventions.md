@@ -118,3 +118,19 @@ GOAL through its parents.
 **RATIONALE.** A Verilog block names the requirements that it implements in its
 `implements=` list. A check in `tools/` names its rule in an `# implements:` comment, so each
 documentation rule traces down to its script.
+
+## 5. Sentences and layout
+
+**DEFINITION.** A **REQUIREMENT sentence** is a sentence of a REQUIREMENT that holds `shall`.
+{rule=doc.requirement-sentence parent=doc.one-reading}
+
+**DEFINITION.** A **defined term** is the first bold text of a DEFINITION. In a REQUIREMENT
+sentence, it can follow The, A, An, Each, Every or No.
+{rule=doc.defined-term parent=doc.one-reading}
+
+**REQUIREMENT.** Each REQUIREMENT sentence shall have the form
+`[Where F,] [While S,] [When T, | If C, then] X shall R.`, where X names a defined term.
+{rule=doc.ears parent=doc.one-reading,doc.traceable}
+
+**RATIONALE.** EARS gives each REQUIREMENT one of a few fixed forms, and a defined actor names
+who acts. A reader then finds one meaning in each rule.

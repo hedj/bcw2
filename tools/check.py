@@ -36,6 +36,11 @@ ATTRIBUTES = re.compile(r"\{([^{}]*)\}\s*")
 ANCHOR = re.compile(r"[a-z][a-z0-9-]*(\.[a-z0-9-]+)+")
 SHALL = re.compile(r"\bshall\b", re.IGNORECASE)
 CODE_SPAN = re.compile(r"`[^`]*`")
+EARS = re.compile(r"(?:[Ww]here [^,]+, )?(?:[Ww]hile [^,]+, )?(?:[Ww]hen [^,]+, |[Ii]f [^,]+, then )?"
+                  r"(?P<actor>(?!(?:[Ww]here|[Ww]hile|[Ww]hen|[Ii]f) )[^,]+?) shall (?P<response>.+)\.")
+DETERMINER = re.compile(r"^(?:the|a|an|each|every|no)\s+", re.IGNORECASE)
+BOLD = re.compile(r"\*\*(.+?)\*\*")
+SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
 IMPLEMENTS = re.compile(r"^[ \t]*# implements: (\S+)[ \t]*$", re.MULTILINE)
 
 
@@ -336,6 +341,45 @@ def crowded(documents):
                if chunk.label in RULES and len(parents(chunk)) > 2)
 
 
+def normalise(text):
+    return " ".join(re.sub(r"[*_]", "", text).lower().split())
+
+
+def defined_terms(documents):
+    """The first bold text of each DEFINITION, outside code spans, normalised."""
+    terms = set()
+    for document in documents:
+        for chunk in document.chunks:
+            match = BOLD.search(CODE_SPAN.sub("", chunk.english)) if chunk.label == "DEFINITION" else None
+            if match:
+                terms.add(normalise(match.group(1)))
+    return terms
+
+
+# implements: doc.ears
+def check_ears(documents):
+    terms = defined_terms(documents)
+    fix = "write it as [Where F,] [While S,] [When T, | If C, then] X shall R., with X a defined term"
+    for document in documents:
+        for chunk in document.chunks:
+            if chunk.label != "REQUIREMENT":
+                continue
+            number = next((chunk.line + offset for offset, text in enumerate(chunk.lines)
+                           if SHALL.search(CODE_SPAN.sub("", text))), chunk.line)
+            for sentence in SENTENCE_END.split(CODE_SPAN.sub("CODE", chunk.english)):
+                if not SHALL.search(sentence):
+                    continue
+                match = EARS.fullmatch(sentence)
+                if match is None:
+                    yield Finding(chunk.path, number, "ears", chunk.anchor,
+                                  "the sentence does not have the EARS form", fix)
+                    continue
+                actor = normalise(DETERMINER.sub("", match.group("actor")))
+                if actor not in terms:
+                    yield Finding(chunk.path, number, "ears", chunk.anchor,
+                                  f"the actor {actor!r} is not a defined term", fix)
+
+
 def check(paths, retired, implemented=()):
     """Return every finding in the given documents.
 
@@ -356,6 +400,7 @@ def check(paths, retired, implemented=()):
     findings += check_implemented(documents, implemented)
     findings += check_references(documents, set(seen), implemented)
     findings += check_reaches_goal(documents)
+    findings += check_ears(documents)
     return sorted(findings, key=lambda f: (f.path, f.line, f.check))
 
 

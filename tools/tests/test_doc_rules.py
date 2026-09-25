@@ -177,5 +177,66 @@ class CrowdedTest(unittest.TestCase):
         self.assertIn(", 0 rules with more than 2 parents", run_book(text).stdout)
 
 
+SENTENCE = "The core shall give the turn after\nthread *t* to thread *t* + 1."
+
+
+def with_requirement(sentence):
+    return GOOD.replace(SENTENCE, sentence)
+
+
+def only(check_name, text):
+    return [f for f in findings(text) if f[1] == check_name]
+
+
+class EarsTest(unittest.TestCase):
+    """doc.ears"""
+
+    def test_every_clause_in_order_passes(self):
+        for sentence in ["Where a trace exists, while the core runs, when a thread waits, the core shall wait.",
+                         "While the core runs, the core shall give each turn in order.",
+                         "If a thread faults, then the core shall not give it a turn.",
+                         "Each core shall give `a, b` to thread *t*.",
+                         "The Core shall give\nthe turn."]:
+            with self.subTest(sentence=sentence):
+                self.assertEqual(only("ears", with_requirement(sentence)), [])
+
+    def test_a_sentence_outside_the_pattern_is_a_finding(self):
+        for sentence in ["When a thread waits the core shall wait.",
+                         "When a thread waits, where a trace exists, the core shall wait.",
+                         "If a thread faults, the core shall wait.",
+                         "The core Shall wait.",
+                         "The core shall give these turns:"]:
+            with self.subTest(sentence=sentence):
+                text = with_requirement(sentence)
+                self.assertEqual(only("ears", text), [(line(text, "**REQUIREMENT.**"), "ears", "core.rotation")])
+
+    def test_a_clause_without_its_comma_is_a_form_finding_not_an_actor_finding(self):
+        with tempfile.TemporaryDirectory() as name:
+            path = Path(name) / "core.md"
+            path.write_text(with_requirement("When a thread waits the core shall wait."))
+            messages = [f.message for f in check.check([str(path)], set()) if f.check == "ears"]
+        self.assertEqual(messages, ["the sentence does not have the EARS form"])
+
+    def test_the_finding_is_on_the_line_of_shall(self):
+        text = with_requirement("When a thread\nwaits the core shall wait.")
+        self.assertEqual(only("ears", text), [(line(text, "shall wait"), "ears", "core.rotation")])
+
+    def test_an_actor_that_no_definition_defines_is_a_finding(self):
+        for sentence in ["Rotation shall be fixed.", "The cores shall wait.", "A core turn shall wait."]:
+            with self.subTest(sentence=sentence):
+                text = with_requirement(sentence)
+                self.assertEqual(only("ears", text), [(line(text, "**REQUIREMENT.**"), "ears", "core.rotation")])
+
+    def test_only_the_first_bold_text_of_a_definition_defines_a_term(self):
+        text = GOOD.replace("The **core** runs the threads in turn.", "The core runs the **threads** in turn.")
+        self.assertEqual(only("ears", text), [(line(text, "**REQUIREMENT.**"), "ears", "core.rotation")])
+        text = GOOD.replace("The **core** runs the threads in turn.", "The **core** runs the **threads**.")
+        self.assertEqual(only("ears", text), [])
+
+    def test_bold_text_inside_a_code_span_defines_nothing(self):
+        text = GOOD.replace("The **core** runs the threads in turn.", "The `**core**` runs the threads in turn.")
+        self.assertEqual(only("ears", text), [(line(text, "**REQUIREMENT.**"), "ears", "core.rotation")])
+
+
 if __name__ == "__main__":
     unittest.main()
