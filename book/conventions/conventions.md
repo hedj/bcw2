@@ -11,7 +11,8 @@ tutorials yet.
 
 Each GOAL and each rule carries an anchor, such as `core.rotation`, on the attribute line at
 the end of its paragraph. The attribute line also names the parents of the chunk.
-`book/retired-anchors.txt` lists the anchors that no chunk can use again. `make check` also
+`book/retired-anchors.txt` lists the anchors that no chunk can use again, and
+`book/general-words.txt` lists the words that need no definition. `make check` also
 prints the number of rules with more than two parents, because a long list of parents says
 little.
 
@@ -50,11 +51,11 @@ author for approval.
 ## 3. Terms and marking
 
 **DEFINITION.** A **chunk** is a paragraph that starts with a bold label, with the fenced
-blocks that follow it directly.
+blocks that follow it directly. The English of a chunk is its text without the label and the
+attribute line.
 {rule=doc.chunk parent=doc.rules-apart}
 
-**DEFINITION.** A **rule** is a chunk labelled REQUIREMENT, PARAMETER or DEFINITION. The
-English of a rule is its text without the label and the attribute line.
+**DEFINITION.** A **rule** is a chunk labelled REQUIREMENT, PARAMETER or DEFINITION.
 {rule=doc.rule parent=doc.rules-apart}
 
 **DEFINITION.** The **normative text** of the book is the English of its rules. Unlabelled
@@ -141,7 +142,7 @@ sentence, it can follow The, A, An, Each, Every or No.
 {rule=doc.defined-term parent=doc.one-reading}
 
 **REQUIREMENT.** Each REQUIREMENT sentence shall have the form
-`[Where F,] [While S,] [When T, | If C, then] X shall R.`, where X names a defined term.
+`[Where F,] [While S,] [When T, | If C, then] X shall R.`, where `X` names a defined term.
 {rule=doc.ears parent=doc.one-reading,doc.traceable}
 
 **REQUIREMENT.** Each rule shall have no finding of level `advisory-free` from
@@ -153,6 +154,18 @@ sentence, it can follow The, A, An, Each, Every or No.
 
 **REQUIREMENT.** Where a chunk carries `never=`, the chunk shall be a DEFINITION.
 {rule=doc.never-on-definition parent=doc.one-reading}
+
+**DEFINITION.** A **general word** is a word that `book/general-words.txt` lists, in upper or
+lower case.
+{rule=doc.general-word parent=doc.one-reading}
+
+**DEFINITION.** A **known word** is a general word, or a word that is part of a whole defined
+term in the text. A known word can also end in `s`, `es` or `'s`.
+{rule=doc.known-word parent=doc.one-reading}
+
+**REQUIREMENT.** Where a chunk is a rule or a GOAL, the chunk shall hold only known words in its
+English outside quotations.
+{rule=doc.known-words parent=doc.one-reading}
 
 **DEFINITION.** A **quotation** is a code span. The rules on words and sentences ignore the
 text inside it.

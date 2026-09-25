@@ -70,12 +70,20 @@ def line(text, needle):
                 if needle in content)
 
 
-def findings(text, retired=(), implemented=()):
+# The general words of the GOAL and the rules of GOOD. The labels, the defined
+# terms and the attribute lines are not in it.
+GENERAL = {"the", "shall", "give", "after", "thread", "t", "to", "a", "is", "cycle", "in",
+           "rotation", "runs", "no", "can", "change", "timing", "of", "another"}
+
+
+def findings(text, retired=(), implemented=(), general=None):
+    """The findings on text, as (line, check, anchor). With general=None, check
+    skips doc.known-words, so that a test of another rule can add new words."""
     with tempfile.TemporaryDirectory() as name:
         path = Path(name) / "core.md"
         path.write_text(text)
         return [(f.line, f.check, f.anchor)
-                for f in check.check([str(path)], set(retired), set(implemented))]
+                for f in check.check([str(path)], set(retired), set(implemented), general)]
 
 
 class GoodTest(unittest.TestCase):
@@ -199,13 +207,15 @@ class StampsTest(unittest.TestCase):
             return check.check([str(path)], set())
 
 
-def run_book(text, retired="", tool=None):
+def run_book(text, retired="", tool=None, general="".join(word + "\n" for word in sorted(GENERAL))):
     """Run tools/check.py on a book of one chapter, with an optional tools/tool.py."""
     with tempfile.TemporaryDirectory() as name:
         book = Path(name) / "book" / "core"
         book.mkdir(parents=True)
         (book / "core.md").write_text(text)
         (Path(name) / "book" / "retired-anchors.txt").write_text(retired)
+        if general is not None:
+            (Path(name) / "book" / "general-words.txt").write_text(general)
         if tool is not None:
             (Path(name) / "tools").mkdir()
             (Path(name) / "tools" / "tool.py").write_text(tool)
@@ -226,6 +236,20 @@ class CommandTest(unittest.TestCase):
             f"book/core/core.md:{line(GOOD, 'A **turn**')}: [anchors] core.turn: the anchor is retired",
             "    fix: choose a new anchor",
         ])
+
+    def test_the_general_words_come_from_book_general_words_txt(self):
+        result = run_book(GOOD, general="# General words\nTHE\n" + "".join(
+            word + "\n" for word in sorted(GENERAL - {"the", "cycle"})))
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout.splitlines()[:2], [
+            f"book/core/core.md:{line(GOOD, 'A **turn**')}: [known-words] core.turn: 'cycle' is not a known word",
+            "    fix: define it in a DEFINITION, list it in book/general-words.txt, or put it in a quotation",
+        ])
+        self.assertEqual(len(result.stdout.splitlines()), 3, result.stdout)
+
+    def test_a_missing_list_of_general_words_is_an_empty_list(self):
+        result = run_book(GOOD, general=None)
+        self.assertIn("[known-words] design.timing: 'no' is not a known word", result.stdout)
 
 
 if __name__ == "__main__":

@@ -48,6 +48,8 @@ DETERMINER = re.compile(r"^(?:the|a|an|each|every|no)\s+", re.IGNORECASE)
 BOLD = re.compile(r"\*\*(.+?)\*\*")
 DOTTED = re.compile(r"\b[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)+\.?|\b(?:etc|vs|cf|approx|incl|esp|resp|ca)\.", re.IGNORECASE)
 SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
+WORD = re.compile(r"[^\W\d_][^\W_]*(?:['’-][^\W_]+)*")
+ENDINGS = ("", "s", "es", "'s", "’s")
 IMPLEMENTS = re.compile(r"^[ \t]*# implements: (\S+)[ \t]*$", re.MULTILINE)
 
 
@@ -432,6 +434,43 @@ def check_vocabulary(documents):
                                   f"use the term that {never[match.group(0).lower()]} defines")
 
 
+def known(word, words):
+    """Whether word is in words, as it stands or with one of ENDINGS."""
+    return any(word.endswith(ending) and word[:len(word) - len(ending)] in words for ending in ENDINGS)
+
+
+# implements: doc.known-words
+def check_known_words(documents, general):
+    terms = sorted((tuple(term.split()) for term in defined_terms(documents)), key=len, reverse=True)
+
+    def term_at(words, index):
+        """The number of words of the longest defined term at words[index], or 0."""
+        for term in terms:
+            found = [word for word, _ in words[index:index + len(term)]]
+            if (len(found) == len(term) and found[:-1] == list(term[:-1])
+                    and known(found[-1], {term[-1]})):
+                return len(term)
+        return 0
+
+    for document in documents:
+        for chunk in document.chunks:
+            if chunk.label not in ANCHORED:
+                continue
+            words = [(match.group(0).lower(), chunk.line + offset)
+                     for offset, text in enumerate(chunk.lines)
+                     for match in WORD.finditer(CODE_SPAN.sub(
+                         " ", LABEL.sub("", text, count=1) if offset == 0 else text))]
+            index = 0
+            while index < len(words):
+                size = term_at(words, index)
+                if size == 0 and not known(words[index][0], general):
+                    yield Finding(chunk.path, words[index][1], "known-words", chunk.anchor,
+                                  f"{words[index][0]!r} is not a known word",
+                                  "define it in a DEFINITION, list it in book/general-words.txt, "
+                                  "or put it in a quotation")
+                index += max(size, 1)
+
+
 # implements: doc.overview-first
 def check_overview_first(document):
     second = [number for number, level in document.headings if level == 2][1:2]
@@ -489,10 +528,12 @@ def check_dotted_words(chunk):
                           "put it in a code span, such as `Q8.4`")
 
 
-def check(paths, retired, implemented=()):
+def check(paths, retired, implemented=(), general=None):
     """Return every finding in the given documents.
 
     implemented holds the anchors that the tools name in "# implements:" comments.
+    general holds the general words. With general=None, doc.known-words is not
+    checked, so that a test of another rule can use words that no list holds.
     The first pass checks each chunk on its own. The second pass runs the checks
     that need the whole book.
     """
@@ -518,17 +559,24 @@ def check(paths, retired, implemented=()):
     findings += check_reaches_goal(documents)
     findings += check_ears(documents)
     findings += check_vocabulary(documents)
+    if general is not None:
+        findings += check_known_words(documents, general)
     return sorted(findings, key=lambda f: (f.path, f.line, f.check))
+
+
+def listed(path):
+    """The lines of a list file, without blank lines and # comments. No file is an empty list."""
+    if not Path(path).exists():
+        return set()
+    return {line.strip() for line in Path(path).read_text().splitlines()
+            if line.strip() and not line.startswith("#")}
 
 
 def main(argv):
     paths = argv or sorted(str(p) for p in Path("book").glob("**/*.md"))
-    retired_file = Path("book/retired-anchors.txt")
-    retired = set()
-    if retired_file.exists():
-        retired = {line.strip() for line in retired_file.read_text().splitlines()
-                   if line.strip() and not line.startswith("#")}
-    findings = check(paths, retired, tool_implements(sorted(Path("tools").glob("*.py"))))
+    general = {word.lower() for word in listed("book/general-words.txt")}
+    findings = check(paths, listed("book/retired-anchors.txt"),
+                     tool_implements(sorted(Path("tools").glob("*.py"))), general)
     for finding in findings:
         print(finding)
     print(f"check: {len(paths)} documents, {len(findings)} findings, "

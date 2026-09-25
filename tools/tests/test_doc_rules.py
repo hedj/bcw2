@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from test_check import GOOD, ROOT, findings, line, run_book
+from test_check import GENERAL, GOOD, ROOT, findings, line, run_book
 
 sys.path.insert(0, str(ROOT / "tools"))
 
@@ -419,6 +419,83 @@ class AttributeKeysTest(unittest.TestCase):
         text = GOOD.replace("{rule=core.turn parent=core.core}", "{rule=core.turn parent=core.core never=slot}").replace(
             "{rule=core.rotation parent=design.timing}", "{rule=core.rotation parent=design.timing impl=none}")
         self.assertEqual(findings(text), [])
+
+
+class KnownWordsTest(unittest.TestCase):
+    """doc.general-word, doc.known-word and doc.known-words"""
+
+    SLOT = GOOD + "\n**DEFINITION.** A **time slot** is a turn of the core.\n{rule=core.slot parent=core.core}\n"
+
+    def known(self, text, general=GENERAL):
+        return [f for f in findings(text, general=general) if f[1] == "known-words"]
+
+    def test_a_chapter_of_general_words_and_defined_terms_passes(self):
+        self.assertEqual(findings(GOOD, general=GENERAL), [])
+
+    def test_an_unknown_word_in_a_goal_or_a_rule_is_a_finding_on_its_line(self):
+        for word, needle, anchor in [("timing", "the timing of", "design.timing"),
+                                     ("give", "shall give", "core.rotation"),
+                                     ("cycle", "A **turn**", "core.turn"),
+                                     ("runs", "The **core**", "core.core")]:
+            with self.subTest(word=word):
+                self.assertEqual(self.known(GOOD, GENERAL - {word}),
+                                 [(line(GOOD, needle), "known-words", anchor)])
+
+    def test_each_unknown_word_is_a_finding(self):
+        text = GOOD.replace("the timing of", "the zyx timing wvu of")
+        self.assertEqual(self.known(text), [(line(text, "zyx"), "known-words", "design.timing")] * 2)
+
+    def test_the_finding_is_on_the_line_of_the_word(self):
+        self.assertEqual(self.known(GOOD, GENERAL - {"t"}),
+                         [(line(GOOD, "thread *t* to"), "known-words", "core.rotation")] * 2)
+
+    def test_a_word_outside_a_goal_or_a_rule_passes(self):
+        for old, new in [("eight cycles apart.", "eight zyx cycles apart."),
+                         ("the thread count is", "the zyx thread count is"),
+                         ("is prose.", "is zyx prose."),
+                         ("## 2. Rotation", "## 2. Zyx")]:
+            with self.subTest(new=new):
+                self.assertEqual(self.known(GOOD.replace(old, new)), [])
+
+    def test_a_word_in_a_quotation_passes(self):
+        text = GOOD.replace("the timing of", "the `zyx` timing of")
+        self.assertEqual(self.known(text), [])
+
+    def test_case_does_not_matter(self):
+        text = GOOD.replace("the timing of", "the TIMING of")
+        self.assertEqual(self.known(text), [])
+
+    def test_a_defined_term_needs_no_listing(self):
+        self.assertEqual(self.known(GOOD, GENERAL | {"turn", "core"}), [])
+        self.assertEqual(self.known(GOOD.replace("the timing of", "the core of")), [])
+
+    def test_the_endings_s_es_and_apostrophe_s_keep_a_word_known(self):
+        text = GOOD.replace("the timing of", "the timings, core's, turns, toes of")
+        self.assertEqual(self.known(text), [])
+
+    def test_other_endings_do_not(self):
+        for word in ["timingly", "cored", "turner", "thready"]:
+            with self.subTest(word=word):
+                text = GOOD.replace("the timing of", f"the {word} of")
+                self.assertEqual(self.known(text), [(line(text, word), "known-words", "design.timing")])
+
+    def test_a_word_of_a_defined_term_is_known_only_inside_the_whole_term(self):
+        for sentence, unknown in [("The core shall give the time slot to thread `t`.", []),
+                                  ("The core shall give the time slots to thread `t`.", []),
+                                  ("The core shall give the time\nslot to thread `t`.", []),
+                                  ("The core shall give the slot to thread `t`.", ["slot"]),
+                                  ("The core shall give the time to thread `t`.", ["time"]),
+                                  ("The core shall give the times slot to thread `t`.", ["times", "slot"])]:
+            with self.subTest(sentence=sentence):
+                text = self.SLOT.replace(SENTENCE, sentence)
+                self.assertEqual(self.known(text), [(line(text, "**REQUIREMENT.**"), "known-words", "core.rotation")]
+                                 * len(unknown))
+
+    def test_the_longest_defined_term_wins(self):
+        text = self.SLOT + "\n**DEFINITION.** A **time** is a zyx.\n{rule=core.time parent=core.core}\n"
+        self.assertEqual(self.known(text, GENERAL | {"zyx"}), [])
+        text = text.replace(SENTENCE, "The core shall give the time slot of the time to thread `t`.")
+        self.assertEqual(self.known(text, GENERAL | {"zyx"}), [])
 
 
 if __name__ == "__main__":

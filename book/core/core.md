@@ -11,11 +11,18 @@ fixed order, so no thread can change when another thread gets its turn.
 thread.
 {rule=core.core parent=design.timing-invariant}
 
-**REQUIREMENT.** The core shall give the turn after thread *t* to thread *t* + 1, modulo the
+**DEFINITION.** A **thread** is a stream of instructions with its own registers and program
+counter.
+{rule=core.thread parent=core.core}
+
+**DEFINITION.** A **turn** is a cycle in which the core issues an instruction of one thread.
+{rule=core.turn parent=core.core}
+
+**REQUIREMENT.** The core shall give the turn after thread `t` to thread `t + 1`, modulo the
 thread count.
 {rule=core.rotation parent=design.timing-invariant}
 
-``` {.python .formal file=build/model/core_rotate.py stamp=1a7d6146}
+``` {.python .formal file=build/model/core_rotate.py stamp=dfd1dbf5}
 def core_rotate(turn):
     return {'next': turn + 1}
 ```
