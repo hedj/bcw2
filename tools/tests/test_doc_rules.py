@@ -290,5 +290,31 @@ class VocabularyTest(unittest.TestCase):
         self.assertEqual(findings(text), [(line(text, "**REQUIREMENT.**"), "anchors", "core.rotation")])
 
 
+class OverviewFirstTest(unittest.TestCase):
+    """doc.overview-first"""
+
+    def test_a_chunk_in_the_overview_is_a_finding(self):
+        text = GOOD.replace("The core runs every thread through one pipeline.",
+                            "**RATIONALE.** The core runs every thread through one pipeline.")
+        self.assertEqual(findings(text), [(line(text, "**RATIONALE.** The core runs"), "overview-first", None)])
+
+    def test_a_chunk_before_the_first_heading_is_a_finding(self):
+        text = GOOD.replace("# Core\n", "# Core\n\n**OPEN — the title is not settled.**\n")
+        self.assertEqual(findings(text), [(line(text, "the title is not settled"), "overview-first", None)])
+
+    def test_a_level_three_heading_does_not_end_the_overview(self):
+        text = GOOD.replace("## 2. Rotation", "### 2. Rotation")
+        expected = [(line(text, needle), "overview-first", anchor) for needle, anchor in [
+            ("**REQUIREMENT.**", "core.rotation"), ("**RATIONALE.**", None), ("**OPEN", None),
+            ("A **turn**", "core.turn"), ("The **core**", "core.core")]]
+        self.assertEqual(findings(text), expected)
+
+    def test_a_heading_inside_a_fenced_block_is_not_a_heading(self):
+        text = GOOD.replace("The core runs every thread through one pipeline.",
+                            "The core runs every thread.\n\n``` {file=build/x.md}\n## 9. Not\n```\n\n"
+                            "**RATIONALE.** Still the overview.")
+        self.assertEqual(findings(text), [(line(text, "Still the overview"), "overview-first", None)])
+
+
 if __name__ == "__main__":
     unittest.main()

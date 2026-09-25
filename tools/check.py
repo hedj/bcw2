@@ -67,6 +67,7 @@ class Document:
     findings: list  # the findings that parsing met
     blocks: list  # every fenced block at the top level
     spans: list  # (line, text) of every inline code span
+    headings: list  # (line, level) of every heading at the top level
 
 
 @dataclass
@@ -122,7 +123,7 @@ def fence_attributes(info):
 def parse(path, text):
     """Parse one document into its chunks."""
     source = text.splitlines()
-    chunks, findings, blocks, spans, current = [], [], [], [], None
+    chunks, findings, blocks, spans, headings, current = [], [], [], [], [], None
     for token in MarkdownIt("commonmark").parse(text):
         if token.type == "inline":
             start, end = token.map
@@ -142,6 +143,8 @@ def parse(path, text):
             findings.append(Finding(path, token.map[0] + 1, "stamps", None,
                                     "a formal block stands outside any rule chunk",
                                     "move it directly after the rule that it states"))
+        if token.type == "heading_open":
+            headings.append((token.map[0] + 1, int(token.tag[1])))
         current = None
         if token.type != "paragraph_open":
             continue
@@ -159,7 +162,7 @@ def parse(path, text):
                 attrs[key] = value
         current = Chunk(path, start + 1, match.group(1), lines, attrs)
         chunks.append(current)
-    return Document(path, chunks, findings, blocks, spans)
+    return Document(path, chunks, findings, blocks, spans, headings)
 
 
 def read(paths):
@@ -415,6 +418,17 @@ def check_vocabulary(documents):
                                   f"use the term that {never[match.group(0).lower()]} defines")
 
 
+# implements: doc.overview-first
+def check_overview_first(document):
+    second = [number for number, level in document.headings if level == 2][1:2]
+    limit = second[0] if second else float("inf")
+    for chunk in document.chunks:
+        if chunk.line < limit:
+            yield Finding(chunk.path, chunk.line, "overview-first", chunk.anchor,
+                          "the chunk stands before the second ## heading of its chapter",
+                          "move it after the overview, which holds explanation only")
+
+
 def check(paths, retired, implemented=()):
     """Return every finding in the given documents.
 
@@ -426,6 +440,7 @@ def check(paths, retired, implemented=()):
     findings, seen = [], {}
     for document in documents:
         findings += document.findings
+        findings += check_overview_first(document)
         for chunk in document.chunks:
             findings += check_labels(chunk)
             findings += check_one_shall(chunk)

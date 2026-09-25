@@ -141,3 +141,11 @@ sentence, it can follow The, A, An, Each, Every or No.
 
 **RATIONALE.** EARS gives each REQUIREMENT a fixed form, and a defined actor names who acts.
 The linter keeps each rule short and plain. A `never=` list keeps one word for each meaning.
+
+## 6. Layout
+
+**REQUIREMENT.** Each chunk shall stand after the second `##` heading of its chapter.
+{rule=doc.overview-first parent=doc.rules-apart,doc.one-engineer}
+
+**RATIONALE.** A reader meets the purpose of a chapter before its rules. Diátaxis keeps
+explanation apart from reference in the same way.
