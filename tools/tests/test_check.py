@@ -127,6 +127,15 @@ class AnchorsTest(unittest.TestCase):
         text = GOOD.replace("rule=core.turn", "rule=Core_Turn")
         self.assertEqual(findings(text), [(line(text, "A **turn**"), "anchors", "Core_Turn")])
 
+    def test_the_anchor_form_is_parts_of_lower_case_letters_digits_and_hyphens_joined_by_dots(self):
+        for anchor, good in [("core.rot-2", True), ("core.2x", True), ("a.b.c", True),
+                             ("core", False), ("1core.x", False), ("core..x", False),
+                             ("core.Rot", False), ("core_x.y", False), ("-core.x", False)]:
+            with self.subTest(anchor=anchor):
+                text = GOOD.replace("rule=core.turn", "rule=" + anchor)
+                expected = [] if good else [(line(text, "A **turn**"), "anchors", anchor)]
+                self.assertEqual(findings(text), expected)
+
     def test_a_retired_anchor_is_a_finding(self):
         self.assertEqual(findings(GOOD, retired={"core.turn"}),
                          [(line(GOOD, "A **turn**"), "anchors", "core.turn")])

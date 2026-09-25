@@ -228,7 +228,8 @@ def check_anchors(chunk, seen, retired):
         return
     if not ANCHOR.fullmatch(anchor):
         yield Finding(chunk.path, chunk.line, "anchors", anchor,
-                      "the anchor is not lower-case words joined by dots",
+                      "the anchor is not two or more parts of lower-case letters, digits "
+                      "and hyphens, joined by dots",
                       "write it as chapter.name, for example core.rotation")
     elif anchor in retired:
         yield Finding(chunk.path, chunk.line, "anchors", anchor,

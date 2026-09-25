@@ -89,6 +89,10 @@ DEFINITION, RATIONALE, DISCUSSION, TARGET or OPEN.
 all otherwise.
 {rule=doc.one-shall parent=doc.one-reading,doc.rules-apart}
 
+**DEFINITION.** An **anchor** is two or more parts joined by dots, such as `core.rotation`.
+Each part holds lower-case letters, digits and hyphens, and the first part starts with a letter.
+{rule=doc.anchor parent=doc.traceable}
+
 **REQUIREMENT.** Where a chunk is a rule or a GOAL, the chunk shall carry a unique anchor
 that is not retired.
 {rule=doc.anchors parent=doc.traceable}
