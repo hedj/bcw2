@@ -6,6 +6,7 @@
 # Verilator and Icarus Verilog are the pinned versions. On a system with
 # apt-get, it installs the two Verilog tools. On any other system, install
 # them yourself at these versions, then run this script again.
+# It also points Git at tools/hooks, so that the pre-push hook runs.
 set -e
 
 VERILATOR_VERSION=5.020
@@ -34,6 +35,8 @@ if ! have_versions; then
     echo "setup: found: $(verilator --version 2>&1 | head -n 1); $(iverilog -V 2>&1 | head -n 1)" >&2
     exit 1
 fi
+
+git config core.hooksPath tools/hooks
 
 echo "setup: toolchain ready"
 echo "  $(.venv/bin/python --version)"

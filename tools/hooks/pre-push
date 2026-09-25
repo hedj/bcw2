@@ -1,0 +1,28 @@
+#!/bin/sh
+# Git runs this hook before a push. For each branch that the push sends, it
+# runs make test and make check on the pushed commit, in a temporary
+# worktree, and stops the push if either fails. The working directory, with
+# any edits that are not committed, plays no part.
+#
+# tools/setup.sh installs the hook: git config core.hooksPath tools/hooks
+# PRE_PUSH_TARGETS sets the make targets. The hook's own test sets it to
+# "check", because make test would run that test again.
+root=$(git rev-parse --show-toplevel) || exit 1
+targets=${PRE_PUSH_TARGETS:-test check}
+zero=0000000000000000000000000000000000000000
+while read -r local_ref local_sha remote_ref remote_sha; do
+    [ "$local_sha" = "$zero" ] && continue
+    tree=$(mktemp -d)
+    git worktree add --quiet --detach "$tree" "$local_sha" || exit 1
+    ln -s "$root/.venv" "$tree/.venv"
+    status=0
+    for target in $targets; do
+        (cd "$tree" && make -s "$target") || { status=1; break; }
+    done
+    git worktree remove --force "$tree"
+    if [ "$status" -ne 0 ]; then
+        echo "pre-push: make $target failed on $local_sha, so the push is stopped." >&2
+        exit 1
+    fi
+done
+exit 0
