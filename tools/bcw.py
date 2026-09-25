@@ -31,6 +31,7 @@ Configuration values, which tools/conf.py sets:
     bcw_retired_anchors  the list of retired anchors, or None
     bcw_tangle_root      the folder that tangled paths are relative to, or None
                          to tangle nothing
+    bcw_summary          True to print a line of counts on standard output
 """
 
 import hashlib
@@ -168,7 +169,6 @@ def chunk_directive(label, anchored, options, titled=False):
 # any other directive and any other option.
 # implements: doc.labels
 # implements: doc.attribute-keys
-# implements: doc.never-on-definition
 CHUNK_DIRECTIVES = {
     "goal": chunk_directive("GOAL", True, ["parent"]),
     "requirement": chunk_directive("REQUIREMENT", True, ["parent", "impl"]),
@@ -472,7 +472,7 @@ def check_chapter_title(document):
                       "move it under the title")
 
 
-# The rule doc.chapter-kind arrives with the conventions in reStructuredText.
+# implements: doc.chapter-kind
 def check_chapter_kind(document):
     if document.kind not in KINDS:
         yield Finding(document.path, 1, "chapter-kind", None,
@@ -783,8 +783,9 @@ def check_book(app, env):
     env.bcw_findings = check(documents, retired, tool_implements(config.bcw_tools), general)
     for finding in env.bcw_findings:
         logger.warning(str(finding), location=f"{finding.path}:{finding.line}", type="bcw", subtype=finding.check)
-    logger.info(f"bcw: {len(documents)} chapters, {len(env.bcw_findings)} findings, "
-                f"{crowded(documents)} rules with more than 2 parents")
+    if config.bcw_summary:
+        print(f"bcw: {len(documents)} chapters, {len(env.bcw_findings)} findings, "
+              f"{crowded(documents)} rules with more than 2 parents")
 
 
 # The tangle
@@ -823,6 +824,7 @@ def setup(app):
     app.add_config_value("bcw_general_words", None, "env")
     app.add_config_value("bcw_retired_anchors", None, "env")
     app.add_config_value("bcw_tangle_root", None, "env")
+    app.add_config_value("bcw_summary", False, "env")
     app.add_node(chunk)
     for name, directive in CHUNK_DIRECTIVES.items():
         app.add_directive(name, directive)

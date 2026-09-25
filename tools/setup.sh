@@ -40,8 +40,8 @@ git config core.hooksPath tools/hooks
 
 echo "setup: toolchain ready"
 echo "  $(.venv/bin/python --version)"
-echo "  entangled $(.venv/bin/pip show entangled-cli | sed -n 's/^Version: //p')"
-echo "  markdown-it-py $(.venv/bin/pip show markdown-it-py | sed -n 's/^Version: //p')"
+echo "  Sphinx $(.venv/bin/python -c 'import sphinx; print(sphinx.__version__)')"
+echo "  docutils $(.venv/bin/python -c 'import docutils; print(docutils.__version__)')"
 echo "  z3 $(.venv/bin/python -c 'import z3; print(z3.get_version_string())')"
 echo "  $(verilator --version)"
 echo "  $(iverilog -V 2>&1 | head -n 1)"

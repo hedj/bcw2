@@ -1,5 +1,5 @@
 # General words, one per line, in lower case. A word here needs no DEFINITION.
-# The rule doc.known-words in book/doc/doc.md reads this list.
+# The rule doc.known-words in book/doc/doc.rst reads this list.
 a
 after
 all
@@ -13,15 +13,15 @@ apart
 appear
 approval
 are
+argument
 as
 at
 author
 be
+before
 between
 block
-bold
 book
-brace
 build
 burden
 by
@@ -32,7 +32,6 @@ carry
 case
 change
 check
-class
 code
 come
 comment
@@ -40,10 +39,12 @@ completely
 count
 counter
 cycle
+define
 definition
 digit
-directly
+directive
 discussion
+docutils
 does
 dot
 down
@@ -61,8 +62,8 @@ every
 exactly
 explanation
 failing
-fenced
 fewer
+field
 file
 find
 finding
@@ -82,12 +83,13 @@ have
 heading
 hexadecimal
 hold
+how-to
 hyphen
 if
 ignore
 implementation
 in
-indented
+inline
 inside
 instruction
 is
@@ -95,18 +97,16 @@ issue
 it
 joined
 keep
-key
+kind
 label
 labelled
-last
 letter
 level
-line
 list
+literal
 lower
 lower-case
 machine
-markdown
 meaning
 measure
 measured
@@ -124,13 +124,13 @@ once
 one
 only
 open
+option
 or
 order
 other
 otherwise
 outside
 own
-pair
 paragraph
 parameter
 parent
@@ -151,8 +151,10 @@ reduce
 register
 request
 requirement
+restructuredtext
 result
 retired
+role
 run
 same
 script
@@ -167,7 +169,7 @@ shall
 small
 so
 space
-span
+sphinx
 stand
 start
 state
@@ -181,6 +183,7 @@ take
 target
 tell
 text
+than
 that
 the
 their
@@ -191,14 +194,17 @@ through
 tied
 time
 to
+together
 too
 trace
+tutorial
 two
 unique
-unlabelled
 up
 upper
+use
 valid
+value
 verilog
 view
 what
@@ -208,5 +214,6 @@ which
 whole
 whose
 with
+within
 without
 word

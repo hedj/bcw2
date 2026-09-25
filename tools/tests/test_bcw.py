@@ -7,6 +7,7 @@ depend on the layout of GOOD. Each test builds a Sphinx book in a temporary
 folder, with the chapter at book/core/core.rst.
 """
 
+import contextlib
 import hashlib
 import io
 import re
@@ -113,7 +114,7 @@ class Book:
     temporary folder.
     """
 
-    def __init__(self, chapters, general=None, retired=None, tools=None, tangle=False):
+    def __init__(self, chapters, general=None, retired=None, tools=None, tangle=False, **overrides):
         directory = tempfile.TemporaryDirectory()
         self.root = Path(directory.name)
         try:
@@ -123,7 +124,7 @@ class Book:
             for relative, text in {"index.rst": index, **chapters}.items():
                 (source / relative).parent.mkdir(parents=True, exist_ok=True)
                 (source / relative).write_text(text)
-            overrides = {"extensions": ["bcw"]}
+            overrides = {"extensions": ["bcw"], **overrides}
             if general is not None:
                 (source / "general-words.txt").write_text("".join(word + "\n" for word in sorted(general)))
                 overrides["bcw_general_words"] = str(source / "general-words.txt")
@@ -333,6 +334,20 @@ class StampsTest(unittest.TestCase):
     def test_a_twin_outside_any_chunk_is_a_finding(self):
         text = GOOD + "\nSome prose.\n\n.. twin::\n\n   x\n"
         self.assertEqual(findings(text), [(len(text.splitlines()) - 2, "stamps", None)])
+
+
+class SummaryTest(unittest.TestCase):
+    def test_bcw_summary_prints_the_counts_on_standard_output(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            Book({"core/core.rst": GOOD}, retired={"core.turn"}, bcw_summary=True)
+        self.assertEqual(output.getvalue(), "bcw: 1 chapters, 1 findings, 0 rules with more than 2 parents\n")
+
+    def test_without_it_nothing_is_printed(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            Book({"core/core.rst": GOOD})
+        self.assertEqual(output.getvalue(), "")
 
 
 if __name__ == "__main__":

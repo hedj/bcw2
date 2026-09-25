@@ -1,25 +1,31 @@
 # Run from the repository root, after sh tools/setup.sh.
 #
 #   make tangle   tangle the book into build/
-#   make check    the fast checks, Verilator lint and a load of each twin
+#   make check    the checks of the book, Verilator lint and a load of each twin
 #   make test     the tests of the tools
-#   make clean    remove build/ and entangled's database
+#   make clean    remove build/
 #
-# Every location that make check prints is a line in the book: the output of
-# each tool goes through tools/linemap.py.
+# Sphinx runs tools/bcw.py on book/. It checks the book, reports each finding
+# at its chapter line, and tangles the code into build/. Every location that
+# make check prints is a line in the book: the output of Verilator and of each
+# twin goes through tools/linemap.py.
 
 SHELL := /bin/bash
 .SHELLFLAGS := -o pipefail -c
 PY := .venv/bin/python
 MAP := $(PY) tools/linemap.py
+# -E reads every chapter, because Sphinx does not report again on a chapter
+# that it read in an earlier build. sed shortens the paths that docutils prints.
+SPHINX := $(PY) -m sphinx -E -q -b dummy -c tools book build/sphinx
+RELATIVE := sed "s|$(CURDIR)/||"
 
 .PHONY: tangle check test clean
 
 tangle:
-	$(PY) tools/tangle.py
+	$(SPHINX) 2>&1 | $(RELATIVE)
 
-check: tangle
-	$(PY) tools/check.py
+check:
+	$(SPHINX) -W --keep-going 2>&1 | $(RELATIVE)
 	@for f in $$(find build/rtl -name '*.v' | sort); do \
 	    verilator --lint-only -Wall "$$f" 2>&1 | $(MAP) || exit 1; \
 	done
@@ -31,4 +37,4 @@ test:
 	$(PY) -m unittest discover -s tools/tests
 
 clean:
-	rm -rf build .entangled
+	rm -rf build

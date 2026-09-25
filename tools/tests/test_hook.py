@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from test_entangled import ROOT
+from test_bcw import ROOT
 
 HOOK = ROOT / "tools" / "hooks" / "pre-push"
 ZERO = "0" * 40
@@ -32,7 +32,7 @@ class PrePushTest(unittest.TestCase):
             env={**os.environ, "PRE_PUSH_TARGETS": "check"})
 
     def break_the_chapter(self):
-        chapter = self.clone / "book" / "core" / "core.md"
+        chapter = self.clone / "book" / "core" / "core.rst"
         text = chapter.read_text()
         self.assertEqual(text.count("thread count."), 1)
         chapter.write_text(text.replace("thread count.", "thread count. It shall not stall."))
