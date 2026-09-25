@@ -1,5 +1,5 @@
 # General words, one per line, in lower case. A word here needs no DEFINITION.
-# The rule doc.known-words in book/conventions/conventions.md reads this list.
+# The rule doc.known-words in book/doc/doc.md reads this list.
 a
 after
 all

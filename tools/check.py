@@ -1,4 +1,4 @@
-"""The fast checks on the book: one check for each rule of book/conventions/conventions.md.
+"""The fast checks on the book: one check for each rule of book/doc/doc.md.
 
 Each check function names the rule that it implements in an "# implements:"
 comment. The function name follows the rule: check_labels implements
