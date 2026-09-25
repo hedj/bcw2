@@ -16,12 +16,15 @@ and checks nothing itself. It orders and reshapes what bcw.py reads:
   <details>. The LaTeX prints each twin in small text, moves each source to a
   last section, Implementation, and starts each kind with an unnumbered part.
 - The HTML numbers the chapters through the whole book, as LaTeX does.
-- The HTML links static/weave.css, which sets each chunk apart.
+- The HTML links static/weave.css, which sets each chunk apart. The LaTeX
+  gives each chunk a box with the bar colour and background of its label in
+  weave.css, so the PDF shows the same colours.
 - Each :param: citation shows the value and unit of its PARAMETER or TARGET,
   and each PARAMETER and TARGET shows its value on its first line.
 """
 
 import html
+import re
 from pathlib import Path
 
 from docutils import nodes
@@ -299,13 +302,55 @@ FONTS = r"\usepackage{mathptmx}\usepackage[scaled=.9]{helvet}\usepackage{courier
 STATIC = Path(__file__).resolve().parent / "static"
 
 
+HEX = r"#([0-9a-fA-F]{6})"
+
+# A box with a bar on its left side, over a background. It can break across
+# pages. The bar of 3pt is the bar of 4px in weave.css.
+BOX = (r"\newenvironment{bcwchunk}[2]{\def\FrameCommand{{\color{#1}\vrule width 3pt}"
+       r"\fboxsep=6pt\colorbox{#2}}\MakeFramed{\advance\hsize-\width\FrameRestore}}{\endMakeFramed}")
+
+
+def colours(css):
+    """(bar, background) for each label, from the rules .chunk and .chunk.<label> of the stylesheet."""
+    css = re.sub(r"(?s)/\*.*?\*/", "", css)
+    declared = {}
+    for selectors, body in re.findall(r"([^{}]+)\{([^}]*)\}", css):
+        bar = re.search(r"border-left(?:-color)?:[^;]*" + HEX, body)
+        background = re.search(r"background:\s*" + HEX, body)
+        for selector in selectors.split(","):
+            entry = declared.setdefault(selector.strip(), {})
+            if bar:
+                entry["bar"] = bar.group(1).upper()
+            if background:
+                entry["background"] = background.group(1).upper()
+    base = declared[".chunk"]
+    result = {}
+    for name in bcw.CHUNK_DIRECTIVES:
+        own = declared.get(f".chunk.{name}", {})
+        result[name] = (own.get("bar", base["bar"]), own.get("background", base["background"]))
+    return result
+
+
+def chunk_boxes():
+    """The LaTeX that gives the chunks of each label their box. Sphinx applies the
+    environment sphinxclass<name> to a container with the class <name>."""
+    lines = [BOX]
+    for label, (bar, background) in colours((STATIC / "weave.css").read_text()).items():
+        lines += [rf"\definecolor{{bcwbar{label}}}{{HTML}}{{{bar}}}",
+                  rf"\definecolor{{bcwback{label}}}{{HTML}}{{{background}}}",
+                  rf"\newenvironment{{sphinxclass{label}}}{{\begin{{bcwchunk}}{{bcwbar{label}}}{{bcwback{label}}}}}"
+                  rf"{{\end{{bcwchunk}}}}"]
+    return "\n".join(lines) + "\n"
+
+
 def configure(app, config):
     # No fncychap: LaTeX then heads each chapter with its number in numerals, as the HTML does.
     # Sphinx names the contents after the caption of the first toctree, which is
     # the first part. The name is set back here, after Sphinx sets it.
+    preamble = chunk_boxes() + config.latex_elements.get("preamble", "")
     config.latex_elements = {"fontpkg": FONTS, "fncychap": "",
                              "tableofcontents": r"\renewcommand{\contentsname}{Contents}\sphinxtableofcontents",
-                             **config.latex_elements}
+                             **config.latex_elements, "preamble": preamble}
     config.html_static_path = [*config.html_static_path, str(STATIC)]
 
 

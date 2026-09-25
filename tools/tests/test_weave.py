@@ -256,6 +256,37 @@ class ChecksTest(unittest.TestCase):
                 self.assertEqual(deprecations(lambda: weave(BOOK, builder)), [])
 
 
+LABELS = ["goal", "requirement", "parameter", "definition", "rationale", "discussion", "target", "open"]
+
+
+class PdfStyleTest(unittest.TestCase):
+    """The PDF sets each chunk apart with the bar colour and background of its label in weave.css."""
+
+    def setUp(self):
+        self.tex = weave(BOOK, "latex").output["book.tex"]
+
+    def test_each_label_has_the_colours_of_the_stylesheet(self):
+        # The bar and background of weave.css, or of .chunk where the label sets none.
+        colours = {"goal": ("7B3FA0", "F7F7F7"), "requirement": ("1F5FBF", "EDF3FC"),
+                   "parameter": ("0E7C86", "F7F7F7"), "definition": ("2E7D32", "EDF6EE"),
+                   "rationale": ("8A8A8A", "F7F7F7"), "discussion": ("8A8A8A", "F7F7F7"),
+                   "target": ("C26A00", "F7F7F7"), "open": ("C26A00", "F7F7F7")}
+        for label, (bar, background) in colours.items():
+            with self.subTest(label=label):
+                self.assertIn(rf"\definecolor{{bcwbar{label}}}{{HTML}}{{{bar}}}", self.tex)
+                self.assertIn(rf"\definecolor{{bcwback{label}}}{{HTML}}{{{background}}}", self.tex)
+
+    def test_each_label_has_a_box_that_the_class_of_its_container_applies(self):
+        for label in LABELS:
+            with self.subTest(label=label):
+                self.assertIn(rf"\newenvironment{{sphinxclass{label}}}{{\begin{{bcwchunk}}{{bcwbar{label}}}"
+                              rf"{{bcwback{label}}}}}{{\end{{bcwchunk}}}}", self.tex)
+
+    def test_the_box_holds_the_chunk(self):
+        self.assertTrue(after(self.tex, r"\begin{sphinxuseclass}{requirement}", r"\sphinxstylestrong{REQUIREMENT}",
+                              "The core shall give", r"\end{sphinxuseclass}"), self.tex)
+
+
 class PdfTest(unittest.TestCase):
     def test_latexmk_makes_a_pdf_of_the_latex(self):
         status, size, log = weave(BOOK, "latex", pdf=True).pdf
