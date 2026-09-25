@@ -2,9 +2,8 @@
 
 import os
 import subprocess
-import tempfile
-import unittest
-from pathlib import Path
+
+import pytest
 
 from book import ROOT
 
@@ -12,11 +11,10 @@ HOOK = ROOT / "tools" / "hooks" / "pre-push"
 ZERO = "0" * 40
 
 
-class PrePushTest(unittest.TestCase):
-    def setUp(self):
-        directory = tempfile.TemporaryDirectory()
-        self.addCleanup(directory.cleanup)
-        self.clone = Path(directory.name) / "clone"
+class PrePushTest:
+    @pytest.fixture(autouse=True)
+    def clone(self, tmp_path):
+        self.clone = tmp_path / "clone"
         subprocess.run(["git", "clone", "--quiet", str(ROOT), str(self.clone)], check=True)
         self.good = self.git("rev-parse", "HEAD")
 
@@ -33,12 +31,12 @@ class PrePushTest(unittest.TestCase):
     def break_the_chapter(self):
         chapter = self.clone / "book" / "core" / "core.rst"
         text = chapter.read_text()
-        self.assertEqual(text.count(":param:`core.threads`."), 1)
+        assert text.count(":param:`core.threads`.") == 1
         chapter.write_text(text.replace(":param:`core.threads`.", ":param:`core.threads`. It shall not stall."))
 
     def test_a_good_commit_passes(self):
         result = self.push(self.good)
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        assert result.returncode == 0, result.stdout + result.stderr
 
     def test_a_failing_commit_stops_the_push(self):
         self.break_the_chapter()
@@ -46,23 +44,19 @@ class PrePushTest(unittest.TestCase):
                  "commit", "--quiet", "-am", "Break the chapter")
         bad = self.git("rev-parse", "HEAD")
         result = self.push(bad)
-        self.assertEqual(result.returncode, 1)
-        self.assertIn(f"pre-push: make check failed on {bad}, so the push is stopped.", result.stderr)
-        self.assertIn("[one-shall] core.rotation", result.stdout)
+        assert result.returncode == 1
+        assert f"pre-push: make check failed on {bad}, so the push is stopped." in result.stderr
+        assert "[one-shall] core.rotation" in result.stdout
 
     def test_uncommitted_edits_play_no_part(self):
         self.break_the_chapter()
         result = self.push(self.good)
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        assert result.returncode == 0, result.stdout + result.stderr
 
     def test_a_deleted_branch_runs_nothing(self):
         result = self.push(ZERO)
-        self.assertEqual((result.returncode, result.stdout), (0, ""))
+        assert (result.returncode, result.stdout) == (0, "")
 
     def test_the_worktree_is_removed(self):
         self.push(self.good)
-        self.assertEqual(len(self.git("worktree", "list").splitlines()), 1)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(self.git("worktree", "list").splitlines()) == 1
