@@ -55,10 +55,36 @@ class OrderTest(unittest.TestCase):
         index = body(weave({**BOOK, "design/design.rst": cycle}, "html").output["index.html"])
         self.assertEqual(re.findall(r'<span class="caption-text">([^<]+)</span>', index), ["Tutorials", "Unordered"])
 
-    def test_each_kind_starts_a_part_in_the_latex(self):
+    def test_each_kind_starts_an_unnumbered_part_in_the_latex(self):
         tex = weave(BOOK, "latex").output["book.tex"]
-        self.assertTrue(after(tex, r"\part{Tutorials}", r"\chapter{Guide}", r"\part{Reference}",
+        self.assertTrue(after(tex, r"\part*{Tutorials}\addcontentsline{toc}{part}{Tutorials}", r"\chapter{Guide}",
+                              r"\part*{Reference}\addcontentsline{toc}{part}{Reference}",
                               r"\chapter{Design}", r"\chapter{Core}"), tex)
+
+
+class NumberingTest(unittest.TestCase):
+    """The HTML numbers the chapters through the whole book, as LaTeX does in the PDF."""
+
+    def setUp(self):
+        self.book = weave(BOOK, "html")
+
+    def test_the_index_numbers_the_chapters_through_every_part(self):
+        index = body(self.book.output["index.html"])
+        self.assertEqual(re.findall(r'href="\w+/\w+\.html">(\d+)\. (\w+)</a>', index),
+                         [("1", "Guide"), ("2", "Design"), ("3", "Core")])
+
+    def test_a_chapter_and_its_sections_carry_its_number(self):
+        core = body(self.book.output["core/core.html"])
+        self.assertEqual(re.findall(r'<span class="section-number">([\d.]+) </span>', core),
+                         ["3.", "3.1.", "3.2.", "3.3.", "3.4."])
+
+    def test_the_link_to_the_previous_chapter_carries_its_number(self):
+        self.assertIn('title="previous chapter"><span class="section-number">2. </span>Design',
+                      self.book.output["core/core.html"])
+
+    def test_the_pdf_shows_chapter_numbers_in_numerals(self):
+        tex = weave(BOOK, "latex").output["book.tex"]
+        self.assertNotIn("fncychap", tex)
 
 
 class ChunkTest(unittest.TestCase):

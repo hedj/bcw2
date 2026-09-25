@@ -14,7 +14,8 @@ and checks nothing itself. It orders and reshapes what bcw.py reads:
   its old place.
 - At doctree-resolved, the HTML shows each twin and each source in a closed
   <details>. The LaTeX prints each twin in small text, moves each source to a
-  last section, Implementation, and starts each kind with a \\part.
+  last section, Implementation, and starts each kind with an unnumbered part.
+- The HTML numbers the chapters through the whole book, as LaTeX does.
 - The HTML links static/weave.css, which sets each chunk apart.
 """
 
@@ -59,6 +60,36 @@ def parts(env):
     if rest:
         result.append((LEFT_OUT, [documents[name].docname for name in rest]))
     return result
+
+
+def number_through(app, env):
+    """Number the chapters of each part after those of the parts before it, as LaTeX does.
+
+    Sphinx numbers each toctree from 1, and the chapters directive writes one
+    toctree for each part. After Sphinx assigns the numbers, this adds to the
+    first number of each heading in a later part the count of the chapters
+    before its part. It returns the chapters that it renumbers, so that Sphinx
+    writes them again.
+    """
+    changed, offset = [], 0
+    for _, docnames in parts(env):
+        for docname in docnames:
+            if offset:
+                shift(env, docname, offset)
+                changed.append(docname)
+        offset += len(docnames)
+    return changed
+
+
+def shift(env, docname, offset):
+    def moved(number):
+        return [number[0] + offset, *number[1:]] if number else number
+
+    env.toc_secnumbers[docname] = {anchor: tuple(moved(number))
+                                   for anchor, number in env.toc_secnumbers.get(docname, {}).items()}
+    for node in [*env.tocs[docname].findall(nodes.reference), env.titles.get(docname)]:
+        if node is not None and node.get("secnumber"):
+            node["secnumber"] = moved(node["secnumber"])
 
 
 class ChaptersDirective(SphinxDirective):
@@ -219,8 +250,10 @@ def weave_latex(app, doctree, docname):
         for start in files:
             weave_latex_chapter(start)
             if start["docname"] in first:
-                start.parent.insert(start.parent.index(start),
-                                    nodes.raw("", f"\\part{{{first[start['docname']]}}}", format="latex"))
+                caption = first[start["docname"]]
+                # An unnumbered part, as in the HTML, which still has a line in the contents.
+                start.parent.insert(start.parent.index(start), nodes.raw(
+                    "", f"\\part*{{{caption}}}\\addcontentsline{{toc}}{{part}}{{{caption}}}", format="latex"))
     elif docname != app.config.root_doc:
         weave_latex_chapter(doctree)
 
@@ -241,7 +274,8 @@ STATIC = Path(__file__).resolve().parent / "static"
 
 
 def configure(app, config):
-    config.latex_elements = {"fontpkg": FONTS, **config.latex_elements}
+    # No fncychap: LaTeX then heads each chapter with its number in numerals, as the HTML does.
+    config.latex_elements = {"fontpkg": FONTS, "fncychap": "", **config.latex_elements}
     config.html_static_path = [*config.html_static_path, str(STATIC)]
 
 
@@ -251,6 +285,8 @@ def setup(app):
     app.add_css_file("weave.css")
     app.add_directive("chapters", ChaptersDirective)
     app.connect("env-before-read-docs", read_index_last)
+    # After Sphinx's own numbering, which runs at the default priority of 500.
+    app.connect("env-get-updated", number_through, priority=600)
     app.connect("doctree-read", reshape, priority=450)
     app.connect("doctree-resolved", weave)
     return {"parallel_read_safe": False, "env_version": 1}
