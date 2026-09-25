@@ -201,16 +201,24 @@ def check_one_shall(chunk):
                       "state it with \"shall\", or relabel it DEFINITION")
 
 
-# implements: doc.anchors
-def check_anchors(chunk, seen, retired):
+# implements: doc.attribute-keys
+def check_attribute_keys(chunk):
     for key in chunk.attrs:
         if key not in ATTRIBUTE_KEYS:
-            yield Finding(chunk.path, chunk.line, "anchors", chunk.anchor,
+            yield Finding(chunk.path, chunk.attribute_line, "attribute-keys", chunk.anchor,
                           f"unknown attribute {key}",
                           "use only " + ", ".join(sorted(ATTRIBUTE_KEYS)))
+
+
+# implements: doc.never-on-definition
+def check_never_on_definition(chunk):
     if "never" in chunk.attrs and chunk.label != "DEFINITION":
-        yield Finding(chunk.path, chunk.line, "anchors", chunk.anchor,
+        yield Finding(chunk.path, chunk.attribute_line, "never-on-definition", chunk.anchor,
                       "only a DEFINITION can carry never=", "move never= to the DEFINITION of the term")
+
+
+# implements: doc.anchors
+def check_anchors(chunk, seen, retired):
     anchor = chunk.anchor
     if chunk.label in ANCHORED and anchor is None:
         yield Finding(chunk.path, chunk.line, "anchors", None,
@@ -497,6 +505,8 @@ def check(paths, retired, implemented=()):
         for chunk in document.chunks:
             findings += check_labels(chunk)
             findings += check_one_shall(chunk)
+            findings += check_attribute_keys(chunk)
+            findings += check_never_on_definition(chunk)
             findings += check_anchors(chunk, seen, retired)
             findings += check_stamps(chunk)
             findings += check_definition_parent(chunk)

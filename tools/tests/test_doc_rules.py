@@ -287,7 +287,11 @@ class VocabularyTest(unittest.TestCase):
 
     def test_never_on_a_chunk_that_is_not_a_definition_is_a_finding(self):
         text = GOOD.replace("{rule=core.rotation parent=design.timing}", "{rule=core.rotation parent=design.timing never=cpu}")
-        self.assertEqual(findings(text), [(line(text, "**REQUIREMENT.**"), "anchors", "core.rotation")])
+        self.assertEqual(findings(text), [(line(text, "never=cpu"), "never-on-definition", "core.rotation")])
+
+    def test_never_on_a_goal_is_a_finding(self):
+        text = GOOD.replace("{rule=design.timing}", "{rule=design.timing never=cpu}")
+        self.assertEqual(findings(text), [(line(text, "never=cpu"), "never-on-definition", "design.timing")])
 
 
 class OverviewFirstTest(unittest.TestCase):
@@ -399,6 +403,23 @@ class DottedWordsTest(unittest.TestCase):
     def test_a_dotted_word_outside_a_requirement_passes(self):
         text = GOOD.replace("eight cycles apart.", "eight cycles apart, in Q8.4, e.g. thread 1.")
         self.assertEqual(only("dotted-words", text), [])
+
+class AttributeKeysTest(unittest.TestCase):
+    """doc.attribute-keys"""
+
+    def test_an_unknown_key_is_a_finding_on_the_attribute_line(self):
+        text = GOOD.replace("{rule=core.turn parent=core.core}", "{rule=core.turn parent=core.core colour=red}")
+        self.assertEqual(findings(text), [(line(text, "colour=red"), "attribute-keys", "core.turn")])
+
+    def test_each_unknown_key_is_a_finding(self):
+        text = GOOD.replace("{rule=design.timing}", "{rule=design.timing parnet=core.core size=2}")
+        self.assertEqual(findings(text), [(line(text, "parnet="), "attribute-keys", "design.timing")] * 2)
+
+    def test_the_four_keys_pass(self):
+        text = GOOD.replace("{rule=core.turn parent=core.core}", "{rule=core.turn parent=core.core never=slot}").replace(
+            "{rule=core.rotation parent=design.timing}", "{rule=core.rotation parent=design.timing impl=none}")
+        self.assertEqual(findings(text), [])
+
 
 if __name__ == "__main__":
     unittest.main()

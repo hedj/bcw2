@@ -131,10 +131,6 @@ class AnchorsTest(unittest.TestCase):
         self.assertEqual(findings(GOOD, retired={"core.turn"}),
                          [(line(GOOD, "A **turn**"), "anchors", "core.turn")])
 
-    def test_an_unknown_attribute_key_is_a_finding(self):
-        text = GOOD.replace("{rule=core.turn parent=core.core}", "{rule=core.turn parent=core.core colour=red}")
-        self.assertEqual(findings(text), [(line(text, "A **turn**"), "anchors", "core.turn")])
-
     def test_a_duplicate_anchor_in_another_document_is_a_finding(self):
         other = ("# Bank\n\n## 1. Overview\n\nText.\n\n## 2. Banks\n\n"
                  "**DEFINITION.** A **bank** is a register set.\n{rule=core.turn parent=core.core}\n")

@@ -73,6 +73,14 @@ that a script can check.
 hash of its label, a space and its English.
 {rule=doc.stamp parent=doc.read-is-checked}
 
+**DEFINITION.** The **attribute line** of a chunk is the last line of its paragraph when that
+line is a list of `key=value` pairs in braces.
+{rule=doc.attribute-line parent=doc.traceable}
+
+**REQUIREMENT.** Each attribute line shall hold only the keys `rule`, `parent`, `impl` and
+`never`.
+{rule=doc.attribute-keys parent=doc.traceable}
+
 **REQUIREMENT.** Each chunk shall carry one of these labels: GOAL, REQUIREMENT, PARAMETER,
 DEFINITION, RATIONALE, DISCUSSION, TARGET or OPEN.
 {rule=doc.labels parent=doc.rules-apart}
@@ -138,6 +146,9 @@ sentence, it can follow The, A, An, Each, Every or No.
 
 **REQUIREMENT.** No rule shall hold a word from the `never=` list of a DEFINITION.
 {rule=doc.vocabulary parent=doc.one-reading}
+
+**REQUIREMENT.** Where a chunk carries `never=`, the chunk shall be a DEFINITION.
+{rule=doc.never-on-definition parent=doc.one-reading}
 
 **DEFINITION.** A **quotation** is a code span. The rules on words and sentences ignore the
 text inside it.
