@@ -294,8 +294,8 @@ class PdfStyleTest:
 
 
 FRAGMENTED = (CORE_CHAPTER + "\n.. source:: build/rtl/core/pair.v\n\n"
-              "   module pair (input wire a, output wire b);\n       <<core.pair-logic>>\n   endmodule\n"
-              "\n.. source:: core.pair-logic\n\n   assign b = a;\n")
+              "   module pair (input wire a, output wire b);\n       <<:core.pair-logic>>\n   endmodule\n"
+              "\n.. source:: :core.pair-logic\n\n   assign b = a;\n")
 FRAGMENTED_BOOK = {**BOOK, "core/core.rst": FRAGMENTED}
 
 
@@ -309,7 +309,7 @@ class FragmentWeaveTest:
     """The weave names each fragment, and links each block that uses fragments to them."""
 
     def test_a_fragment_is_a_closed_disclosure_named_after_the_fragment(self, fragmented):
-        assert re.search(r"(?s)<details><summary>Fragment: core\.pair-logic</summary>.*?assign.*?</details>",
+        assert re.search(r"(?s)<details><summary>Fragment: :core\.pair-logic</summary>.*?assign.*?</details>",
                          fragmented)
 
     def test_the_first_block_of_a_fragment_carries_its_id(self, fragmented):
@@ -317,7 +317,7 @@ class FragmentWeaveTest:
 
     def test_a_block_that_uses_fragments_links_to_each(self, fragmented):
         assert re.search(r'<p class="fragment-uses">Uses: <a class="reference internal" '
-                         r'href="#fragment-core\.pair-logic"><code[^>]*><span class="pre">core\.pair-logic</span>',
+                         r'href="#fragment-core\.pair-logic"><code[^>]*><span class="pre">:core\.pair-logic</span>',
                          fragmented)
         # The line follows the disclosure of its block.
         assert fragmented.index("Verilog: build/rtl/core/pair.v") < fragmented.index('class="fragment-uses"')

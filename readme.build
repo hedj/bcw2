@@ -69,18 +69,19 @@ book/.
 Fragments
 ---------
 
-A source directive whose argument is a name, such as core.pair-logic, and
-not a file, defines a fragment. A line that holds only <<core.pair-logic>>
-in another source directive uses the fragment. make tangle puts the
+A source directive whose argument is a colon and a name, such as
+:core.pair-logic, defines a fragment. The colon sets a fragment apart from an
+anchor. A line that holds only <<:core.pair-logic>> in another source
+directive uses the fragment. make tangle puts the
 fragment in place of that line, with the indentation of the line:
 
     .. source:: build/rtl/core/pair.v
 
        module pair (input wire a, output wire b);
-           <<core.pair-logic>>
+           <<:core.pair-logic>>
        endmodule
 
-    .. source:: core.pair-logic
+    .. source:: :core.pair-logic
 
        assign b = a;
 

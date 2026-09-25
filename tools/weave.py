@@ -185,7 +185,7 @@ def link_uses(doctree, docname):
         for number, name in enumerate(names):
             if number:
                 uses += nodes.Text(", ")
-            uses += bcw.citation_link("", nodes.literal(text=name), "fragment-" + name, docname)
+            uses += bcw.citation_link("", nodes.literal(text=name), "fragment-" + name[1:], docname)
         block.parent.insert(block.parent.index(block) + 1, uses)
 
 
@@ -219,7 +219,7 @@ def reshape(app, doctree):
 def summary(block):
     if block["bcw"] == "twin":
         return "Formal twin"
-    if bcw.ANCHOR.fullmatch(block["target"]):
+    if block["target"].startswith(":"):
         return f"Fragment: {block['target']}"
     kind = "Verilog" if block["target"].endswith((".v", ".sv")) else "Source"
     return f"{kind}: {block['target']}"

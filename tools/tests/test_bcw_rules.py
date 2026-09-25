@@ -1012,9 +1012,9 @@ def source(target, *code):
     return f"\n.. source:: {target}\n\n" + "".join(f"   {line}\n" for line in code)
 
 
-SKELETON = source("build/rtl/core/pair.v", "module pair (input wire a, output wire b);", "    <<core.pair-logic>>",
+SKELETON = source("build/rtl/core/pair.v", "module pair (input wire a, output wire b);", "    <<:core.pair-logic>>",
                   "endmodule")
-FRAGMENT = source("core.pair-logic", "assign b = a;")
+FRAGMENT = source(":core.pair-logic", "assign b = a;")
 
 
 class FragmentTest:
@@ -1028,40 +1028,42 @@ class FragmentTest:
 
     def test_a_use_of_no_fragment_is_a_finding_on_its_line(self):
         text = GOOD + SKELETON
-        assert findings(text) == [(line(text, "<<core.pair-logic>>"), "fragment-uses", None)]
+        assert findings(text) == [(line(text, "<<:core.pair-logic>>"), "fragment-uses", None)]
 
     def test_a_fragment_that_reaches_no_file_is_a_finding_on_its_directive_line(self):
         text = GOOD + FRAGMENT
-        assert findings(text) == [(line(text, ".. source:: core.pair-logic"), "fragments-used", None)]
+        assert findings(text) == [(line(text, ".. source:: :core.pair-logic"), "fragments-used", None)]
 
     def test_a_fragment_that_only_a_fragment_that_reaches_no_file_uses_reaches_no_file(self):
-        text = GOOD + source("core.outer", "<<core.pair-logic>>") + FRAGMENT
-        assert findings(text) == [(line(text, ".. source:: core.outer"), "fragments-used", None),
-                                  (line(text, ".. source:: core.pair-logic"), "fragments-used", None)]
+        text = GOOD + source(":core.outer", "<<:core.pair-logic>>") + FRAGMENT
+        assert findings(text) == [(line(text, ".. source:: :core.outer"), "fragments-used", None),
+                                  (line(text, ".. source:: :core.pair-logic"), "fragments-used", None)]
 
     def test_a_fragment_used_through_another_fragment_passes(self):
-        text = (GOOD + SKELETON.replace("<<core.pair-logic>>", "<<core.outer>>")
-                + source("core.outer", "<<core.pair-logic>>") + FRAGMENT)
+        text = (GOOD + SKELETON.replace("<<:core.pair-logic>>", "<<:core.outer>>")
+                + source(":core.outer", "<<:core.pair-logic>>") + FRAGMENT)
         assert findings(text) == []
 
     def test_a_cycle_is_a_finding_on_each_fragment_in_it(self):
-        text = (GOOD + SKELETON + source("core.pair-logic", "<<core.other>>")
-                + source("core.other", "<<core.pair-logic>>"))
-        assert findings(text) == [(line(text, ".. source:: core.pair-logic"), "fragment-cycles", None),
-                                  (line(text, ".. source:: core.other"), "fragment-cycles", None)]
+        text = (GOOD + SKELETON + source(":core.pair-logic", "<<:core.other>>")
+                + source(":core.other", "<<:core.pair-logic>>"))
+        assert findings(text) == [(line(text, ".. source:: :core.pair-logic"), "fragment-cycles", None),
+                                  (line(text, ".. source:: :core.other"), "fragment-cycles", None)]
 
-    @pytest.mark.parametrize("target", ["rtl/core/pair.v", "src/pair.v", "Core_Pair", "core"])
+    @pytest.mark.parametrize("target", ["rtl/core/pair.v", "src/pair.v", "Core_Pair", "core", "core.pair-logic",
+                                        "pair.v", ":Core_Pair"])
     def test_a_target_outside_build_that_is_no_fragment_name_is_a_finding(self, target):
         text = GOOD + source(target, "assign b = a;")
         assert findings(text) == [(line(text, f".. source:: {target}"), "source-targets", None)]
 
-    @pytest.mark.parametrize("code", ["assign b = a << 1;", "assign b = a<<core.pair-logic>>1;",
-                                      "<<core.pair-logic>> // a comment", "<<Core_Pair>>"])
+    @pytest.mark.parametrize("code", ["assign b = a << 1;", "assign b = a<<:core.pair-logic>>1;",
+                                      "<<:core.pair-logic>> // a comment", "<<Core_Pair>>",
+                                      "<<core.pair-logic>>"])
     def test_a_line_that_holds_more_than_a_fragment_name_is_code(self, code):
         assert findings(GOOD + source("build/rtl/core/pair.v", code)) == []
 
     def test_a_line_in_a_twin_is_code(self):
-        text = GOOD.replace("      def core_rotate(turn):\n", "      <<core.none>>\n      def core_rotate(turn):\n")
+        text = GOOD.replace("      def core_rotate(turn):\n", "      <<:core.none>>\n      def core_rotate(turn):\n")
         assert text != GOOD
         assert [f for f in findings(text) if f[1].startswith("fragment")] == []
 
@@ -1099,8 +1101,8 @@ class FragmentTangleTest:
 
     def test_a_file_from_a_skeleton_and_fragments_of_two_chapters(self):
         core = GOOD + source("build/rtl/core/pair.v", "module pair (input wire a, output wire b);",
-                             "    <<core.pair-logic>>", "    <<zeta.more>>", "endmodule") + FRAGMENT
-        zeta = chapter("Zeta", body="\nMore\n====\n" + source("zeta.more", "// one", "// two"))
+                             "    <<:core.pair-logic>>", "    <<:zeta.more>>", "endmodule") + FRAGMENT
+        zeta = chapter("Zeta", body="\nMore\n====\n" + source(":zeta.more", "// one", "// two"))
         files = Book({"core/core.rst": core, "zeta/zeta.rst": zeta}, tangle=True).files
         assert files["build/rtl/core/pair.v"] == (
             f"// bcw: book/core/core.rst:{line(core, 'module pair')}\n"
@@ -1110,27 +1112,27 @@ class FragmentTangleTest:
             f"    // bcw: book/zeta/zeta.rst:{line(zeta, '// one')}\n"
             "    // one\n"
             "    // two\n"
-            f"// bcw: book/core/core.rst:{line(core, 'endmodule', after='<<zeta.more>>')}\n"
+            f"// bcw: book/core/core.rst:{line(core, 'endmodule', after='<<:zeta.more>>')}\n"
             "endmodule\n")
         assert "core.pair-logic" not in files and "zeta.more" not in files
 
     def test_the_blocks_of_a_fragment_join_in_order(self):
-        text = GOOD + SKELETON + FRAGMENT + source("core.pair-logic", "assign c = a;")
+        text = GOOD + SKELETON + FRAGMENT + source(":core.pair-logic", "assign c = a;")
         tangled = Book({"core/core.rst": text}, tangle=True).files["build/rtl/core/pair.v"]
         assert (f"    // bcw: book/core/core.rst:{line(text, 'assign b = a;')}\n    assign b = a;\n"
                 f"    // bcw: book/core/core.rst:{line(text, 'assign c = a;')}\n    assign c = a;\n") in tangled
 
     def test_a_fragment_inside_a_fragment_adds_its_indentation(self):
-        text = (GOOD + SKELETON.replace("<<core.pair-logic>>", "<<core.outer>>")
-                + source("core.outer", "begin", "    <<core.pair-logic>>", "end") + FRAGMENT)
+        text = (GOOD + SKELETON.replace("<<:core.pair-logic>>", "<<:core.outer>>")
+                + source(":core.outer", "begin", "    <<:core.pair-logic>>", "end") + FRAGMENT)
         tangled = Book({"core/core.rst": text}, tangle=True).files["build/rtl/core/pair.v"]
-        end = line(text, "end", after="<<core.pair-logic>>")
+        end = line(text, "end", after="<<:core.pair-logic>>")
         assert (f"    begin\n        // bcw: book/core/core.rst:{line(text, 'assign b = a;')}\n"
                 f"        assign b = a;\n    // bcw: book/core/core.rst:{end}\n    end\n") in tangled
 
     def test_the_indentation_makes_working_python(self):
-        text = GOOD + source("build/model/body.py", "def f(x):", "    <<core.body>>", "", "RESULT = f(1)") + source(
-            "core.body", "y = x + 1", "return y")
+        text = GOOD + source("build/model/body.py", "def f(x):", "    <<:core.body>>", "", "RESULT = f(1)") + source(
+            ":core.body", "y = x + 1", "return y")
         tangled = Book({"core/core.rst": text}, tangle=True).files["build/model/body.py"]
         names = {}
         exec(tangled, names)
@@ -1139,11 +1141,11 @@ class FragmentTangleTest:
 
     def test_a_use_of_no_fragment_stays_as_it_is(self):
         tangled = Book({"core/core.rst": GOOD + SKELETON}, tangle=True).files["build/rtl/core/pair.v"]
-        assert "    <<core.pair-logic>>\n" in tangled
+        assert "    <<:core.pair-logic>>\n" in tangled
 
     def test_a_cycle_ends_and_leaves_the_repeated_use_as_it_is(self):
-        text = (GOOD + SKELETON + source("core.pair-logic", "<<core.other>>")
-                + source("core.other", "<<core.pair-logic>>"))
+        text = (GOOD + SKELETON + source(":core.pair-logic", "<<:core.other>>")
+                + source(":core.other", "<<:core.pair-logic>>"))
 
         def stop(signum, frame):
             raise TimeoutError("the tangle did not end")
@@ -1155,5 +1157,5 @@ class FragmentTangleTest:
         finally:
             signal.alarm(0)
             signal.signal(signal.SIGALRM, previous)
-        assert tangled.count("<<core.pair-logic>>") == 1
+        assert tangled.count("<<:core.pair-logic>>") == 1
 

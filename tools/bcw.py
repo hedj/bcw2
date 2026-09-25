@@ -58,8 +58,9 @@ VALUED = {"PARAMETER", "TARGET"}
 KINDS = ["tutorial", "how-to", "reference", "explanation"]
 ANCHOR = re.compile(r"[a-z][a-z0-9-]*(\.[a-z0-9-]+)+")
 # A fragment use: a line of a source directive that holds only a fragment name
-# between << and >>, after its indentation.
-USE = re.compile(r"^(?P<indent>[ \t]*)<<(?P<name>[a-z][a-z0-9-]*(?:\.[a-z0-9-]+)+)>>\s*$")
+# between << and >>, after its indentation. A fragment name is a colon followed by
+# the form of an anchor, so that a reader tells it from an anchor.
+USE = re.compile(r"^(?P<indent>[ \t]*)<<(?P<name>:[a-z][a-z0-9-]*(?:\.[a-z0-9-]+)+)>>\s*$")
 SHALL = re.compile(r"\bshall\b", re.IGNORECASE)
 # The prose of a chunk writes each quotation as this code span, which holds no
 # word and which ste_lint skips.
@@ -343,7 +344,7 @@ def read_document(app, doctree):
                               child.get("first", child.line), child.astext(), owner)
                 document.blocks.append(block)
                 if is_fragment(block):
-                    label(app, docname, child, "fragment-" + block.target)
+                    label(app, docname, child, "fragment-" + block.target[1:])
                 if owner is not None:
                     owner.blocks.append(block)
             elif not isinstance(child, nodes.system_message):
@@ -363,8 +364,8 @@ def read_document(app, doctree):
 def label(app, docname, node, name):
     """Make name the id of node, and a label that a citation can link to.
 
-    name is the anchor of a chunk, or fragment-<name> for the first block of a
-    fragment. Only the first node with a name gets it: doc.anchors reports the
+    name is the anchor of a chunk, or fragment-<name> for the first block of the
+    fragment :<name>. Only the first node with a name gets it: doc.anchors reports the
     other chunks, and the other blocks of a fragment join the first.
     """
     std = app.env.domains.standard_domain
@@ -1018,8 +1019,8 @@ def check_param_citations(documents):
 
 
 def is_fragment(block):
-    """Whether the block is a source directive that defines a fragment: its argument is a fragment name."""
-    return block.kind == "source" and bool(ANCHOR.fullmatch(block.target))
+    """Whether the block is a source directive that defines a fragment: its argument is a colon and an anchor."""
+    return block.kind == "source" and block.target.startswith(":") and bool(ANCHOR.fullmatch(block.target[1:]))
 
 
 def writes_file(block):
@@ -1072,10 +1073,10 @@ def reached(graph, start):
 def check_source_targets(documents):
     for document in documents:
         for block in document.blocks:
-            if block.kind == "source" and not (block.target.startswith("build/") or ANCHOR.fullmatch(block.target)):
+            if block.kind == "source" and not (block.target.startswith("build/") or is_fragment(block)):
                 yield Finding(document.path, block.line, "source-targets", None,
                               f"{block.target!r} is not a file under build/ and not a fragment name",
-                              "name a file such as build/rtl/core/x.v, or a fragment such as core.rotation-logic")
+                              "name a file such as build/rtl/core/x.v, or a fragment such as :core.rotation-logic")
 
 
 # implements: doc.fragment-uses

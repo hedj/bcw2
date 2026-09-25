@@ -446,9 +446,9 @@ Fragments
 .. definition:: doc.fragment-name
    :parent: doc.one-source
 
-   A :dfn:`fragment name` is the argument of a ``source`` directive when it has the form of an
-   anchor, such as ``core.rotation-logic``. A ``source`` directive whose argument holds a ``/``
-   names a file.
+   A :dfn:`fragment name` is the argument of a ``source`` directive when it is a ``:`` before
+   the form of an anchor, such as ``:core.rotation-logic``. The ``:`` sets it apart from an
+   anchor. A ``source`` directive whose argument holds a ``/`` names a file.
 
 .. definition:: doc.fragment
    :parent: doc.one-source

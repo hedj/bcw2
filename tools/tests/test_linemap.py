@@ -124,11 +124,11 @@ Three
 .. source:: build/rtl/core/core_three.v
 
    module core_three (input wire a, output wire b, output wire c);
-       <<core.three-logic>>
+       <<:core.three-logic>>
        assign c = missing_two;
    endmodule
 
-.. source:: core.three-logic
+.. source:: :core.three-logic
 
    assign b = missing_one;
 """
