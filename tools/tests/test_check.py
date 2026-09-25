@@ -24,15 +24,15 @@ STAMP = hashlib.sha256(("REQUIREMENT " + ENGLISH).encode()).hexdigest()[:8]
 GOOD = f"""\
 # Core
 
-## 1. Overview
+## Overview
 
 The core runs every thread through one pipeline.
 
-## 2. Rotation
+## Rotation
 
 **REQUIREMENT.** The core shall give the turn after
 thread *t* to thread *t* + 1.
-{{rule=core.rotation parent=design.timing}}
+{{rule=core.rotation parent=core.timing}}
 
 ``` {{.python .formal file=build/model/core_rotate.py stamp={STAMP}}}
 def core_rotate(turn):
@@ -53,14 +53,14 @@ endmodule
 {{rule=core.turn parent=core.core}}
 
 **DEFINITION.** The **core** runs the threads in turn.
-{{rule=core.core parent=design.timing}}
+{{rule=core.core parent=core.timing}}
 
 **Thread.** An unlabelled bold paragraph is prose.
 
-## 3. Goals
+## Goals
 
 **GOAL.** No thread can change the timing of another thread.
-{{rule=design.timing}}
+{{rule=core.timing}}
 """
 
 
@@ -76,12 +76,19 @@ GENERAL = {"the", "shall", "give", "after", "thread", "t", "to", "a", "is", "cyc
            "rotation", "runs", "no", "can", "change", "timing", "of", "another"}
 
 
+def chapter(root, text, name="core"):
+    """Write text as the chapter book/<name>/<name>.md under root, and return its path."""
+    path = Path(root) / "book" / name / f"{name}.md"
+    path.parent.mkdir(parents=True)
+    path.write_text(text)
+    return path
+
+
 def findings(text, retired=(), implemented=(), general=None):
     """The findings on text, as (line, check, anchor). With general=None, check
     skips doc.known-words, so that a test of another rule can add new words."""
     with tempfile.TemporaryDirectory() as name:
-        path = Path(name) / "core.md"
-        path.write_text(text)
+        path = chapter(name, text)
         return [(f.line, f.check, f.anchor)
                 for f in check.check([str(path)], set(retired), set(implemented), general)]
 
@@ -136,7 +143,7 @@ class AnchorsTest(unittest.TestCase):
         self.assertEqual(findings(text), [(line(text, "A **turn**"), "anchors", "Core_Turn")])
 
     def test_the_anchor_form_is_parts_of_lower_case_letters_digits_and_hyphens_joined_by_dots(self):
-        for anchor, good in [("core.rot-2", True), ("core.2x", True), ("a.b.c", True),
+        for anchor, good in [("core.rot-2", True), ("core.2x", True), ("core.b.c", True),
                              ("core", False), ("1core.x", False), ("core..x", False),
                              ("core.Rot", False), ("core_x.y", False), ("-core.x", False)]:
             with self.subTest(anchor=anchor):
@@ -149,15 +156,14 @@ class AnchorsTest(unittest.TestCase):
                          [(line(GOOD, "A **turn**"), "anchors", "core.turn")])
 
     def test_a_duplicate_anchor_in_another_document_is_a_finding(self):
-        other = ("# Bank\n\n## 1. Overview\n\nText.\n\n## 2. Banks\n\n"
+        other = ("# Bank\n\n## Overview\n\nText.\n\n## Banks\n\n"
                  "**DEFINITION.** A **bank** is a register set.\n{rule=core.turn parent=core.core}\n")
         with tempfile.TemporaryDirectory() as name:
-            first, second = Path(name) / "a.md", Path(name) / "b.md"
-            first.write_text(GOOD)
-            second.write_text(other)
+            first, second = chapter(name, GOOD), chapter(name, other, "bank")
             result = check.check([str(first), str(second)], set())
         self.assertEqual([(f.path, f.line, f.check) for f in result],
-                         [(str(second), line(other, "A **bank**"), "anchors")])
+                         [(str(second), line(other, "A **bank**"), "anchors"),
+                          (str(second), line(other, "rule=core.turn"), "anchor-prefix")])
         self.assertIn(f"{first}:{line(GOOD, 'A **turn**')}", result[0].message)
 
 
@@ -171,7 +177,7 @@ class GoalTest(unittest.TestCase):
 
     def test_a_formal_block_after_a_goal_is_a_finding(self):
         text = GOOD + "\n``` {.python .formal}\nx\n```\n"
-        self.assertEqual(findings(text), [(line(text, "{.python .formal}"), "stamps", "design.timing")])
+        self.assertEqual(findings(text), [(line(text, "{.python .formal}"), "stamps", "core.timing")])
 
 
 class StampsTest(unittest.TestCase):
@@ -189,7 +195,7 @@ class StampsTest(unittest.TestCase):
 
     def test_reflowed_english_and_changed_attributes_keep_the_stamp(self):
         text = GOOD.replace("after\nthread", "after thread").replace(
-            "{rule=core.rotation parent=design.timing}", "{rule=core.rotation parent=design.timing,core.core}")
+            "{rule=core.rotation parent=core.timing}", "{rule=core.rotation parent=core.timing,core.core}")
         self.assertEqual(findings(text), [])
 
     def test_a_formal_block_after_a_non_rule_is_a_finding(self):
@@ -202,9 +208,7 @@ class StampsTest(unittest.TestCase):
 
     def _check(self, text):
         with tempfile.TemporaryDirectory() as name:
-            path = Path(name) / "core.md"
-            path.write_text(text)
-            return check.check([str(path)], set())
+            return check.check([str(chapter(name, text))], set())
 
 
 def run_book(text, retired="", tool=None, general="".join(word + "\n" for word in sorted(GENERAL))):
@@ -249,7 +253,7 @@ class CommandTest(unittest.TestCase):
 
     def test_a_missing_list_of_general_words_is_an_empty_list(self):
         result = run_book(GOOD, general=None)
-        self.assertIn("[known-words] design.timing: 'no' is not a known word", result.stdout)
+        self.assertIn("[known-words] core.timing: 'no' is not a known word", result.stdout)
 
     def test_a_listed_defined_term_is_a_finding_on_its_definition(self):
         result = run_book(GOOD, general="".join(word + "\n" for word in sorted(GENERAL | {"Turns"})))

@@ -1,6 +1,6 @@
 # Documentation conventions
 
-## 1. Overview
+## Overview
 
 These conventions govern every chapter in `book/`. Each rule in them names the goal that it
 supports.
@@ -16,9 +16,9 @@ the end of its paragraph. The attribute line also names the parents of the chunk
 prints the number of rules with more than two parents, because a long list of parents says
 little.
 
-Section 2 states the goals. The later sections define the terms and state the rules.
+The goals come first. The later sections define the terms and state the rules.
 
-## 2. Goals
+## Goals
 
 **GOAL.** Every rule has one meaning, so that two readers of the rule build the same
 machine.
@@ -48,7 +48,7 @@ an open question or a record.
 for approval.
 {rule=doc.changes-reach-author}
 
-## 3. Terms and marking
+## Terms and marking
 
 **DEFINITION.** A **chunk** is a paragraph that starts with a bold label, with the fenced
 blocks that follow it directly. The English of a chunk is its text without the label and the
@@ -104,7 +104,7 @@ that is not retired.
 **RATIONALE.** Judgement decides whether a rule is right. A script decides whether the text
 obeys it.
 
-## 4. Trace
+## Trace
 
 **REQUIREMENT.** Where a rule is a REQUIREMENT, the rule shall appear in an `implements=` list
 or `implements:` comment, or carry `impl=none`.
@@ -132,7 +132,7 @@ GOAL through its parents.
 `implements=` list. A check in `tools/` names its rule in an `# implements:` comment, so each
 documentation rule traces down to its script.
 
-## 5. Sentences and layout
+## Sentences and layout
 
 **DEFINITION.** A **REQUIREMENT sentence** is a sentence of a REQUIREMENT that holds `shall`.
 {rule=doc.requirement-sentence parent=doc.one-reading}
@@ -189,7 +189,7 @@ quotation.
 rules short and plain, and a `never=` list keeps one word for each meaning. A quotation keeps a
 full stop from splitting a sentence.
 
-## 6. Layout
+## Layout
 
 **REQUIREMENT.** Each chunk shall stand after the second `##` heading of its chapter.
 {rule=doc.overview-first parent=doc.rules-apart,doc.one-engineer}
@@ -212,3 +212,34 @@ RATIONALE or DISCUSSION, of 40 words or fewer.
 **RATIONALE.** A reader meets the purpose of a chapter before its rules, as Diátaxis keeps
 explanation apart from reference. The budget keeps argument short. A code block is part of the
 machine or a check of it.
+
+## Chapters
+
+**DEFINITION.** A **chapter** is a Markdown file in `book/`. The name of a chapter is the name of
+its file without `.md`.
+{rule=doc.chapter parent=doc.one-engineer}
+
+**REQUIREMENT.** Each chapter shall have the path `book/<name>/<name>.md`.
+{rule=doc.chapter-path parent=doc.one-engineer}
+
+**REQUIREMENT.** Each chapter shall hold exactly one `#` heading, on its first line.
+{rule=doc.chapter-title parent=doc.one-engineer}
+
+**REQUIREMENT.** Where a chunk carries an anchor, the chunk shall carry the name of its chapter as
+the first part of the anchor.
+{rule=doc.anchor-prefix parent=doc.traceable}
+
+**DEFINITION.** The **chapter order** puts each chapter after every other chapter that holds a
+parent of one of its chunks. Where two or more chapters can come next, the order takes the first
+name in alphabetical order.
+{rule=doc.chapter-order parent=doc.one-engineer}
+
+**REQUIREMENT.** The chapter order shall hold every chapter.
+{rule=doc.chapters-ordered parent=doc.one-engineer}
+
+**REQUIREMENT.** No chapter shall hold a heading that starts with a number.
+{rule=doc.heading-numbers parent=doc.one-source}
+
+**RATIONALE.** The weave numbers the chapters and their sections, so a new section never changes
+a number in the source. The trace sets the order, so a reader meets each goal before the rules
+that serve it.

@@ -1,11 +1,11 @@
 # Core
 
-## 1. Overview
+## Overview
 
 The core runs every thread of the machine through one pipeline. The threads take turns in a
 fixed order, so no thread can change when another thread gets its turn.
 
-## 2. Rotation
+## Rotation
 
 **DEFINITION.** The **core** is the part of the machine that issues the instructions of every
 thread.

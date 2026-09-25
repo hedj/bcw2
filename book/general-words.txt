@@ -3,6 +3,7 @@
 a
 after
 all
+alphabetical
 also
 alter
 an
@@ -30,10 +31,10 @@ carries
 carry
 case
 change
-chapter
 check
 class
 code
+come
 comment
 completely
 count
@@ -62,6 +63,7 @@ explanation
 failing
 fenced
 fewer
+file
 find
 finding
 first
@@ -104,6 +106,7 @@ list
 lower
 lower-case
 machine
+markdown
 meaning
 measure
 measured
@@ -114,6 +117,7 @@ name
 next
 no
 not
+number
 of
 on
 once
@@ -121,6 +125,7 @@ one
 only
 open
 or
+order
 other
 otherwise
 outside
@@ -130,9 +135,11 @@ paragraph
 parameter
 parent
 part
+path
 plain
 program
 property
+put
 question
 rationale
 reach
@@ -170,6 +177,7 @@ stay
 stop
 stream
 such
+take
 target
 tell
 text

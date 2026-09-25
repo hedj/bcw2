@@ -24,6 +24,7 @@ attributes, such as {.python .formal file=... stamp=...}.
 """
 
 import hashlib
+import heapq
 import re
 import sys
 from dataclasses import dataclass, field
@@ -48,6 +49,7 @@ DETERMINER = re.compile(r"^(?:the|a|an|each|every|no)\s+", re.IGNORECASE)
 BOLD = re.compile(r"\*\*(.+?)\*\*")
 DOTTED = re.compile(r"\b[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)+\.?|\b(?:etc|vs|cf|approx|incl|esp|resp|ca)\.", re.IGNORECASE)
 SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
+NUMBERED = re.compile(r"\d+(?:\.\d+)*\.?(?:\s|$)")
 WORD = re.compile(r"[^\W\d_][^\W_]*(?:['’-][^\W_]+)*")
 ENDINGS = ("", "s", "es", "'s", "’s")
 IMPLEMENTS = re.compile(r"^[ \t]*# implements: (\S+)[ \t]*$", re.MULTILINE)
@@ -74,7 +76,7 @@ class Document:
     findings: list  # the findings that parsing met
     blocks: list  # every fenced or indented code block, at any depth
     spans: list  # (line, text) of every inline code span
-    headings: list  # (line, level) of every heading at the top level
+    headings: list  # (line, level, text) of every heading at the top level
 
 
 @dataclass
@@ -131,7 +133,8 @@ def parse(path, text):
     """Parse one document into its chunks."""
     source = text.splitlines()
     chunks, findings, blocks, spans, headings, current = [], [], [], [], [], None
-    for token in MarkdownIt("commonmark").parse(text):
+    tokens = MarkdownIt("commonmark").parse(text)
+    for index, token in enumerate(tokens):
         if token.type == "inline":
             start, end = token.map
             for child in token.children:
@@ -151,7 +154,7 @@ def parse(path, text):
                                     "a formal block stands outside any rule chunk",
                                     "move it directly after the rule that it states"))
         if token.type == "heading_open":
-            headings.append((token.map[0] + 1, int(token.tag[1])))
+            headings.append((token.map[0] + 1, int(token.tag[1]), tokens[index + 1].content))
         current = None
         if token.type != "paragraph_open":
             continue
@@ -484,7 +487,7 @@ def check_general_words(documents, general):
 
 # implements: doc.overview-first
 def check_overview_first(document):
-    second = [number for number, level in document.headings if level == 2][1:2]
+    second = [number for number, level, _ in document.headings if level == 2][1:2]
     limit = second[0] if second else float("inf")
     for chunk in document.chunks:
         if chunk.line < limit:
@@ -498,7 +501,7 @@ ARGUMENT = {"RATIONALE", "DISCUSSION"}
 
 # implements: doc.argument-budget
 def check_argument_budget(document):
-    starts = [number for number, level in document.headings if 2 <= level <= 4]
+    starts = [number for number, level, _ in document.headings if 2 <= level <= 4]
     sections = {}
     for chunk in document.chunks:
         above = [number for number in starts if number < chunk.line]
@@ -539,6 +542,81 @@ def check_dotted_words(chunk):
                           "put it in a code span, such as `Q8.4`")
 
 
+# implements: doc.chapter-path
+def check_chapter_path(document):
+    name = Path(document.path).stem
+    if Path(document.path).parts[-3:] != ("book", name, name + ".md"):
+        yield Finding(document.path, 1, "chapter-path", None,
+                      f"the chapter is not at book/{name}/{name}.md", f"move it to book/{name}/{name}.md")
+
+
+# implements: doc.chapter-title
+def check_chapter_title(document):
+    titles = [number for number, level, _ in document.headings if level == 1]
+    if 1 not in titles:
+        yield Finding(document.path, 1, "chapter-title", None,
+                      "the chapter does not start with a # heading", "put its title in a # heading on line 1")
+    for number in titles:
+        if number != 1:
+            yield Finding(document.path, number, "chapter-title", None,
+                          "the chapter has a # heading after line 1",
+                          "make it a ## heading, or move its text to a chapter of its own")
+
+
+# implements: doc.heading-numbers
+def check_heading_numbers(document):
+    for number, _, text in document.headings:
+        if NUMBERED.match(text):
+            yield Finding(document.path, number, "heading-numbers", None,
+                          f"the heading {text!r} starts with a number",
+                          "remove the number, because the weave numbers the chapters and sections")
+
+
+# implements: doc.anchor-prefix
+def check_anchor_prefix(chunk):
+    name = Path(chunk.path).stem
+    if chunk.anchor is not None and ANCHOR.fullmatch(chunk.anchor) and chunk.anchor.split(".")[0] != name:
+        yield Finding(chunk.path, chunk.attribute_line, "anchor-prefix", chunk.anchor,
+                      f"the anchor does not start with {name}., the name of its chapter",
+                      f"rename it to {name}.{chunk.anchor.split('.', 1)[1]}, or move the chunk to its chapter")
+
+
+def chapter_order(documents):
+    """The chapter order of doc.chapter-order, and the sorted names of the chapters that it leaves out."""
+    chapter = {}
+    for document in documents:
+        for chunk in document.chunks:
+            if chunk.anchor is not None:
+                chapter.setdefault(chunk.anchor, Path(document.path).stem)
+    names = {Path(document.path).stem for document in documents}
+    before = {name: set() for name in names}
+    for document in documents:
+        for chunk in document.chunks:
+            for parent in parents(chunk):
+                if chapter.get(parent, Path(document.path).stem) != Path(document.path).stem:
+                    before[Path(document.path).stem].add(chapter[parent])
+    order, free = [], sorted(name for name in names if not before[name])
+    while free:
+        name = heapq.heappop(free)
+        order.append(name)
+        for other in sorted(names):
+            if name in before[other]:
+                before[other].discard(name)
+                if not before[other]:
+                    heapq.heappush(free, other)
+    return order, sorted(names - set(order))
+
+
+# implements: doc.chapters-ordered
+def check_chapters_ordered(documents):
+    left = chapter_order(documents)[1]
+    for document in documents:
+        if Path(document.path).stem in left:
+            yield Finding(document.path, 1, "chapters-ordered", None,
+                          f"the chapter order leaves out {', '.join(left)}, because their parents form a cycle "
+                          "or depend on one", "change a parent so that the parents between chapters run one way")
+
+
 def check(paths, retired, implemented=(), general=None):
     """Return every finding in the given documents.
 
@@ -556,6 +634,9 @@ def check(paths, retired, implemented=(), general=None):
         findings += check_overview_first(document)
         findings += check_argument_budget(document)
         findings += check_code_kinds(document)
+        findings += check_chapter_path(document)
+        findings += check_chapter_title(document)
+        findings += check_heading_numbers(document)
         for chunk in document.chunks:
             findings += check_labels(chunk)
             findings += check_one_shall(chunk)
@@ -566,11 +647,13 @@ def check(paths, retired, implemented=(), general=None):
             findings += check_definition_parent(chunk)
             findings += check_linter(chunk)
             findings += check_dotted_words(chunk)
+            findings += check_anchor_prefix(chunk)
     findings += check_implemented(documents, implemented)
     findings += check_references(documents, set(seen), implemented)
     findings += check_reaches_goal(documents)
     findings += check_ears(documents)
     findings += check_vocabulary(documents)
+    findings += check_chapters_ordered(documents)
     if general is not None:
         findings += check_known_words(documents, general)
         findings += check_general_words(documents, general)

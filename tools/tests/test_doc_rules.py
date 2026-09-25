@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from test_check import GENERAL, GOOD, ROOT, findings, line, run_book
+from test_check import GENERAL, GOOD, ROOT, chapter, findings, line, run_book
 
 sys.path.insert(0, str(ROOT / "tools"))
 
@@ -29,7 +29,7 @@ class ImplementedTest(unittest.TestCase):
         self.assertEqual(findings(text), [(line(text, REQUIREMENT), "implemented", "core.rotation")])
 
     def test_impl_none_is_an_exit(self):
-        text = self.without_verilog().replace("parent=design.timing}", "parent=design.timing impl=none}", 1)
+        text = self.without_verilog().replace("parent=core.timing}", "parent=core.timing impl=none}", 1)
         self.assertEqual(findings(text), [])
 
     def test_a_tool_comment_implements_it(self):
@@ -65,12 +65,12 @@ class ReferencesTest(unittest.TestCase):
         self.assertEqual(findings(text), [(line(text, "parent=core.nothing"), "references", "core.turn")])
 
     def test_a_parent_list_can_name_several_anchors(self):
-        text = GOOD.replace("{rule=core.rotation parent=design.timing}", "{rule=core.rotation parent=design.timing,core.core}")
+        text = GOOD.replace("{rule=core.rotation parent=core.timing}", "{rule=core.rotation parent=core.timing,core.core}")
         self.assertEqual(findings(text), [])
 
     def test_an_empty_parent_entry_is_a_finding(self):
-        text = GOOD.replace("{rule=core.core parent=design.timing}", "{rule=core.core parent=design.timing,}")
-        self.assertEqual(findings(text), [(line(text, "parent=design.timing,}"), "references", "core.core")])
+        text = GOOD.replace("{rule=core.core parent=core.timing}", "{rule=core.core parent=core.timing,}")
+        self.assertEqual(findings(text), [(line(text, "parent=core.timing,}"), "references", "core.core")])
 
     def test_an_implements_entry_that_names_no_anchor_is_a_finding(self):
         text = GOOD.replace("implements=core.rotation}", "implements=core.rotation,core.gone}")
@@ -78,8 +78,7 @@ class ReferencesTest(unittest.TestCase):
 
     def test_a_tool_comment_that_names_no_anchor_is_a_finding(self):
         with tempfile.TemporaryDirectory() as name:
-            path = Path(name) / "core.md"
-            path.write_text(GOOD)
+            path = chapter(name, GOOD)
             result = check.check([str(path)], set(), [("tools/x.py", 3, "doc.gone")])
         self.assertEqual([(f.path, f.line, f.check) for f in result], [("tools/x.py", 3, "references")])
 
@@ -88,7 +87,7 @@ class ReferencesTest(unittest.TestCase):
         self.assertEqual(findings(text), [(line(text, "core.rotate`"), "references", None)])
 
     def test_citations_in_headings_and_lists_count(self):
-        text = GOOD.replace("## 2. Rotation", "## 2. Rotation, `core.nothing`") + "\n- `core.gone`\n"
+        text = GOOD.replace("## Rotation", "## Rotation, `core.nothing`") + "\n- `core.gone`\n"
         self.assertEqual(findings(text), [(line(text, "core.nothing"), "references", None),
                                           (line(text, "core.gone"), "references", None)])
 
@@ -108,29 +107,28 @@ class ReachesGoalTest(unittest.TestCase):
     """doc.reaches-goal"""
 
     def test_a_rule_without_a_parent_is_a_finding(self):
-        text = GOOD.replace("{rule=core.rotation parent=design.timing}", "{rule=core.rotation}")
+        text = GOOD.replace("{rule=core.rotation parent=core.timing}", "{rule=core.rotation}")
         self.assertEqual(findings(text), [(line(text, "{rule=core.rotation}"), "reaches-goal", "core.rotation")])
 
     def test_a_cycle_is_a_finding_on_each_chunk_in_it(self):
-        text = GOOD.replace("{rule=core.core parent=design.timing}", "{rule=core.core parent=core.turn}")
+        text = GOOD.replace("{rule=core.core parent=core.timing}", "{rule=core.core parent=core.turn}")
         self.assertEqual(findings(text), [(line(text, "{rule=core.turn"), "reaches-goal", "core.turn"),
                                           (line(text, "{rule=core.core"), "reaches-goal", "core.core")])
 
     def test_the_message_names_the_fault(self):
-        cycle = GOOD.replace("{rule=core.core parent=design.timing}", "{rule=core.core parent=core.turn}")
+        cycle = GOOD.replace("{rule=core.core parent=core.timing}", "{rule=core.core parent=core.turn}")
         self.assertEqual(self.messages(cycle), ["the chunk reaches itself through its parents"] * 2)
-        short = GOOD.replace("{rule=core.core parent=design.timing}", "{rule=core.core}")
+        short = GOOD.replace("{rule=core.core parent=core.timing}", "{rule=core.core}")
         self.assertEqual(self.messages(short), ["the chunk reaches no GOAL through its parents",
                                                 "the chunk has no parent"])
 
     def messages(self, text):
         with tempfile.TemporaryDirectory() as name:
-            path = Path(name) / "core.md"
-            path.write_text(text)
+            path = chapter(name, text)
             return [f.message for f in check.check([str(path)], set()) if f.check == "reaches-goal"]
 
     def test_a_chain_that_stops_short_of_a_goal_is_a_finding(self):
-        text = GOOD.replace("{rule=core.core parent=design.timing}", "{rule=core.core parent=core.orphan}")
+        text = GOOD.replace("{rule=core.core parent=core.timing}", "{rule=core.core parent=core.orphan}")
         text = text.replace("**Thread.**", "**DEFINITION.** An **orphan** has no parent.\n{rule=core.orphan}\n\n**Thread.**")
         self.assertEqual(findings(text), [(line(text, "{rule=core.turn"), "reaches-goal", "core.turn"),
                                           (line(text, "{rule=core.core"), "reaches-goal", "core.core"),
@@ -141,12 +139,12 @@ class ReachesGoalTest(unittest.TestCase):
         self.assertEqual(findings(text), [(line(text, "{rule=core.why}"), "reaches-goal", "core.why")])
 
     def test_a_goal_can_serve_another_goal(self):
-        text = GOOD.replace("{rule=core.core parent=design.timing}", "{rule=core.core parent=design.sub}")
-        text += "\n**GOAL.** Threads stay apart.\n{rule=design.sub parent=design.timing}\n"
+        text = GOOD.replace("{rule=core.core parent=core.timing}", "{rule=core.core parent=core.sub}")
+        text += "\n**GOAL.** Threads stay apart.\n{rule=core.sub parent=core.timing}\n"
         self.assertEqual(findings(text), [])
 
     def test_a_chain_that_meets_an_unknown_anchor_is_left_to_references(self):
-        text = GOOD.replace("{rule=core.core parent=design.timing}", "{rule=core.core parent=core.nothing}")
+        text = GOOD.replace("{rule=core.core parent=core.timing}", "{rule=core.core parent=core.nothing}")
         self.assertEqual(findings(text), [(line(text, "{rule=core.core"), "references", "core.core")])
 
 
@@ -154,11 +152,11 @@ class DefinitionParentTest(unittest.TestCase):
     """doc.definition-parent"""
 
     def test_a_definition_with_two_parents_is_a_finding(self):
-        text = GOOD.replace("{rule=core.turn parent=core.core}", "{rule=core.turn parent=core.core,design.timing}")
+        text = GOOD.replace("{rule=core.turn parent=core.core}", "{rule=core.turn parent=core.core,core.timing}")
         self.assertEqual(findings(text), [(line(text, "{rule=core.turn"), "definition-parent", "core.turn")])
 
     def test_a_requirement_can_have_two_parents(self):
-        text = GOOD.replace("{rule=core.rotation parent=design.timing}", "{rule=core.rotation parent=design.timing,core.core}")
+        text = GOOD.replace("{rule=core.rotation parent=core.timing}", "{rule=core.rotation parent=core.timing,core.core}")
         self.assertEqual(findings(text), [])
 
 
@@ -166,14 +164,14 @@ class CrowdedTest(unittest.TestCase):
     """The count of rules with more than two parents, which is not a finding."""
 
     def test_a_rule_with_three_parents_is_counted_but_passes(self):
-        text = GOOD.replace("{rule=core.rotation parent=design.timing}",
-                            "{rule=core.rotation parent=design.timing,core.core,core.turn}")
+        text = GOOD.replace("{rule=core.rotation parent=core.timing}",
+                            "{rule=core.rotation parent=core.timing,core.core,core.turn}")
         result = run_book(text)
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertEqual(result.stdout, "check: 1 documents, 0 findings, 1 rules with more than 2 parents\n")
 
     def test_two_parents_are_not_counted(self):
-        text = GOOD.replace("{rule=core.rotation parent=design.timing}", "{rule=core.rotation parent=design.timing,core.core}")
+        text = GOOD.replace("{rule=core.rotation parent=core.timing}", "{rule=core.rotation parent=core.timing,core.core}")
         self.assertIn(", 0 rules with more than 2 parents", run_book(text).stdout)
 
 
@@ -212,8 +210,7 @@ class EarsTest(unittest.TestCase):
 
     def test_a_clause_without_its_comma_is_a_form_finding_not_an_actor_finding(self):
         with tempfile.TemporaryDirectory() as name:
-            path = Path(name) / "core.md"
-            path.write_text(with_requirement("When a thread waits the core shall wait."))
+            path = chapter(name, with_requirement("When a thread waits the core shall wait."))
             messages = [f.message for f in check.check([str(path)], set()) if f.check == "ears"]
         self.assertEqual(messages, ["the sentence does not have the EARS form"])
 
@@ -262,7 +259,7 @@ class LinterTest(unittest.TestCase):
 
     def test_a_semicolon_in_a_goal_is_a_finding_on_its_line(self):
         text = GOOD.replace("the timing of another thread.", "the timing of another thread; it is fixed.")
-        self.assertEqual(findings(text), [(line(text, "thread; it"), "linter", "design.timing")])
+        self.assertEqual(findings(text), [(line(text, "thread; it"), "linter", "core.timing")])
 
     def test_a_chunk_that_is_not_a_rule_or_a_goal_is_not_linted(self):
         text = GOOD.replace("eight cycles apart.", "eight cycles apart; so it is.")
@@ -276,7 +273,7 @@ class LinterTest(unittest.TestCase):
 class VocabularyTest(unittest.TestCase):
     """doc.vocabulary"""
 
-    NEVER = GOOD.replace("{rule=core.core parent=design.timing}", "{rule=core.core parent=design.timing never=cpu,slot}")
+    NEVER = GOOD.replace("{rule=core.core parent=core.timing}", "{rule=core.core parent=core.timing never=cpu,slot}")
 
     def test_a_definition_with_never_words_passes(self):
         self.assertEqual(findings(self.NEVER), [])
@@ -287,7 +284,7 @@ class VocabularyTest(unittest.TestCase):
 
     def test_a_never_word_in_a_goal_is_a_finding(self):
         text = self.NEVER.replace("the timing of another", "the CPU timing of another")
-        self.assertEqual(findings(text), [(line(text, "CPU timing"), "vocabulary", "design.timing")])
+        self.assertEqual(findings(text), [(line(text, "CPU timing"), "vocabulary", "core.timing")])
 
     def test_only_whole_words_count(self):
         text = self.NEVER.replace("A **turn** is a thread's cycle", "A **turn** is a thread's slotted cycle")
@@ -299,12 +296,12 @@ class VocabularyTest(unittest.TestCase):
         self.assertEqual(findings(text), [])
 
     def test_never_on_a_chunk_that_is_not_a_definition_is_a_finding(self):
-        text = GOOD.replace("{rule=core.rotation parent=design.timing}", "{rule=core.rotation parent=design.timing never=cpu}")
+        text = GOOD.replace("{rule=core.rotation parent=core.timing}", "{rule=core.rotation parent=core.timing never=cpu}")
         self.assertEqual(findings(text), [(line(text, "never=cpu"), "never-on-definition", "core.rotation")])
 
     def test_never_on_a_goal_is_a_finding(self):
-        text = GOOD.replace("{rule=design.timing}", "{rule=design.timing never=cpu}")
-        self.assertEqual(findings(text), [(line(text, "never=cpu"), "never-on-definition", "design.timing")])
+        text = GOOD.replace("{rule=core.timing}", "{rule=core.timing never=cpu}")
+        self.assertEqual(findings(text), [(line(text, "never=cpu"), "never-on-definition", "core.timing")])
 
 
 class OverviewFirstTest(unittest.TestCase):
@@ -320,7 +317,7 @@ class OverviewFirstTest(unittest.TestCase):
         self.assertEqual(findings(text), [(line(text, "the title is not settled"), "overview-first", None)])
 
     def test_a_level_three_heading_does_not_end_the_overview(self):
-        text = GOOD.replace("## 2. Rotation", "### 2. Rotation")
+        text = GOOD.replace("## Rotation", "### Rotation")
         expected = [(line(text, needle), "overview-first", anchor) for needle, anchor in [
             ("**REQUIREMENT.**", "core.rotation"), ("**RATIONALE.**", None), ("**OPEN", None),
             ("A **turn**", "core.turn"), ("The **core**", "core.core")]]
@@ -354,7 +351,7 @@ class ArgumentBudgetTest(unittest.TestCase):
         self.assertEqual(findings(GOOD.replace("A thread's instructions are eight cycles apart.", words(40))), [])
 
     def test_a_level_three_heading_starts_a_new_section(self):
-        text = GOOD.replace(self.THREAD, self.THREAD + "\n\n### 2.1 More\n\n**DISCUSSION.** Another view.")
+        text = GOOD.replace(self.THREAD, self.THREAD + "\n\n### More\n\n**DISCUSSION.** Another view.")
         self.assertEqual(findings(text), [])
 
     def test_a_level_five_heading_does_not_start_a_section(self):
@@ -370,7 +367,7 @@ class ArgumentBudgetTest(unittest.TestCase):
         self.assertEqual(findings(text), [(line(text, "word word"), "argument-budget", None)])
 
     def test_a_section_without_a_rule_or_a_goal_has_no_budget(self):
-        text = GOOD + "\n## 4. Notes\n\n**DISCUSSION.** One.\n\n**DISCUSSION.** " + words(50) + "\n"
+        text = GOOD + "\n## Notes\n\n**DISCUSSION.** One.\n\n**DISCUSSION.** " + words(50) + "\n"
         self.assertEqual(findings(text), [])
 
 
@@ -433,12 +430,12 @@ class AttributeKeysTest(unittest.TestCase):
         self.assertEqual(findings(text), [(line(text, "colour=red"), "attribute-keys", "core.turn")])
 
     def test_each_unknown_key_is_a_finding(self):
-        text = GOOD.replace("{rule=design.timing}", "{rule=design.timing parnet=core.core size=2}")
-        self.assertEqual(findings(text), [(line(text, "parnet="), "attribute-keys", "design.timing")] * 2)
+        text = GOOD.replace("{rule=core.timing}", "{rule=core.timing parnet=core.core size=2}")
+        self.assertEqual(findings(text), [(line(text, "parnet="), "attribute-keys", "core.timing")] * 2)
 
     def test_the_four_keys_pass(self):
         text = GOOD.replace("{rule=core.turn parent=core.core}", "{rule=core.turn parent=core.core never=slot}").replace(
-            "{rule=core.rotation parent=design.timing}", "{rule=core.rotation parent=design.timing impl=none}")
+            "{rule=core.rotation parent=core.timing}", "{rule=core.rotation parent=core.timing impl=none}")
         self.assertEqual(findings(text), [])
 
 
@@ -454,7 +451,7 @@ class KnownWordsTest(unittest.TestCase):
         self.assertEqual(findings(GOOD, general=GENERAL), [])
 
     def test_an_unknown_word_in_a_goal_or_a_rule_is_a_finding_on_its_line(self):
-        for word, needle, anchor in [("timing", "the timing of", "design.timing"),
+        for word, needle, anchor in [("timing", "the timing of", "core.timing"),
                                      ("give", "shall give", "core.rotation"),
                                      ("cycle", "A **turn**", "core.turn"),
                                      ("runs", "The **core**", "core.core")]:
@@ -464,7 +461,7 @@ class KnownWordsTest(unittest.TestCase):
 
     def test_each_unknown_word_is_a_finding(self):
         text = GOOD.replace("the timing of", "the zyx timing wvu of")
-        self.assertEqual(self.known(text), [(line(text, "zyx"), "known-words", "design.timing")] * 2)
+        self.assertEqual(self.known(text), [(line(text, "zyx"), "known-words", "core.timing")] * 2)
 
     def test_the_finding_is_on_the_line_of_the_word(self):
         self.assertEqual(self.known(GOOD, GENERAL - {"t"}),
@@ -474,7 +471,7 @@ class KnownWordsTest(unittest.TestCase):
         for old, new in [("eight cycles apart.", "eight zyx cycles apart."),
                          ("the thread count is", "the zyx thread count is"),
                          ("is prose.", "is zyx prose."),
-                         ("## 2. Rotation", "## 2. Zyx")]:
+                         ("## Rotation", "## Zyx")]:
             with self.subTest(new=new):
                 self.assertEqual(self.known(GOOD.replace(old, new)), [])
 
@@ -502,7 +499,7 @@ class KnownWordsTest(unittest.TestCase):
         for word in ["timingly", "cored", "turner", "thready"]:
             with self.subTest(word=word):
                 text = GOOD.replace("the timing of", f"the {word} of")
-                self.assertEqual(self.known(text), [(line(text, word), "known-words", "design.timing")])
+                self.assertEqual(self.known(text), [(line(text, word), "known-words", "core.timing")])
 
     def test_a_word_of_a_defined_term_is_known_only_inside_the_whole_term(self):
         for sentence, unknown in [("The core shall give the time slot to thread `t`.", []),
@@ -555,6 +552,136 @@ class GeneralWordsTest(unittest.TestCase):
 
     def test_a_word_that_only_starts_like_a_defined_term_passes(self):
         self.assertEqual(self.general(GOOD, {"turner", "cored", "turnstile"}), [])
+
+
+def book(chapters, check_name=None):
+    """The findings on a book of {path under book/: text}, as (path under book/, line, check, anchor)."""
+    with tempfile.TemporaryDirectory() as name:
+        root = Path(name) / "book"
+        for relative, text in chapters.items():
+            (root / relative).parent.mkdir(parents=True, exist_ok=True)
+            (root / relative).write_text(text)
+        result = check.check([str(root / relative) for relative in chapters], set())
+        return [(str(Path(f.path).relative_to(root)), f.line, f.check, f.anchor) for f in result
+                if check_name in (None, f.check)]
+
+
+def order(chapters):
+    """chapter_order on a book of {path under book/: text}."""
+    with tempfile.TemporaryDirectory() as name:
+        root = Path(name) / "book"
+        for relative, text in chapters.items():
+            (root / relative).parent.mkdir(parents=True, exist_ok=True)
+            (root / relative).write_text(text)
+        return check.chapter_order(check.read([str(root / relative) for relative in chapters]))
+
+
+class ChapterPathTest(unittest.TestCase):
+    """doc.chapter and doc.chapter-path"""
+
+    def test_a_chapter_at_book_name_name_md_passes(self):
+        self.assertEqual(book({"core/core.md": GOOD}), [])
+
+    def test_a_chapter_at_another_path_is_a_finding_on_line_1(self):
+        for relative in ["core/x.md", "x.md", "core/sub/sub.md"]:
+            with self.subTest(relative=relative):
+                self.assertEqual(book({relative: GOOD}, "chapter-path"), [(relative, 1, "chapter-path", None)])
+
+
+class ChapterTitleTest(unittest.TestCase):
+    """doc.chapter-title"""
+
+    def test_a_chapter_without_a_title_is_a_finding_on_line_1(self):
+        text = GOOD.replace("# Core\n\n", "")
+        self.assertEqual(only("chapter-title", text), [(1, "chapter-title", None)])
+
+    def test_a_second_title_is_a_finding_on_its_line(self):
+        text = GOOD + "\n# More\n"
+        self.assertEqual(only("chapter-title", text), [(line(text, "# More"), "chapter-title", None)])
+
+    def test_a_title_after_line_1_is_a_finding_on_line_1_and_on_its_line(self):
+        text = "Intro.\n\n" + GOOD
+        self.assertEqual(only("chapter-title", text),
+                         [(1, "chapter-title", None), (line(text, "# Core"), "chapter-title", None)])
+
+    def test_a_setext_title_counts(self):
+        text = GOOD.replace("# Core\n", "Core\n====\n")
+        self.assertEqual(only("chapter-title", text), [])
+        self.assertEqual(only("chapter-title", text + "\nMore\n====\n"),
+                         [(line(text + "\nMore\n====\n", "More"), "chapter-title", None)])
+
+
+class HeadingNumbersTest(unittest.TestCase):
+    """doc.heading-numbers"""
+
+    def test_a_numbered_heading_is_a_finding_on_its_line(self):
+        for old, new in [("## Rotation", "## 2. Rotation"), ("## Rotation", "### 4.2 Legs"),
+                         ("# Core", "# 1 Core"), ("## Goals", "## 3.")]:
+            with self.subTest(new=new):
+                text = GOOD.replace(old, new)
+                self.assertEqual(only("heading-numbers", text), [(line(text, new), "heading-numbers", None)])
+
+    def test_a_heading_that_starts_with_a_word_or_a_compound_passes(self):
+        for new in ["## Rotation 2", "## 64-bit counters", "## v2 rotation"]:
+            with self.subTest(new=new):
+                self.assertEqual(only("heading-numbers", GOOD.replace("## Rotation", new)), [])
+
+    def test_a_number_in_a_code_block_is_not_a_heading(self):
+        text = GOOD + "\n``` {.check}\n## 9. Not\n```\n"
+        self.assertEqual(only("heading-numbers", text), [])
+
+
+class AnchorPrefixTest(unittest.TestCase):
+    """doc.anchor-prefix"""
+
+    def test_an_anchor_of_another_chapter_is_a_finding_on_the_attribute_line(self):
+        text = GOOD.replace("rule=core.turn", "rule=bank.turn")
+        self.assertEqual(findings(text), [(line(text, "rule=bank.turn"), "anchor-prefix", "bank.turn")])
+
+    def test_a_goal_is_covered(self):
+        text = GOOD.replace("{rule=core.timing}", "{rule=design.timing}")
+        self.assertEqual(only("anchor-prefix", text), [(line(text, "rule=design.timing"), "anchor-prefix", "design.timing")])
+
+    def test_the_prefix_is_the_file_name(self):
+        self.assertEqual(book({"core/core.md": GOOD.replace("rule=core.turn", "rule=cor.turn")}, "anchor-prefix"),
+                         [("core/core.md", line(GOOD, "rule=core.turn"), "anchor-prefix", "cor.turn")])
+        self.assertEqual(book({"x/core.md": GOOD}, "anchor-prefix"), [])
+
+
+DESIGN = ("# Design\n\n## Overview\n\nText.\n\n## Goals\n\n"
+          "**GOAL.** No thread can change the timing of another thread.\n{rule=design.timing}\n")
+CORE = GOOD.replace("parent=core.timing}", "parent=design.timing}")
+EMPTY = "# {}\n\n## Overview\n\nText.\n"
+
+
+class ChapterOrderTest(unittest.TestCase):
+    """doc.chapter-order and doc.chapters-ordered"""
+
+    def test_a_chapter_comes_after_the_chapters_of_its_parents(self):
+        chapters = {"core/core.md": CORE, "design/design.md": DESIGN}
+        self.assertEqual(order(chapters), (["design", "core"], []))
+        self.assertEqual(book(chapters), [])
+
+    def test_ties_go_in_alphabetical_order(self):
+        self.assertEqual(order({"b/b.md": EMPTY.format("B"), "a/a.md": EMPTY.format("A")}), (["a", "b"], []))
+
+    def test_the_first_free_name_goes_next(self):
+        chapters = {"doc/doc.md": EMPTY.format("Doc"), "core/core.md": CORE, "design/design.md": DESIGN}
+        self.assertEqual(order(chapters), (["design", "core", "doc"], []))
+
+    def test_a_parent_in_the_same_chapter_adds_no_edge(self):
+        self.assertEqual(order({"core/core.md": GOOD}), (["core"], []))
+
+    def test_a_cycle_of_chapters_is_a_finding_on_line_1_of_each(self):
+        cycle = DESIGN + "\n**DEFINITION.** A **zyx** is a thing.\n{rule=design.zyx parent=core.core}\n"
+        chapters = {"core/core.md": CORE, "design/design.md": cycle, "a/a.md": EMPTY.format("A")}
+        self.assertEqual(order(chapters), (["a"], ["core", "design"]))
+        self.assertEqual(book(chapters, "chapters-ordered"),
+                         [("core/core.md", 1, "chapters-ordered", None), ("design/design.md", 1, "chapters-ordered", None)])
+
+    def test_an_unknown_parent_adds_no_edge(self):
+        text = CORE.replace("{rule=core.turn parent=core.core}", "{rule=core.turn parent=gone.x}")
+        self.assertEqual(order({"core/core.md": text, "design/design.md": DESIGN}), (["design", "core"], []))
 
 
 if __name__ == "__main__":
