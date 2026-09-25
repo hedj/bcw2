@@ -264,5 +264,31 @@ class LinterTest(unittest.TestCase):
         self.assertEqual(findings(text), [])
 
 
+class VocabularyTest(unittest.TestCase):
+    """doc.vocabulary"""
+
+    NEVER = GOOD.replace("{rule=core.core parent=design.timing}", "{rule=core.core parent=design.timing never=cpu,slot}")
+
+    def test_a_definition_with_never_words_passes(self):
+        self.assertEqual(findings(self.NEVER), [])
+
+    def test_a_never_word_in_a_rule_is_a_finding_in_any_case(self):
+        text = self.NEVER.replace("A **turn** is a thread's cycle", "A **turn** is a thread's CPU cycle")
+        self.assertEqual(findings(text), [(line(text, "CPU cycle"), "vocabulary", "core.turn")])
+
+    def test_only_whole_words_count(self):
+        text = self.NEVER.replace("A **turn** is a thread's cycle", "A **turn** is a thread's slotted cycle")
+        self.assertEqual(findings(text), [])
+
+    def test_a_never_word_outside_a_rule_or_in_a_code_span_passes(self):
+        text = self.NEVER.replace("eight cycles apart.", "eight cycles apart, not a slot.").replace(
+            "in the rotation.", "in the rotation, not a `slot`.")
+        self.assertEqual(findings(text), [])
+
+    def test_never_on_a_chunk_that_is_not_a_definition_is_a_finding(self):
+        text = GOOD.replace("{rule=core.rotation parent=design.timing}", "{rule=core.rotation parent=design.timing never=cpu}")
+        self.assertEqual(findings(text), [(line(text, "**REQUIREMENT.**"), "anchors", "core.rotation")])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -32,7 +32,7 @@ import ste_lint
 LABELS = {"GOAL", "REQUIREMENT", "PARAMETER", "DEFINITION", "RATIONALE", "DISCUSSION", "TARGET", "OPEN"}
 RULES = {"REQUIREMENT", "PARAMETER", "DEFINITION"}
 ANCHORED = RULES | {"GOAL"}
-ATTRIBUTE_KEYS = {"rule", "parent", "impl"}
+ATTRIBUTE_KEYS = {"rule", "parent", "impl", "never"}
 LABEL = re.compile(r"\*\*([A-Z][A-Z]+)(?: — [^*]+?)?\.\*\*")
 ATTRIBUTES = re.compile(r"\{([^{}]*)\}\s*")
 ANCHOR = re.compile(r"[a-z][a-z0-9-]*(\.[a-z0-9-]+)+")
@@ -200,6 +200,9 @@ def check_anchor(chunk, seen, retired):
             yield Finding(chunk.path, chunk.line, "anchors", chunk.anchor,
                           f"unknown attribute {key}",
                           "use only " + ", ".join(sorted(ATTRIBUTE_KEYS)))
+    if "never" in chunk.attrs and chunk.label != "DEFINITION":
+        yield Finding(chunk.path, chunk.line, "anchors", chunk.anchor,
+                      "only a DEFINITION can carry never=", "move never= to the DEFINITION of the term")
     anchor = chunk.anchor
     if chunk.label in ANCHORED and anchor is None:
         yield Finding(chunk.path, chunk.line, "anchors", None,
@@ -394,6 +397,24 @@ def check_linter(chunk):
                           f"{finding['rule']} [{finding['match']}]", finding["message"])
 
 
+# implements: doc.vocabulary
+def check_vocabulary(documents):
+    never = {word.lower(): chunk.anchor for document in documents for chunk in document.chunks
+             if chunk.label == "DEFINITION" for word in chunk.attrs.get("never", "").split(",") if word}
+    if not never:
+        return
+    pattern = re.compile(r"\b(" + "|".join(map(re.escape, sorted(never))) + r")\b", re.IGNORECASE)
+    for document in documents:
+        for chunk in document.chunks:
+            if chunk.label not in RULES:
+                continue
+            for offset, text in enumerate(chunk.lines):
+                for match in pattern.finditer(CODE_SPAN.sub("", text)):
+                    yield Finding(chunk.path, chunk.line + offset, "vocabulary", chunk.anchor,
+                                  f"{match.group(0)!r} is a never-word of {never[match.group(0).lower()]}",
+                                  f"use the term that {never[match.group(0).lower()]} defines")
+
+
 def check(paths, retired, implemented=()):
     """Return every finding in the given documents.
 
@@ -416,6 +437,7 @@ def check(paths, retired, implemented=()):
     findings += check_references(documents, set(seen), implemented)
     findings += check_reaches_goal(documents)
     findings += check_ears(documents)
+    findings += check_vocabulary(documents)
     return sorted(findings, key=lambda f: (f.path, f.line, f.check))
 
 

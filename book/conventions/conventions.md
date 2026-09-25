@@ -136,6 +136,8 @@ sentence, it can follow The, A, An, Each, Every or No.
 `tools/ste_lint.py`.
 {rule=doc.linter parent=doc.one-reading,doc.one-engineer}
 
-**RATIONALE.** EARS gives each REQUIREMENT one of a few fixed forms, and a defined actor names
-who acts. A reader then finds one meaning in each rule. The linter keeps each rule short and
-plain.
+**REQUIREMENT.** No rule shall hold a word from the `never=` list of a DEFINITION.
+{rule=doc.vocabulary parent=doc.one-reading}
+
+**RATIONALE.** EARS gives each REQUIREMENT a fixed form, and a defined actor names who acts.
+The linter keeps each rule short and plain. A `never=` list keeps one word for each meaning.
