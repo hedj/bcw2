@@ -10,7 +10,11 @@ and exits 1 if it found anything.
 
 A chunk is a top-level paragraph that starts with a bold label, such as
 **REQUIREMENT.** or **OPEN — title.**, with the fenced blocks that follow it
-directly. The last line of the paragraph can be an attribute line, such as
+directly. The labels are GOAL, REQUIREMENT, PARAMETER, DEFINITION, RATIONALE,
+DISCUSSION, TARGET and OPEN. A GOAL and a rule (REQUIREMENT, PARAMETER or
+DEFINITION) need an anchor. Only a rule can have a formal twin.
+
+The last line of the paragraph can be an attribute line, such as
 {rule=core.rotation parent=prop.x}. A fenced block carries pandoc-style
 attributes, such as {.python .formal file=... stamp=...}.
 """
@@ -23,8 +27,9 @@ from pathlib import Path
 
 from markdown_it import MarkdownIt
 
-LABELS = {"REQUIREMENT", "PARAMETER", "DEFINITION", "RATIONALE", "DISCUSSION", "TARGET", "OPEN"}
+LABELS = {"GOAL", "REQUIREMENT", "PARAMETER", "DEFINITION", "RATIONALE", "DISCUSSION", "TARGET", "OPEN"}
 RULES = {"REQUIREMENT", "PARAMETER", "DEFINITION"}
+ANCHORED = RULES | {"GOAL"}
 ATTRIBUTE_KEYS = {"rule", "parent", "impl"}
 LABEL = re.compile(r"\*\*([A-Z][A-Z]+)(?: — [^*]+?)?\.\*\*")
 ATTRIBUTES = re.compile(r"\{([^{}]*)\}\s*")
@@ -157,7 +162,7 @@ def check_anchor(chunk, seen, retired):
                           f"unknown attribute {key}",
                           "use only " + ", ".join(sorted(ATTRIBUTE_KEYS)))
     anchor = chunk.anchor
-    if chunk.label in RULES and anchor is None:
+    if chunk.label in ANCHORED and anchor is None:
         yield Finding(chunk.path, chunk.line, "anchors", None,
                       f"the {chunk.label} has no anchor",
                       "end the paragraph with an attribute line such as {rule=core.name}")

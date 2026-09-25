@@ -35,6 +35,9 @@ def core_rotate(turn):
 {{rule=core.turn}}
 
 **Thread.** An unlabelled bold paragraph is prose.
+
+**GOAL.** Every rule has one meaning.
+{{rule=doc.one-reading}}
 """
 
 
@@ -100,6 +103,19 @@ class AnchorsTest(unittest.TestCase):
         self.assertIn(f"{first}:16", result[0].message)
 
 
+class GoalTest(unittest.TestCase):
+    def test_a_goal_needs_no_shall(self):
+        self.assertNotIn((21, "labels", "doc.one-reading"), findings(GOOD))
+
+    def test_a_goal_without_an_anchor_is_a_finding(self):
+        text = GOOD.replace("{rule=doc.one-reading}\n", "")
+        self.assertEqual(findings(text), [(21, "anchors", None)])
+
+    def test_a_formal_block_after_a_goal_is_a_finding(self):
+        text = GOOD + "\n``` {.python .formal}\nx\n```\n"
+        self.assertEqual(findings(text), [(24, "stamps", "doc.one-reading")])
+
+
 class StampsTest(unittest.TestCase):
     def test_a_stale_stamp_is_a_finding_that_gives_the_new_stamp(self):
         text = GOOD.replace("fixed\nand unconditional", "fixed\nand constant")
@@ -122,7 +138,7 @@ class StampsTest(unittest.TestCase):
 
     def test_a_formal_block_outside_any_chunk_is_a_finding(self):
         text = GOOD + "\nSome prose.\n\n``` {.python .formal}\nx\n```\n"
-        self.assertEqual(findings(text)[-1], (23, "stamps", None))
+        self.assertEqual(findings(text)[-1], (26, "stamps", None))
 
     def _check(self, text):
         with tempfile.TemporaryDirectory() as name:
