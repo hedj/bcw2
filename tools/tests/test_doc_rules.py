@@ -371,5 +371,27 @@ class CodeKindsTest(unittest.TestCase):
         self.assertEqual(findings(self.with_block("``` {.check}\nx = 1\n```\n")), [])
 
 
+class NoAbbreviationsTest(unittest.TestCase):
+    """doc.no-abbreviations"""
+
+    def test_an_abbreviation_in_a_requirement_is_a_finding_on_its_line(self):
+        for abbreviation in ["e.g.", "i.e.", "a.k.a.", "etc.", "Etc.", "vs.", "cf.", "approx.", "incl.", "esp.", "resp."]:
+            with self.subTest(abbreviation=abbreviation):
+                text = with_requirement(f"The core shall give\nthe turn, {abbreviation} to each thread.")
+                self.assertEqual(only("no-abbreviations", text),
+                                 [(line(text, abbreviation), "no-abbreviations", "core.rotation")])
+
+    def test_an_ordinary_word_at_the_end_of_a_sentence_passes(self):
+        for sentence in ["The core shall give the turn to each thread, the next one etch.",
+                         "The core shall give the turn to the TVs."]:
+            with self.subTest(sentence=sentence):
+                self.assertEqual(only("no-abbreviations", with_requirement(sentence)), [])
+
+    def test_an_abbreviation_outside_a_requirement_or_in_a_code_span_passes(self):
+        text = GOOD.replace("eight cycles apart.", "eight cycles apart, e.g. thread 1.").replace(
+            "*t* + 1.", "*t* + 1, as `e.g.` shows.")
+        self.assertEqual(only("no-abbreviations", text), [])
+
+
 if __name__ == "__main__":
     unittest.main()

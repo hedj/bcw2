@@ -46,6 +46,7 @@ EARS = re.compile(r"(?:[Ww]here [^,]+, )?(?:[Ww]hile [^,]+, )?(?:[Ww]hen [^,]+, 
                   r"(?P<actor>(?!(?:[Ww]here|[Ww]hile|[Ww]hen|[Ii]f) )[^,]+?) shall (?P<response>.+)\.")
 DETERMINER = re.compile(r"^(?:the|a|an|each|every|no)\s+", re.IGNORECASE)
 BOLD = re.compile(r"\*\*(.+?)\*\*")
+ABBREVIATION = re.compile(r"\b(?:[A-Za-z]\.){2,}|\b(?:etc|vs|cf|approx|incl|esp|resp)\.", re.IGNORECASE)
 SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
 IMPLEMENTS = re.compile(r"^[ \t]*# implements: (\S+)[ \t]*$", re.MULTILINE)
 
@@ -468,6 +469,17 @@ def check_code_kinds(document):
                           "give it file=, or the class .formal or .check")
 
 
+# implements: doc.no-abbreviations
+def check_no_abbreviations(chunk):
+    if chunk.label != "REQUIREMENT":
+        return
+    for offset, text in enumerate(chunk.lines):
+        for match in ABBREVIATION.finditer(CODE_SPAN.sub("", text)):
+            yield Finding(chunk.path, chunk.line + offset, "no-abbreviations", chunk.anchor,
+                          f"the REQUIREMENT holds the abbreviation {match.group(0)!r}",
+                          "write the words out in full")
+
+
 def check(paths, retired, implemented=()):
     """Return every finding in the given documents.
 
@@ -489,6 +501,7 @@ def check(paths, retired, implemented=()):
             findings += check_stamps(chunk)
             findings += check_definition_parent(chunk)
             findings += check_linter(chunk)
+            findings += check_no_abbreviations(chunk)
     findings += check_implemented(documents, implemented)
     findings += check_references(documents, set(seen), implemented)
     findings += check_reaches_goal(documents)
