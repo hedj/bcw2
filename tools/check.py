@@ -494,7 +494,7 @@ def check_argument_budget(document):
         if above:
             sections.setdefault(above[-1], []).append(chunk)
     for chunks in sections.values():
-        if not any(chunk.label in RULES for chunk in chunks):
+        if not any(chunk.label in ANCHORED for chunk in chunks):
             continue
         arguments = [chunk for chunk in chunks if chunk.label in ARGUMENT]
         for chunk in arguments[1:]:

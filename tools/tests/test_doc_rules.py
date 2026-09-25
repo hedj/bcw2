@@ -356,7 +356,15 @@ class ArgumentBudgetTest(unittest.TestCase):
         text = GOOD.replace(self.THREAD, self.THREAD + "\n\n##### More\n\n**DISCUSSION.** Another view.")
         self.assertEqual(findings(text), [(line(text, "Another view"), "argument-budget", None)])
 
-    def test_a_section_without_a_rule_has_no_budget(self):
+    def test_a_second_argument_block_in_a_section_with_a_goal_is_a_finding(self):
+        text = GOOD + "\n**DISCUSSION.** One.\n\n**DISCUSSION.** Two.\n"
+        self.assertEqual(findings(text), [(line(text, "Two."), "argument-budget", None)])
+
+    def test_an_argument_block_of_41_words_in_a_section_with_a_goal_is_a_finding(self):
+        text = GOOD + "\n**RATIONALE.** " + words(41) + "\n"
+        self.assertEqual(findings(text), [(line(text, "word word"), "argument-budget", None)])
+
+    def test_a_section_without_a_rule_or_a_goal_has_no_budget(self):
         text = GOOD + "\n## 4. Notes\n\n**DISCUSSION.** One.\n\n**DISCUSSION.** " + words(50) + "\n"
         self.assertEqual(findings(text), [])
 

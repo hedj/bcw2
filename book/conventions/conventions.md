@@ -194,8 +194,8 @@ full stop from splitting a sentence.
 heading of those levels.
 {rule=doc.section parent=doc.one-engineer}
 
-**REQUIREMENT.** Where a section holds a rule, the section shall hold at most one RATIONALE or
-DISCUSSION, of 40 words or fewer.
+**REQUIREMENT.** Where a section holds a rule or a GOAL, the section shall hold at most one
+RATIONALE or DISCUSSION, of 40 words or fewer.
 {rule=doc.argument-budget parent=doc.one-engineer,doc.rules-apart}
 
 **DEFINITION.** A **code block** is a fenced or indented block of code in a chapter.
