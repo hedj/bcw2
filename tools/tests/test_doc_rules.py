@@ -255,7 +255,11 @@ class LinterTest(unittest.TestCase):
         text = GOOD.replace("The **core** runs the threads in turn.", "The **core** is built from threads.")
         self.assertEqual(findings(text), [])
 
-    def test_a_chunk_that_is_not_a_rule_is_not_linted(self):
+    def test_a_semicolon_in_a_goal_is_a_finding_on_its_line(self):
+        text = GOOD.replace("the timing of another thread.", "the timing of another thread; it is fixed.")
+        self.assertEqual(findings(text), [(line(text, "thread; it"), "linter", "design.timing")])
+
+    def test_a_chunk_that_is_not_a_rule_or_a_goal_is_not_linted(self):
         text = GOOD.replace("eight cycles apart.", "eight cycles apart; so it is.")
         self.assertEqual(findings(text), [])
 
@@ -275,6 +279,10 @@ class VocabularyTest(unittest.TestCase):
     def test_a_never_word_in_a_rule_is_a_finding_in_any_case(self):
         text = self.NEVER.replace("A **turn** is a thread's cycle", "A **turn** is a thread's CPU cycle")
         self.assertEqual(findings(text), [(line(text, "CPU cycle"), "vocabulary", "core.turn")])
+
+    def test_a_never_word_in_a_goal_is_a_finding(self):
+        text = self.NEVER.replace("the timing of another", "the CPU timing of another")
+        self.assertEqual(findings(text), [(line(text, "CPU timing"), "vocabulary", "design.timing")])
 
     def test_only_whole_words_count(self):
         text = self.NEVER.replace("A **turn** is a thread's cycle", "A **turn** is a thread's slotted cycle")

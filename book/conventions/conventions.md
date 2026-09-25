@@ -44,8 +44,8 @@ their reading burden is measured.
 an open question or a record.
 {rule=doc.rules-apart}
 
-**GOAL.** A script finds each change that alters what the machine does, and sends it to the
-author for approval.
+**GOAL.** A script finds each change to what the machine does, and sends it to the author
+for approval.
 {rule=doc.changes-reach-author}
 
 ## 3. Terms and marking
@@ -145,11 +145,12 @@ sentence, it can follow The, A, An, Each, Every or No.
 `[Where F,] [While S,] [When T, | If C, then] X shall R.`, where `X` names a defined term.
 {rule=doc.ears parent=doc.one-reading,doc.traceable}
 
-**REQUIREMENT.** Each rule shall have no finding of level `advisory-free` from
-`tools/ste_lint.py`.
+**REQUIREMENT.** Where a chunk is a rule or a GOAL, the chunk shall have no finding of level
+`advisory-free` from `tools/ste_lint.py`.
 {rule=doc.linter parent=doc.one-reading,doc.one-engineer}
 
-**REQUIREMENT.** No rule shall hold a word from the `never=` list of a DEFINITION.
+**REQUIREMENT.** Where a chunk is a rule or a GOAL, the chunk shall hold no word from the
+`never=` list of a DEFINITION.
 {rule=doc.vocabulary parent=doc.one-reading}
 
 **REQUIREMENT.** Where a chunk carries `never=`, the chunk shall be a DEFINITION.

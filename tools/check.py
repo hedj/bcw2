@@ -406,7 +406,7 @@ def check_ears(documents):
 
 # implements: doc.linter
 def check_linter(chunk):
-    if chunk.label not in RULES:
+    if chunk.label not in ANCHORED:
         return
     for finding in ste_lint.lint(chunk.english, chunk.path)[0]:
         if finding["level"] == "advisory-free":
@@ -425,7 +425,7 @@ def check_vocabulary(documents):
     pattern = re.compile(r"\b(" + "|".join(map(re.escape, sorted(never))) + r")\b", re.IGNORECASE)
     for document in documents:
         for chunk in document.chunks:
-            if chunk.label not in RULES:
+            if chunk.label not in ANCHORED:
                 continue
             for offset, text in enumerate(chunk.lines):
                 for match in pattern.finditer(CODE_SPAN.sub("", text)):
