@@ -15,9 +15,11 @@ and checks nothing itself. It orders and reshapes what bcw.py reads:
 - At doctree-resolved, the HTML shows each twin and each source in a closed
   <details>. The LaTeX prints each twin in small text, moves each source to a
   last section, Implementation, and starts each kind with a \\part.
+- The HTML links static/weave.css, which sets each chunk apart.
 """
 
 import html
+from pathlib import Path
 
 from docutils import nodes
 from docutils.statemachine import StringList
@@ -229,13 +231,19 @@ def weave(app, doctree, docname):
 FONTS = r"\usepackage{mathptmx}\usepackage[scaled=.9]{helvet}\usepackage{courier}"
 
 
-def set_fonts(app, config):
+# The folder of weave.css, the stylesheet that sets each chunk apart.
+STATIC = Path(__file__).resolve().parent / "static"
+
+
+def configure(app, config):
     config.latex_elements = {"fontpkg": FONTS, **config.latex_elements}
+    config.html_static_path = [*config.html_static_path, str(STATIC)]
 
 
 def setup(app):
     app.setup_extension("bcw")
-    app.connect("config-inited", set_fonts)
+    app.connect("config-inited", configure)
+    app.add_css_file("weave.css")
     app.add_directive("chapters", ChaptersDirective)
     app.connect("env-before-read-docs", read_index_last)
     app.connect("doctree-read", reshape, priority=450)

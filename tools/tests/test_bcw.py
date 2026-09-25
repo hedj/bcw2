@@ -114,7 +114,7 @@ class Book:
     sets of words and anchors, or None for no list file. tools maps the name of
     each file in tools/ to its text. With tangle, the tangle writes under the
     temporary folder. builder names the Sphinx builder, and output keeps the text
-    of each HTML and LaTeX file that it writes. index replaces the index, which
+    of each HTML, CSS and LaTeX file that it writes. index replaces the index, which
     lists the chapters by default. With pdf, latexmk makes a PDF of the LaTeX,
     and pdf keeps its exit status and the size of the PDF.
     """
@@ -160,7 +160,7 @@ class Book:
                           for path in sorted(self.root.glob("build/**/*")) if path.is_file()}
             self.output = {str(path.relative_to(self.root / "out")): path.read_text()
                            for path in sorted((self.root / "out").glob("**/*"))
-                           if path.suffix in (".html", ".tex")}
+                           if path.suffix in (".html", ".tex", ".css")}
             if pdf:
                 result = subprocess.run(["latexmk", "-pdf", "-interaction=nonstopmode", "-halt-on-error"],
                                         cwd=self.root / "out", capture_output=True, text=True)

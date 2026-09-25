@@ -118,6 +118,26 @@ class ExplanationTest(unittest.TestCase):
         self.assertIn('<a class="reference internal" href="#rotation">Rotation</a>', self.core[self.heading:])
 
 
+class StyleTest(unittest.TestCase):
+    """The stylesheet of the weave sets each rule apart from the prose around it."""
+
+    def setUp(self):
+        self.book = weave(BOOK, "html")
+
+    def test_each_page_links_the_stylesheet(self):
+        for page, prefix in [("index.html", ""), ("core/core.html", "../")]:
+            with self.subTest(page=page):
+                self.assertRegex(self.book.output[page],
+                                 rf'<link rel="stylesheet" type="text/css" href="{prefix}_static/weave\.css[^"]*" />')
+
+    def test_each_chunk_has_a_border_and_each_label_its_colour(self):
+        css = self.book.output["_static/weave.css"]
+        self.assertRegex(css, r"(?s)\.chunk \{[^}]*border-left:")
+        for label in ["goal", "requirement", "parameter", "definition", "rationale", "discussion", "target", "open"]:
+            with self.subTest(label=label):
+                self.assertRegex(css, rf"\.chunk\.{label}\b[^{{]*\{{[^}}]*border-left-color:")
+
+
 class ChecksTest(unittest.TestCase):
     def test_the_weave_leaves_the_checks_unchanged(self):
         self.assertEqual(Book({"core/core.rst": GOOD}, general=GENERAL, extensions=["bcw", "weave"]).tuples(), [])

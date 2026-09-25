@@ -1,0 +1,41 @@
+/* The stylesheet of the weave. Each chunk stands apart from the prose around
+   it: a light background, and a bar on its left side whose colour tells its
+   label. tools/weave.py adds this file to every HTML page. */
+
+.chunk {
+    border-left: 4px solid #999999;
+    background: #f7f7f7;
+    padding: 0.1em 1em;
+    margin: 1.2em 0;
+}
+
+.chunk > p.chunk-label {
+    margin: 0.6em 0 0.3em;
+    font-size: 0.9em;
+    letter-spacing: 0.03em;
+}
+
+.chunk > p.chunk-serves,
+p.chunk-why {
+    font-size: 0.9em;
+    color: #555555;
+}
+
+.chunk.goal { border-left-color: #7b3fa0; }
+.chunk.requirement { border-left-color: #1f5fbf; }
+.chunk.parameter { border-left-color: #0e7c86; }
+.chunk.definition { border-left-color: #2e7d32; }
+.chunk.rationale,
+.chunk.discussion { border-left-color: #8a8a8a; }
+.chunk.target,
+.chunk.open { border-left-color: #c26a00; }
+
+details {
+    margin: 0.5em 0;
+}
+
+details > summary {
+    cursor: pointer;
+    font-size: 0.9em;
+    color: #555555;
+}
