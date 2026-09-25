@@ -369,15 +369,14 @@ def normalise(text):
     return " ".join(re.sub(r"[*_]", "", text).lower().split())
 
 
+def defined_term(chunk):
+    """The first bold text of a DEFINITION, outside code spans, normalised, or None."""
+    match = BOLD.search(CODE_SPAN.sub("", chunk.english)) if chunk.label == "DEFINITION" else None
+    return normalise(match.group(1)) if match else None
+
+
 def defined_terms(documents):
-    """The first bold text of each DEFINITION, outside code spans, normalised."""
-    terms = set()
-    for document in documents:
-        for chunk in document.chunks:
-            match = BOLD.search(CODE_SPAN.sub("", chunk.english)) if chunk.label == "DEFINITION" else None
-            if match:
-                terms.add(normalise(match.group(1)))
-    return terms
+    return {defined_term(chunk) for document in documents for chunk in document.chunks} - {None}
 
 
 # implements: doc.ears
@@ -471,6 +470,18 @@ def check_known_words(documents, general):
                 index += max(size, 1)
 
 
+# implements: doc.general-words
+def check_general_words(documents, general):
+    for document in documents:
+        for chunk in document.chunks:
+            term = defined_term(chunk)
+            for word in sorted(general):
+                if known(word, {term}):
+                    yield Finding(chunk.path, chunk.line, "general-words", chunk.anchor,
+                                  f"the defined term {term!r} is also the general word {word!r}",
+                                  f"remove {word!r} from book/general-words.txt")
+
+
 # implements: doc.overview-first
 def check_overview_first(document):
     second = [number for number, level in document.headings if level == 2][1:2]
@@ -532,8 +543,9 @@ def check(paths, retired, implemented=(), general=None):
     """Return every finding in the given documents.
 
     implemented holds the anchors that the tools name in "# implements:" comments.
-    general holds the general words. With general=None, doc.known-words is not
-    checked, so that a test of another rule can use words that no list holds.
+    general holds the general words. With general=None, doc.known-words and
+    doc.general-words are not checked, so that a test of another rule can use
+    words that no list holds.
     The first pass checks each chunk on its own. The second pass runs the checks
     that need the whole book.
     """
@@ -561,6 +573,7 @@ def check(paths, retired, implemented=(), general=None):
     findings += check_vocabulary(documents)
     if general is not None:
         findings += check_known_words(documents, general)
+        findings += check_general_words(documents, general)
     return sorted(findings, key=lambda f: (f.path, f.line, f.check))
 
 

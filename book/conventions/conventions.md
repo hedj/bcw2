@@ -168,6 +168,10 @@ term in the text. A known word can also end in `s`, `es` or `'s`.
 English outside quotations.
 {rule=doc.known-words parent=doc.one-reading}
 
+**REQUIREMENT.** No general word shall be a defined term, with or without the ending `s`, `es`
+or `'s`.
+{rule=doc.general-words parent=doc.one-reading}
+
 **DEFINITION.** A **quotation** is a code span. The rules on words and sentences ignore the
 text inside it.
 {rule=doc.quotation parent=doc.one-reading}

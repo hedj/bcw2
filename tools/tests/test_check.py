@@ -251,6 +251,15 @@ class CommandTest(unittest.TestCase):
         result = run_book(GOOD, general=None)
         self.assertIn("[known-words] design.timing: 'no' is not a known word", result.stdout)
 
+    def test_a_listed_defined_term_is_a_finding_on_its_definition(self):
+        result = run_book(GOOD, general="".join(word + "\n" for word in sorted(GENERAL | {"Turns"})))
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stdout.splitlines()[:2], [
+            f"book/core/core.md:{line(GOOD, 'A **turn**')}: [general-words] core.turn: "
+            "the defined term 'turn' is also the general word 'turns'",
+            "    fix: remove 'turns' from book/general-words.txt",
+        ])
+
 
 if __name__ == "__main__":
     unittest.main()

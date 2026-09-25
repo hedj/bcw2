@@ -233,6 +233,11 @@ class EarsTest(unittest.TestCase):
         text = GOOD.replace("The **core** runs the threads in turn.", "The **core** runs the **threads**.")
         self.assertEqual(only("ears", text), [])
 
+    def test_bold_text_outside_a_definition_defines_nothing(self):
+        text = with_requirement("The zyx shall wait.").replace(
+            "A thread's instructions are", "A **zyx** has instructions")
+        self.assertEqual(only("ears", text), [(line(text, "**REQUIREMENT.**"), "ears", "core.rotation")])
+
     def test_bold_text_inside_a_code_span_defines_nothing(self):
         text = GOOD.replace("The **core** runs the threads in turn.", "The `**core**` runs the threads in turn.")
         self.assertEqual(only("ears", text), [(line(text, "**REQUIREMENT.**"), "ears", "core.rotation")])
@@ -485,6 +490,10 @@ class KnownWordsTest(unittest.TestCase):
         self.assertEqual(self.known(GOOD, GENERAL | {"turn", "core"}), [])
         self.assertEqual(self.known(GOOD.replace("the timing of", "the core of")), [])
 
+    def test_a_defined_term_in_upper_case_matches_in_any_case(self):
+        text = GOOD.replace("A **turn** is", "A **Turn** is")
+        self.assertEqual(self.known(text), [])
+
     def test_the_endings_s_es_and_apostrophe_s_keep_a_word_known(self):
         text = GOOD.replace("the timing of", "the timings, core's, turns, toes of")
         self.assertEqual(self.known(text), [])
@@ -512,6 +521,40 @@ class KnownWordsTest(unittest.TestCase):
         self.assertEqual(self.known(text, GENERAL | {"zyx"}), [])
         text = text.replace(SENTENCE, "The core shall give the time slot of the time to thread `t`.")
         self.assertEqual(self.known(text, GENERAL | {"zyx"}), [])
+
+
+class GeneralWordsTest(unittest.TestCase):
+    """doc.general-words"""
+
+    SLOT = KnownWordsTest.SLOT
+
+    def general(self, text, extra):
+        return [f for f in findings(text, general=GENERAL | extra) if f[1] == "general-words"]
+
+    def test_a_listed_defined_term_is_a_finding_on_its_definition(self):
+        for word in ["turn", "turns", "turn's", "turnes"]:
+            with self.subTest(word=word):
+                self.assertEqual(self.general(GOOD, {word}), [(line(GOOD, "A **turn**"), "general-words", "core.turn")])
+
+    def test_each_listed_form_is_a_finding(self):
+        self.assertEqual(self.general(GOOD, {"turn", "turns"}),
+                         [(line(GOOD, "A **turn**"), "general-words", "core.turn")] * 2)
+
+    def test_a_listed_multi_word_term_is_a_finding(self):
+        for word in ["time slot", "time slots"]:
+            with self.subTest(word=word):
+                self.assertEqual(self.general(self.SLOT, {word}),
+                                 [(line(self.SLOT, "A **time slot**"), "general-words", "core.slot")])
+
+    def test_a_defined_term_in_upper_case_matches_in_any_case(self):
+        text = GOOD.replace("A **turn** is", "A **Turn** is")
+        self.assertEqual(self.general(text, {"turn"}), [(line(text, "A **Turn**"), "general-words", "core.turn")])
+
+    def test_one_word_of_a_multi_word_term_passes(self):
+        self.assertEqual(self.general(self.SLOT, {"time", "slot"}), [])
+
+    def test_a_word_that_only_starts_like_a_defined_term_passes(self):
+        self.assertEqual(self.general(GOOD, {"turner", "cored", "turnstile"}), [])
 
 
 if __name__ == "__main__":
