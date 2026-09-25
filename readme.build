@@ -35,7 +35,8 @@ make check    Makes sure that the book obeys the rules of
 make weave    Builds the reader edition: build/html/index.html and
               build/latex/bcw2.pdf. It reports findings but does not stop
               on them.
-make test     Runs the tests of the tools, in tools/tests.
+make test     Runs the tests of the tools, in tools/tests, with pytest on
+              each core of the machine.
 make tangle   Writes the code of the book into build/: the Verilog into
               build/rtl, the twins into build/model, and the value of each
               PARAMETER into build/rtl/bcw_params.sv and
@@ -81,16 +82,26 @@ tools/tests/        The tests of the tools.
 The tests
 ---------
 
-Each test builds a small book in a temporary folder. It then compares the
-findings, the tangled files or the woven pages with the expected result.
-Some tests run Verilator, Icarus Verilog or latexmk, so run the tests inside
-the environment:
+pytest runs the tests, and pytest.ini holds its configuration. Each test
+builds a small book in a temporary folder. It then compares the findings,
+the tangled files or the woven pages with the expected result. The helpers
+that build a book, such as Book and the chapter GOOD, are in
+tools/tests/book.py. Some tests run Verilator, Icarus Verilog or latexmk, so
+run the tests inside the environment:
 
     ./dev make test
 
-To run one class of tests, name its module and class:
+To run one class of tests, name its file and class:
 
-    ./dev sh -c 'cd tools/tests && python3 -m unittest test_bcw_rules.TargetTest'
+    ./dev pytest tools/tests/test_bcw_rules.py::TargetTest
+
+To run the tests whose names hold a word, give the word after -k:
+
+    ./dev pytest -k boxs
+
+A test that runs over a list of cases runs each case as a test of its own,
+with the case in brackets after the name of the test, for example
+test_other_endings_do_not[boxs].
 
 A new check needs a test that fails before the check exists and passes
 after it. A new rule in book/doc/doc.rst needs a check in tools/ that names

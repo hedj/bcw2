@@ -4,7 +4,7 @@
 #   make tangle   tangle the book into build/
 #   make check    the checks of the book, Verilator lint and a load of each twin
 #   make weave    the reader edition, as build/html/index.html and build/latex/bcw2.pdf
-#   make test     the tests of the tools
+#   make test     the tests of the tools, with pytest on each core
 #   make clean    remove build/
 #
 # Sphinx runs tools/bcw.py on book/. It checks the book, reports each finding
@@ -48,7 +48,7 @@ weave:
 	LATEXMKOPTS=-quiet $(PY) -m sphinx -M latexpdf book build -E -q -c tools 2>&1 | $(RELATIVE)
 
 test:
-	$(PY) -m pytest
+	$(PY) -m pytest -n auto
 
 clean:
 	rm -rf build
