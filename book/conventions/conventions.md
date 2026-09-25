@@ -139,18 +139,22 @@ sentence, it can follow The, A, An, Each, Every or No.
 **REQUIREMENT.** No rule shall hold a word from the `never=` list of a DEFINITION.
 {rule=doc.vocabulary parent=doc.one-reading}
 
-**DEFINITION.** An **abbreviation** is a run of two or more letters with a full stop after
-each, such as `e.g.`. The words `etc.`, `vs.`, `cf.`, `approx.`, `incl.`, `esp.` and `resp.`
-are abbreviations too.
-{rule=doc.abbreviation parent=doc.one-reading}
+**DEFINITION.** A **quotation** is a code span. The rules on words and sentences ignore the
+text inside it.
+{rule=doc.quotation parent=doc.one-reading}
 
-**REQUIREMENT.** Where a rule is a REQUIREMENT, the rule shall hold no abbreviation outside
-code spans.
-{rule=doc.no-abbreviations parent=doc.one-reading}
+**DEFINITION.** A **dotted word** is a word with a full stop between two letters or digits,
+such as `Q8.4`, `9.09` or `e.g.`. The words `etc.`, `vs.`, `cf.`, `approx.`, `incl.`, `esp.`
+and `resp.` are dotted words too.
+{rule=doc.dotted-word parent=doc.one-reading}
 
-**RATIONALE.** EARS gives each REQUIREMENT a fixed form, and a defined actor names who acts.
-The linter keeps each rule short and plain. A `never=` list keeps one word for each meaning. An
-abbreviation breaks a REQUIREMENT into false sentences.
+**REQUIREMENT.** Where a rule is a REQUIREMENT, the rule shall hold each dotted word inside a
+quotation.
+{rule=doc.dotted-words parent=doc.one-reading}
+
+**RATIONALE.** EARS gives each REQUIREMENT a fixed form with a defined actor. The linter keeps
+rules short and plain, and a `never=` list keeps one word for each meaning. A quotation keeps a
+full stop from splitting a sentence.
 
 ## 6. Layout
 
