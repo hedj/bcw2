@@ -121,14 +121,59 @@ Both you and humans commit to this repository.
 - Report negative results and failed approaches.
 - If you made a mistake or an earlier conclusion was wrong, state the mistake and correct it.
 
-## 9. Write clearly
-Apply these rules to all explanations, reports, comments, commit messages, and docs. The rules come from Simplified Technical English (ASD-STE100).
+## 9. Write plain English
+Write plain English that a smart reader outside the field understands on one read. Follow the spirit of ASD-STE100 Simplified Technical English. Apply this section to the text that you write, and to text that the user asks you to rewrite. Section 9.1 applies to all of that text. Sections 9.2 and 9.3 give the rules for the two registers: the document and the reply.
+
+Do not apply this section to code or to code comments that quote code. Also do not apply it to marketing copy that the user asks for.
+
+### 9.1 Rules for all text
 - Use short sentences: 20 words or fewer for instructions, 25 or fewer for descriptions.
 - Use the active voice and name the actor: "The parser rejects the input," not "The input is rejected."
 - Write instructions in the imperative: "Run the tests," not "You may want to consider running the tests."
 - Use one word for one meaning. Do not switch between synonyms (e.g. "user" / "client" / "caller") for the same thing.
 - Use exact values instead of "some," "a few," or "soon."
 - Do not use hedging filler: "basically," "just," "should probably," "kind of."
+- Use Australian spelling.
+
+### 9.2 The document
+Documents include documentation, READMEs, runbooks, error messages, and release notes. They also include code comments, commit messages, pull request descriptions, and reports in files.
+- Never touch code, identifiers, commands, file paths, quoted errors, product names, or facts.
+- Classify each passage. Procedural text tells the reader what to do: use the imperative mood and one instruction per sentence. Descriptive text explains: use simple tenses, one topic per paragraph, and at most six sentences per paragraph.
+- Put the condition before the command, with a comma: "If the build fails, read the log."
+- Use simple tenses. Do not use the present perfect ("has completed" becomes "completed"). Do not put an "-ing" verb after a comma.
+- Use only the modals "can", "will", and "must". Do not use "should", "would", "may", "might", or "could". Exception: in a rule of the specification, keep the modal that the rule has. Write "shall" in a new REQUIREMENT.
+- Write complete grammar: no contractions, keep articles, and keep "that".
+- Do not use semicolons or em-dashes.
+- As a verb, write "make sure that" for check, verify, confirm, validate, and ensure. Write "configuration" for config, settings, and options. Keep each term that the Terms section or a project document defines, such as the noun "check" in `migration_plan.md`.
+- Keep noun chains to three words or fewer.
+- Define a concept term at its first use, in fewer than ten words, with one term per sentence. Do not define product names, standard names (Postgres, S3, HTTP), or the tool that the document is about.
+- Name the host, the flag, or the prior step that a command depends on. Do not assume that the reader already has it.
+- State the fact, not its importance. Delete "simply", "seamlessly", "robust", "powerful", "comprehensive", "leverage", "crucial", "in order to", and "it is worth noting". Do not write "not just X, it is Y", decorative triplets, or "in conclusion".
+- Do not use emoji. Do not put a heading over two sentences or fewer.
+- Use a vertical list only for three or more parallel items or steps.
+- In a warning, write the command or the condition first, then the risk.
+
+Before you deliver a document, do this self-check:
+1. Count the words in your three longest sentences. Split each sentence that is over its limit.
+2. Search for "'", "has been", "should", "may", ";", "—", ", making", "check", "verify", and "config". Correct each hit that breaks a rule of this section.
+
+If the user names STE, ASD-STE100, or compliance in a request, use strict mode. Strict mode also applies these STE dictionary words to the document:
+- "operate" for run
+- "do" for execute
+- "show" for display
+- "but" for however
+- "because" for since
+
+In strict mode, say once per conversation that no tool guarantees compliance. Also say that the official dictionary is free at asd-ste100.org.
+
+### 9.3 The reply
+Every chat reply follows these rules, in every mode. A report that you give in chat is a reply.
+- Answer in prose: no headers, no bullet lists, no bold, and no tables. Use a code block only when the reader must copy its content.
+- Do not use em-dashes. Name the relation ("because", "but", "for example"), or write two sentences.
+- Define a concept term in fewer than ten words the first time that you use it: "idempotent (safe to run twice)". Do not define a product name.
+- Do not use contractions.
+- Do not use openers ("Certainly", "Great question") or closers ("I hope this helps", "Let me know").
+- Do not shorten quoted error text, security warnings, or confirmations before a destructive action.
 
 ## 10. Stop and ask when
 - No implementation can meet all the requirements.
