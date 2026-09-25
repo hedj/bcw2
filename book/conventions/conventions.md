@@ -155,6 +155,13 @@ heading of those levels.
 DISCUSSION, of 40 words or fewer.
 {rule=doc.argument-budget parent=doc.one-engineer,doc.rules-apart}
 
-**RATIONALE.** A reader meets the purpose of a chapter before its rules. Diátaxis keeps
-explanation apart from reference in the same way. The budget keeps argument short and next to
-its rule.
+**DEFINITION.** A **code block** is a fenced or indented block of code in a chapter.
+{rule=doc.code-block parent=doc.rules-apart}
+
+**REQUIREMENT.** Each code block shall carry `file=`, the class `.formal` or the class
+`.check`.
+{rule=doc.code-kinds parent=doc.rules-apart}
+
+**RATIONALE.** A reader meets the purpose of a chapter before its rules, as Diátaxis keeps
+explanation apart from reference. The budget keeps argument short. A code block is part of the
+machine or a check of it.

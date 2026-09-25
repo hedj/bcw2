@@ -349,5 +349,27 @@ class ArgumentBudgetTest(unittest.TestCase):
         self.assertEqual(findings(text), [])
 
 
+class CodeKindsTest(unittest.TestCase):
+    """doc.code-kinds"""
+
+    def with_block(self, block):
+        return GOOD.replace("**Thread.** An unlabelled bold paragraph is prose.",
+                            "**Thread.** An unlabelled bold paragraph is prose.\n\n" + block)
+
+    def test_a_block_without_file_or_class_is_a_finding(self):
+        for block in ["```python\nx = 1\n```", "``` {.python}\nx = 1\n```", "    x = 1"]:
+            with self.subTest(block=block):
+                text = self.with_block(block + "\n")
+                self.assertEqual(findings(text), [(line(text, "x = 1") - (0 if block.startswith("    ") else 1),
+                                                   "code-kinds", None)])
+
+    def test_a_block_inside_a_list_item_is_a_finding(self):
+        text = self.with_block("- An item:\n\n  ```\n  x = 1\n  ```\n")
+        self.assertEqual(findings(text), [(line(text, "x = 1") - 1, "code-kinds", None)])
+
+    def test_a_check_block_passes(self):
+        self.assertEqual(findings(self.with_block("``` {.check}\nx = 1\n```\n")), [])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,4 +1,8 @@
-"""The fast checks on the book: labels, one-shall, anchors and stamps.
+"""The fast checks on the book: one check for each rule of book/conventions/conventions.md.
+
+Each check function names the rule that it implements in an "# implements:"
+comment. The function name follows the rule: check_labels implements
+doc.labels, check_ears implements doc.ears, and so on.
 
 Run it from the repository root: .venv/bin/python tools/check.py [FILE ...]
 With no FILE, it checks every book/**/*.md. It prints each finding as
@@ -65,7 +69,7 @@ class Document:
     path: str
     chunks: list
     findings: list  # the findings that parsing met
-    blocks: list  # every fenced block at the top level
+    blocks: list  # every fenced or indented code block, at any depth
     spans: list  # (line, text) of every inline code span
     headings: list  # (line, level) of every heading at the top level
 
@@ -132,10 +136,10 @@ def parse(path, text):
                     number = next((start + offset + 1 for offset, content in enumerate(source[start:end])
                                    if child.content in content), start + 1)
                     spans.append((number, child.content))
+        if token.type in ("fence", "code_block"):
+            blocks.append(Block(token.map[0] + 1, *fence_attributes(token.info)))
         if token.level != 0 or token.type in ("paragraph_close", "inline"):
             continue
-        if token.type == "fence":
-            blocks.append(Block(token.map[0] + 1, *fence_attributes(token.info)))
         if token.type == "fence" and current is not None:
             current.blocks.append(blocks[-1])
             continue
@@ -197,7 +201,7 @@ def check_one_shall(chunk):
 
 
 # implements: doc.anchors
-def check_anchor(chunk, seen, retired):
+def check_anchors(chunk, seen, retired):
     for key in chunk.attrs:
         if key not in ATTRIBUTE_KEYS:
             yield Finding(chunk.path, chunk.line, "anchors", chunk.anchor,
@@ -455,6 +459,15 @@ def check_argument_budget(document):
                               "cut it to 40 words, or move the explanation to the overview")
 
 
+# implements: doc.code-kinds
+def check_code_kinds(document):
+    for block in document.blocks:
+        if "file" not in block.attrs and not block.classes & {"formal", "check"}:
+            yield Finding(document.path, block.line, "code-kinds", None,
+                          "the code block is not tangled, and is not a twin or a check",
+                          "give it file=, or the class .formal or .check")
+
+
 def check(paths, retired, implemented=()):
     """Return every finding in the given documents.
 
@@ -468,10 +481,11 @@ def check(paths, retired, implemented=()):
         findings += document.findings
         findings += check_overview_first(document)
         findings += check_argument_budget(document)
+        findings += check_code_kinds(document)
         for chunk in document.chunks:
             findings += check_labels(chunk)
             findings += check_one_shall(chunk)
-            findings += check_anchor(chunk, seen, retired)
+            findings += check_anchors(chunk, seen, retired)
             findings += check_stamps(chunk)
             findings += check_definition_parent(chunk)
             findings += check_linter(chunk)
