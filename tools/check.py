@@ -318,6 +318,20 @@ def check_reaches_goal(documents):
                           "name a parent that reaches a GOAL")
 
 
+# implements: doc.definition-parent
+def check_definition_parent(chunk):
+    if chunk.label == "DEFINITION" and len(parents(chunk)) > 1:
+        yield Finding(chunk.path, chunk.attribute_line, "definition-parent", chunk.anchor,
+                      "the DEFINITION names more than one parent",
+                      "keep the one parent that the term serves")
+
+
+def crowded(documents):
+    """The number of rules with more than two parents."""
+    return sum(1 for document in documents for chunk in document.chunks
+               if chunk.label in RULES and len(parents(chunk)) > 2)
+
+
 def check(paths, retired, implemented=()):
     """Return every finding in the given documents.
 
@@ -334,6 +348,7 @@ def check(paths, retired, implemented=()):
             findings += check_one_shall(chunk)
             findings += check_anchor(chunk, seen, retired)
             findings += check_stamps(chunk)
+            findings += check_definition_parent(chunk)
     findings += check_implemented(documents, implemented)
     findings += check_references(documents, set(seen), implemented)
     findings += check_reaches_goal(documents)
@@ -350,7 +365,8 @@ def main(argv):
     findings = check(paths, retired, tool_implements(sorted(Path("tools").glob("*.py"))))
     for finding in findings:
         print(finding)
-    print(f"check: {len(paths)} documents, {len(findings)} findings")
+    print(f"check: {len(paths)} documents, {len(findings)} findings, "
+          f"{crowded(read(paths))} rules with more than 2 parents")
     return 1 if findings else 0
 
 

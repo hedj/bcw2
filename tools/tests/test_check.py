@@ -201,7 +201,7 @@ class CommandTest(unittest.TestCase):
     def test_a_clean_book_exits_0(self):
         result = run_book(GOOD)
         self.assertEqual(result.returncode, 0, result.stdout)
-        self.assertEqual(result.stdout, "check: 1 documents, 0 findings\n")
+        self.assertEqual(result.stdout, "check: 1 documents, 0 findings, 0 rules with more than 2 parents\n")
 
     def test_a_finding_prints_location_check_anchor_and_fix_and_exits_1(self):
         result = run_book(GOOD, retired="# Retired anchors\ncore.turn\n")

@@ -11,7 +11,9 @@ tutorials yet.
 
 Each GOAL and each rule carries an anchor, such as `core.rotation`, on the attribute line at
 the end of its paragraph. The attribute line also names the parents of the chunk.
-`book/retired-anchors.txt` lists the anchors that no chunk can use again.
+`book/retired-anchors.txt` lists the anchors that no chunk can use again. `make check` also
+prints the number of rules with more than two parents, because a long list of parents says
+little.
 
 Section 2 states the goals. The later sections define the terms and state the rules.
 
@@ -105,6 +107,9 @@ word is also the first word of an anchor.
 **REQUIREMENT.** Where a chunk carries an anchor and is not a GOAL, the chunk shall reach a
 GOAL through its parents.
 {rule=doc.reaches-goal parent=doc.traceable}
+
+**REQUIREMENT.** Where a chunk is a DEFINITION, the chunk shall name at most one parent.
+{rule=doc.definition-parent parent=doc.traceable}
 
 **RATIONALE.** A Verilog block names the requirements that it implements in its
 `implements=` list. A check in `tools/` names its rule in an `# implements:` comment, so each

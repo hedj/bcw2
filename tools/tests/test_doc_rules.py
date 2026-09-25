@@ -65,7 +65,7 @@ class ReferencesTest(unittest.TestCase):
         self.assertEqual(findings(text), [(line(text, "parent=core.nothing"), "references", "core.turn")])
 
     def test_a_parent_list_can_name_several_anchors(self):
-        text = GOOD.replace("{rule=core.turn parent=core.core}", "{rule=core.turn parent=core.core,design.timing}")
+        text = GOOD.replace("{rule=core.rotation parent=design.timing}", "{rule=core.rotation parent=design.timing,core.core}")
         self.assertEqual(findings(text), [])
 
     def test_an_empty_parent_entry_is_a_finding(self):
@@ -148,6 +148,33 @@ class ReachesGoalTest(unittest.TestCase):
     def test_a_chain_that_meets_an_unknown_anchor_is_left_to_references(self):
         text = GOOD.replace("{rule=core.core parent=design.timing}", "{rule=core.core parent=core.nothing}")
         self.assertEqual(findings(text), [(line(text, "{rule=core.core"), "references", "core.core")])
+
+
+class DefinitionParentTest(unittest.TestCase):
+    """doc.definition-parent"""
+
+    def test_a_definition_with_two_parents_is_a_finding(self):
+        text = GOOD.replace("{rule=core.turn parent=core.core}", "{rule=core.turn parent=core.core,design.timing}")
+        self.assertEqual(findings(text), [(line(text, "{rule=core.turn"), "definition-parent", "core.turn")])
+
+    def test_a_requirement_can_have_two_parents(self):
+        text = GOOD.replace("{rule=core.rotation parent=design.timing}", "{rule=core.rotation parent=design.timing,core.core}")
+        self.assertEqual(findings(text), [])
+
+
+class CrowdedTest(unittest.TestCase):
+    """The count of rules with more than two parents, which is not a finding."""
+
+    def test_a_rule_with_three_parents_is_counted_but_passes(self):
+        text = GOOD.replace("{rule=core.rotation parent=design.timing}",
+                            "{rule=core.rotation parent=design.timing,core.core,core.turn}")
+        result = run_book(text)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(result.stdout, "check: 1 documents, 0 findings, 1 rules with more than 2 parents\n")
+
+    def test_two_parents_are_not_counted(self):
+        text = GOOD.replace("{rule=core.rotation parent=design.timing}", "{rule=core.rotation parent=design.timing,core.core}")
+        self.assertIn(", 0 rules with more than 2 parents", run_book(text).stdout)
 
 
 if __name__ == "__main__":
