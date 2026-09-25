@@ -57,6 +57,9 @@ ANCHORED = RULES | {"GOAL", "TARGET"}
 VALUED = {"PARAMETER", "TARGET"}
 KINDS = ["tutorial", "how-to", "reference", "explanation"]
 ANCHOR = re.compile(r"[a-z][a-z0-9-]*(\.[a-z0-9-]+)+")
+# A fragment use: a line of a source directive that holds only a fragment name
+# between << and >>, after its indentation.
+USE = re.compile(r"^(?P<indent>[ \t]*)<<(?P<name>[a-z][a-z0-9-]*(?:\.[a-z0-9-]+)+)>>\s*$")
 SHALL = re.compile(r"\bshall\b", re.IGNORECASE)
 # The prose of a chunk writes each quotation as this code span, which holds no
 # word and which ste_lint skips.
@@ -1008,6 +1011,103 @@ def check_param_citations(documents):
                               "cite it with the role rule, or name a PARAMETER or a TARGET")
 
 
+# Fragments
+
+
+def is_fragment(block):
+    """Whether the block is a source directive that defines a fragment: its argument is a fragment name."""
+    return block.kind == "source" and bool(ANCHOR.fullmatch(block.target))
+
+
+def writes_file(block):
+    """Whether the block is a source directive that writes a file: its argument holds a slash."""
+    return block.kind == "source" and "/" in block.target
+
+
+def fragment_uses(block):
+    """(chapter line, fragment name, indentation) of each fragment use in a source directive."""
+    if block.kind != "source":
+        return []
+    return [(block.first + offset, match["name"], match["indent"])
+            for offset, text in enumerate(block.text.splitlines()) if (match := USE.match(text))]
+
+
+def fragments(documents):
+    """The blocks of each fragment, by name, in the order that the tangle reads them."""
+    result = {}
+    for document in documents:
+        for block in document.blocks:
+            if is_fragment(block):
+                result.setdefault(block.target, []).append(block)
+    return result
+
+
+def fragment_graph(documents):
+    """The fragments that the blocks of each fragment use, and the fragments that a file uses."""
+    graph, roots = {}, set()
+    for name, blocks in fragments(documents).items():
+        graph[name] = {used for block in blocks for _, used, _ in fragment_uses(block)}
+    for document in documents:
+        for block in document.blocks:
+            if writes_file(block):
+                roots.update(used for _, used, _ in fragment_uses(block))
+    return graph, roots
+
+
+def reached(graph, start):
+    """The fragments that the fragments in start reach through their uses, start included."""
+    seen, stack = set(), list(start)
+    while stack:
+        name = stack.pop()
+        if name not in seen:
+            seen.add(name)
+            stack.extend(graph.get(name, ()))
+    return seen
+
+
+# implements: doc.source-targets
+def check_source_targets(documents):
+    for document in documents:
+        for block in document.blocks:
+            if block.kind == "source" and not (block.target.startswith("build/") or ANCHOR.fullmatch(block.target)):
+                yield Finding(document.path, block.line, "source-targets", None,
+                              f"{block.target!r} is not a file under build/ and not a fragment name",
+                              "name a file such as build/rtl/core/x.v, or a fragment such as core.rotation-logic")
+
+
+# implements: doc.fragment-uses
+def check_fragment_uses(documents):
+    defined = fragments(documents)
+    for document in documents:
+        for block in document.blocks:
+            for number, name, _ in fragment_uses(block):
+                if name not in defined:
+                    yield Finding(document.path, number, "fragment-uses", None,
+                                  f"no source directive defines the fragment {name}",
+                                  f"define it with .. source:: {name}, or name a fragment that exists")
+
+
+# implements: doc.fragments-used
+def check_fragments_used(documents):
+    graph, roots = fragment_graph(documents)
+    used = reached(graph, roots)
+    for name, blocks in fragments(documents).items():
+        if name not in used:
+            yield Finding(blocks[0].path, blocks[0].line, "fragments-used", None,
+                          f"the fragment {name} reaches no file",
+                          f"use it with a line <<{name}>> in a source directive that writes a file")
+
+
+# implements: doc.fragment-cycles
+def check_fragment_cycles(documents):
+    graph = fragment_graph(documents)[0]
+    for name, blocks in fragments(documents).items():
+        if name in reached(graph, graph[name]):
+            yield Finding(blocks[0].path, blocks[0].line, "fragment-cycles", None,
+                          f"the fragment {name} reaches itself through its uses",
+                          "remove a use from the cycle")
+
+
 def crowded(documents):
     """The number of rules with more than two parents."""
     return sum(1 for document in documents for chunk in document.chunks
@@ -1043,6 +1143,10 @@ def check(documents, retired=(), tools=(), general=None):
     findings += check_constant_names(documents)
     findings += check_param_citations(documents)
     findings += check_target_parents(documents)
+    findings += check_source_targets(documents)
+    findings += check_fragment_uses(documents)
+    findings += check_fragments_used(documents)
+    findings += check_fragment_cycles(documents)
     if general is not None:
         findings += check_known_words(documents, general)
         findings += check_general_words(documents, general)

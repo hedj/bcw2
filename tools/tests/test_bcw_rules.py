@@ -1006,6 +1006,65 @@ class TargetTest:
         assert findings(text) == []
 
 
+def source(target, *code):
+    """A source directive to add at the end of GOOD, with each line of code indented under it."""
+    return f"\n.. source:: {target}\n\n" + "".join(f"   {line}\n" for line in code)
+
+
+SKELETON = source("build/rtl/core/pair.v", "module pair (input wire a, output wire b);", "    <<core.pair-logic>>",
+                  "endmodule")
+FRAGMENT = source("core.pair-logic", "assign b = a;")
+
+
+class FragmentTest:
+    """doc.source-targets, doc.fragment-uses, doc.fragments-used and doc.fragment-cycles"""
+
+    def test_a_skeleton_and_its_fragment_pass(self):
+        assert findings(GOOD + SKELETON + FRAGMENT) == []
+
+    def test_a_fragment_can_come_before_its_use(self):
+        assert findings(GOOD + FRAGMENT + SKELETON) == []
+
+    def test_a_use_of_no_fragment_is_a_finding_on_its_line(self):
+        text = GOOD + SKELETON
+        assert findings(text) == [(line(text, "<<core.pair-logic>>"), "fragment-uses", None)]
+
+    def test_a_fragment_that_reaches_no_file_is_a_finding_on_its_directive_line(self):
+        text = GOOD + FRAGMENT
+        assert findings(text) == [(line(text, ".. source:: core.pair-logic"), "fragments-used", None)]
+
+    def test_a_fragment_that_only_a_fragment_that_reaches_no_file_uses_reaches_no_file(self):
+        text = GOOD + source("core.outer", "<<core.pair-logic>>") + FRAGMENT
+        assert findings(text) == [(line(text, ".. source:: core.outer"), "fragments-used", None),
+                                  (line(text, ".. source:: core.pair-logic"), "fragments-used", None)]
+
+    def test_a_fragment_used_through_another_fragment_passes(self):
+        text = (GOOD + SKELETON.replace("<<core.pair-logic>>", "<<core.outer>>")
+                + source("core.outer", "<<core.pair-logic>>") + FRAGMENT)
+        assert findings(text) == []
+
+    def test_a_cycle_is_a_finding_on_each_fragment_in_it(self):
+        text = (GOOD + SKELETON + source("core.pair-logic", "<<core.other>>")
+                + source("core.other", "<<core.pair-logic>>"))
+        assert findings(text) == [(line(text, ".. source:: core.pair-logic"), "fragment-cycles", None),
+                                  (line(text, ".. source:: core.other"), "fragment-cycles", None)]
+
+    @pytest.mark.parametrize("target", ["rtl/core/pair.v", "src/pair.v", "Core_Pair", "core"])
+    def test_a_target_outside_build_that_is_no_fragment_name_is_a_finding(self, target):
+        text = GOOD + source(target, "assign b = a;")
+        assert findings(text) == [(line(text, f".. source:: {target}"), "source-targets", None)]
+
+    @pytest.mark.parametrize("code", ["assign b = a << 1;", "assign b = a<<core.pair-logic>>1;",
+                                      "<<core.pair-logic>> // a comment", "<<Core_Pair>>"])
+    def test_a_line_that_holds_more_than_a_fragment_name_is_code(self, code):
+        assert findings(GOOD + source("build/rtl/core/pair.v", code)) == []
+
+    def test_a_line_in_a_twin_is_code(self):
+        text = GOOD.replace("      def core_rotate(turn):\n", "      <<core.none>>\n      def core_rotate(turn):\n")
+        assert text != GOOD
+        assert [f for f in findings(text) if f[1].startswith("fragment")] == []
+
+
 class TangleTest:
     """The tangle writes each file of a twin or a source, with a marker before each block."""
 

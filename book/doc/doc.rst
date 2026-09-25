@@ -439,3 +439,52 @@ Targets
    A measurement of the finished hardware decides a TARGET. No design decision can rest on a
    goal that nobody has met yet, so no chunk serves a TARGET and no value names one. The tangle
    writes no TARGET.
+
+Fragments
+=========
+
+.. definition:: doc.fragment-name
+   :parent: doc.one-source
+
+   A :dfn:`fragment name` is the argument of a ``source`` directive when it has the form of an
+   anchor, such as ``core.rotation-logic``. A ``source`` directive whose argument holds a ``/``
+   names a file.
+
+.. definition:: doc.fragment
+   :parent: doc.one-source
+
+   A :dfn:`fragment` is the code of the ``source`` directives with one fragment name, joined in
+   the order that ``make tangle`` reads the directives.
+
+.. definition:: doc.fragment-use
+   :parent: doc.one-source
+
+   A :dfn:`fragment use` is a line of a ``source`` directive that holds only a fragment name
+   between ``<<`` and ``>>``, after spaces. ``make tangle`` puts the fragment in place of the
+   line, with those spaces before each line of the fragment.
+
+.. requirement:: doc.source-targets
+   :parent: doc.traceable
+
+   Where a code block is a ``source`` directive, the code block shall name a file in ``build/``
+   or a fragment name.
+
+.. requirement:: doc.fragment-uses
+   :parent: doc.traceable
+
+   Each fragment use shall name a fragment.
+
+.. requirement:: doc.fragments-used
+   :parent: doc.one-source
+
+   Each fragment shall reach a file through fragment uses.
+
+.. requirement:: doc.fragment-cycles
+   :parent: doc.one-source
+
+   No fragment shall reach itself through fragment uses.
+
+.. rationale::
+
+   A fragment lets the code of a rule stand next to the rule, while a skeleton puts a module in
+   order. A marker before each fragment traces each tangled line to its chapter line.
