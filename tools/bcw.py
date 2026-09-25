@@ -42,6 +42,7 @@ from pathlib import Path
 
 from docutils import nodes
 from docutils.parsers.rst import directives
+from sphinx import addnodes
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective, SphinxRole
 
@@ -214,13 +215,20 @@ class CheckDirective(CodeDirective):
 
 
 class RuleRole(SphinxRole):
-    """:rule:`anchor`, a citation. It shows as a literal until the weave links it."""
+    """:rule:`anchor`, a citation: a link to the label of the anchor, around a literal.
+
+    The link does not warn when it finds no label, because doc.references
+    reports each citation of an anchor that is not in the book.
+    """
 
     def run(self):
-        node = nodes.literal(self.rawtext, self.text, classes=["rule"])
-        node["anchor"] = self.text
-        node["line"] = self.lineno
-        return [node], []
+        literal = nodes.literal(self.rawtext, self.text, classes=["rule"])
+        literal["anchor"] = self.text
+        literal["line"] = self.lineno
+        link = addnodes.pending_xref(self.rawtext, literal, refdomain="std", reftype="ref",
+                                     reftarget=self.text, refexplicit=True, refwarn=False,
+                                     refdoc=self.env.docname)
+        return [link], []
 
 
 # Reading a chapter
@@ -253,6 +261,7 @@ def read_document(app, doctree):
                 walk(child, level + 1, tops[0] if level + 1 == 2 else top,
                      title if 2 <= level + 1 <= 4 else section, owner)
             elif isinstance(child, chunk):
+                label(app, docname, child)
                 item = Chunk(path, document.name, child.line, child["label"], child["anchor"], child["options"],
                              child["option_lines"], [], top=top, section=section)
                 for paragraph in child.children:
@@ -283,6 +292,18 @@ def read_document(app, doctree):
             document.strays.append(child.line)
     document.titles += [child.line - 1 for child in doctree.children if isinstance(child, nodes.section)]
     app.env.bcw_documents[docname] = document
+
+
+def label(app, docname, node):
+    """Make the anchor of a chunk its id, and a label that a citation can link to.
+
+    Only the first chunk with an anchor gets it: doc.anchors reports the others.
+    """
+    anchor = node["anchor"]
+    std = app.env.domains.standard_domain
+    if anchor is not None and anchor not in std.anonlabels:
+        node["ids"].append(anchor)
+        std.note_hyperlink_target(anchor, docname, anchor, anchor)
 
 
 def paragraph_prose(paragraph):

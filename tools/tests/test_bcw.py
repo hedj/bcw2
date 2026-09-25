@@ -96,7 +96,8 @@ Goals
 GENERAL = {"the", "shall", "give", "after", "thread", "t", "to", "a", "is", "cycle", "in",
            "rotation", "runs", "no", "can", "change", "timing", "of", "another"}
 
-WARNING = re.compile(r"^(?P<path>[^\s:]+?)(?::(?P<line>\d+))?: (?:WARNING|ERROR|CRITICAL|SEVERE): (?P<text>.*)$")
+# A warning with a location starts with its path. A warning without one starts with its level.
+WARNING = re.compile(r"^(?:(?P<path>[^\s:]+?)(?::(?P<line>\d+))?: )?(?:WARNING|ERROR|CRITICAL|SEVERE): (?P<text>.*)$")
 
 
 def line(text, needle):
@@ -143,6 +144,8 @@ class Book:
                 app = Sphinx(str(source), None, str(self.root / "out"), str(self.root / "doctrees"), "dummy",
                              confoverrides=overrides, status=None, warning=warnings, freshenv=True)
                 app.build()
+                self.resolved = {name: app.env.get_and_resolve_doctree(name, app.builder)
+                                 for name in sorted(app.env.found_docs)}
             self.findings = app.env.bcw_findings
             for finding in self.findings:
                 finding.path = finding.path.replace(str(self.root) + "/", "")
@@ -159,7 +162,7 @@ class Book:
         for text in self.warnings.splitlines():
             match = WARNING.match(text)
             if match and not re.match(r"\[[\w-]+\] ", match["text"]):
-                found.append((match["path"], int(match["line"]) if match["line"] else None, match["text"]))
+                found.append((match["path"] or "", int(match["line"]) if match["line"] else None, match["text"]))
         return found
 
     def tuples(self):

@@ -8,6 +8,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from docutils import nodes
+
 from test_bcw import GENERAL, GOOD, Book, bcw, findings, line, only
 
 ROTATION = ".. requirement:: core.rotation\n   :parent: core.timing\n"
@@ -716,6 +718,33 @@ class ChapterOrderTest(unittest.TestCase):
         chapters = {"core/core.rst": CORE_CHAPTER.replace(":kind: reference", ":kind: tutorial"),
                     "design/design.rst": DESIGN}
         self.assertEqual(order(chapters), (["core", "design"], []))
+
+
+class CitationLinkTest(unittest.TestCase):
+    """A citation links to the chunk that carries its anchor."""
+
+    CITING = CORE_CHAPTER.replace("eight cycles apart.",
+                                  "eight cycles apart, as :rule:`design.timing` and :rule:`core.turn` say.")
+
+    def references(self, book, docname):
+        return [(node.get("refuri"), node.get("refid"), node.astext())
+                for node in book.resolved[docname].findall(nodes.reference)]
+
+    def test_each_citation_resolves_to_its_anchor(self):
+        book = Book({"core/core.rst": self.CITING, "design/design.rst": DESIGN})
+        self.assertEqual(book.tuples(), [])
+        self.assertEqual(self.references(book, "core/core"), [("#design.timing", None, "design.timing"),
+                                                              (None, "core.turn", "core.turn")])
+
+    def test_each_anchored_chunk_carries_its_anchor_as_its_id(self):
+        book = Book({"core/core.rst": GOOD})
+        ids = [node["ids"] for node in book.resolved["core/core"].findall(bcw.chunk)]
+        self.assertEqual(ids, [["core.rotation"], [], [], ["core.turn"], ["core.core"], ["core.timing"]])
+
+    def test_the_checks_still_read_the_citation_as_a_quotation(self):
+        book = Book({"core/core.rst": self.CITING, "design/design.rst": DESIGN}, general=GENERAL | {"eight",
+                    "cycles", "apart", "as", "and", "say"})
+        self.assertEqual([f for f in book.tuples() if f[2] == "known-words"], [])
 
 
 class TangleTest(unittest.TestCase):
