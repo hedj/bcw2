@@ -35,6 +35,7 @@ carry
 case
 change
 check
+closure
 code
 come
 comment
@@ -120,7 +121,6 @@ machine
 meaning
 measure
 measured
-meet
 minus
 modulo
 more
@@ -171,6 +171,7 @@ retired
 role
 run
 same
+satisfies
 script
 second
 security

@@ -53,7 +53,7 @@ Rotation
    :value: core.clock
    :unit: Hz
 
-   The core meets timing at :param:`core.clock`.
+   The core satisfies timing closure at :param:`core.clock`.
 
 .. requirement:: core.rotation
    :parent: design.timing-invariant
