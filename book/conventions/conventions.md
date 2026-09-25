@@ -91,6 +91,17 @@ obeys it.
 or `implements:` comment, or carry `impl=none`.
 {rule=doc.implemented parent=doc.traceable}
 
+**DEFINITION.** A **reference** is an entry in a `parent=` or `implements=` list, an
+`implements:` comment in `tools/`, or a citation.
+{rule=doc.reference parent=doc.traceable}
+
+**DEFINITION.** A **citation** is a code span of lower-case words joined by dots, whose first
+word is also the first word of an anchor.
+{rule=doc.citation parent=doc.traceable}
+
+**REQUIREMENT.** Each reference shall name an anchor in the book.
+{rule=doc.references parent=doc.traceable}
+
 **RATIONALE.** A Verilog block names the requirements that it implements in its
 `implements=` list. A check in `tools/` names its rule in an `# implements:` comment, so each
 documentation rule traces down to its script.

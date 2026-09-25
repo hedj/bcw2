@@ -59,6 +59,7 @@ class Document:
     chunks: list
     findings: list  # the findings that parsing met
     blocks: list  # every fenced block at the top level
+    spans: list  # (line, text) of every inline code span
 
 
 @dataclass
@@ -86,6 +87,10 @@ class Chunk:
     def anchor(self):
         return self.attrs.get("rule")
 
+    @property
+    def attribute_line(self):
+        return self.line + len(self.lines)
+
 
 def stamp(chunk):
     """The review stamp: a hash of the chunk's label and English."""
@@ -110,8 +115,15 @@ def fence_attributes(info):
 def parse(path, text):
     """Parse one document into its chunks."""
     source = text.splitlines()
-    chunks, findings, blocks, current = [], [], [], None
+    chunks, findings, blocks, spans, current = [], [], [], [], None
     for token in MarkdownIt("commonmark").parse(text):
+        if token.type == "inline":
+            start, end = token.map
+            for child in token.children:
+                if child.type == "code_inline":
+                    number = next((start + offset + 1 for offset, content in enumerate(source[start:end])
+                                   if child.content in content), start + 1)
+                    spans.append((number, child.content))
         if token.level != 0 or token.type in ("paragraph_close", "inline"):
             continue
         if token.type == "fence":
@@ -140,7 +152,7 @@ def parse(path, text):
                 attrs[key] = value
         current = Chunk(path, start + 1, match.group(1), lines, attrs)
         chunks.append(current)
-    return Document(path, chunks, findings, blocks)
+    return Document(path, chunks, findings, blocks, spans)
 
 
 def read(paths):
@@ -215,13 +227,18 @@ def check_stamps(chunk):
 
 
 def tool_implements(paths):
-    """The anchors that the "# implements:" comments in the given files name."""
-    return {anchor for path in paths for anchor in IMPLEMENTS.findall(Path(path).read_text())}
+    """(path, line, anchor) for each "# implements:" comment in the given files."""
+    found = []
+    for path in paths:
+        text = Path(path).read_text()
+        for match in IMPLEMENTS.finditer(text):
+            found.append((str(path), text.count("\n", 0, match.start()) + 1, match.group(1)))
+    return found
 
 
 # implements: doc.implemented
 def check_implemented(documents, tools):
-    named = set(tools)
+    named = {anchor for _, _, anchor in tools}
     for document in documents:
         for block in document.blocks:
             if "verilog" in block.classes and "implements" in block.attrs:
@@ -234,6 +251,32 @@ def check_implemented(documents, tools):
                               "no Verilog block and no check implements the REQUIREMENT",
                               "name it in an implements= list or an implements: comment, "
                               "or set impl=none")
+
+
+# implements: doc.references
+def check_references(documents, anchors, tools):
+    fix = "name an existing anchor, and separate the entries of a list with commas only"
+    for path, number, anchor in tools:
+        if anchor not in anchors:
+            yield Finding(path, number, "references", None, f"{anchor} is not an anchor in the book", fix)
+    prefixes = {anchor.split(".")[0] for anchor in anchors}
+    for document in documents:
+        for chunk in document.chunks:
+            if "parent" in chunk.attrs:
+                for entry in chunk.attrs["parent"].split(","):
+                    if entry not in anchors:
+                        yield Finding(chunk.path, chunk.attribute_line, "references", chunk.anchor,
+                                      f"the parent {entry!r} is not an anchor in the book", fix)
+        for block in document.blocks:
+            if "implements" in block.attrs:
+                for entry in block.attrs["implements"].split(","):
+                    if entry not in anchors:
+                        yield Finding(document.path, block.line, "references", None,
+                                      f"the implements= entry {entry!r} is not an anchor in the book", fix)
+        for number, text in document.spans:
+            if ANCHOR.fullmatch(text) and text.split(".")[0] in prefixes and text not in anchors:
+                yield Finding(document.path, number, "references", None,
+                              f"the citation {text} names no anchor in the book", fix)
 
 
 def check(paths, retired, implemented=()):
@@ -253,6 +296,7 @@ def check(paths, retired, implemented=()):
             findings += check_anchor(chunk, seen, retired)
             findings += check_stamps(chunk)
     findings += check_implemented(documents, implemented)
+    findings += check_references(documents, set(seen), implemented)
     return sorted(findings, key=lambda f: (f.path, f.line, f.check))
 
 
