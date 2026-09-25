@@ -48,7 +48,7 @@ weave:
 	LATEXMKOPTS=-quiet $(PY) -m sphinx -M latexpdf book build -E -q -c tools 2>&1 | $(RELATIVE)
 
 test:
-	$(PY) -m unittest discover -s tools/tests
+	$(PY) -m pytest
 
 clean:
 	rm -rf build

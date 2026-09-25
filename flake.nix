@@ -16,7 +16,7 @@
         in
         pkgs.mkShellNoCC {
           packages = [
-            (pkgs.python3.withPackages (ps: [ ps.sphinx ps.z3-solver ]))
+            (pkgs.python3.withPackages (ps: [ ps.sphinx ps.z3-solver ps.pytest ps.pytest-xdist ]))
             pkgs.verilator
             pkgs.iverilog
             # For make weave: latexmk, the LaTeX packages that the LaTeX of Sphinx

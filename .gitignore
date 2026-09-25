@@ -4,3 +4,4 @@ __pycache__/
 # The pip environment of the old tools/setup.sh, which a clone from before
 # the Nix flake can still hold.
 .venv/
+.pytest_cache/
