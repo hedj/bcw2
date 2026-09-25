@@ -53,6 +53,13 @@ class Finding:
 
 
 @dataclass
+class Document:
+    path: str
+    chunks: list
+    findings: list  # the findings that parsing met
+
+
+@dataclass
 class Block:
     line: int
     classes: set
@@ -99,7 +106,7 @@ def fence_attributes(info):
 
 
 def parse(path, text):
-    """Return the chunks of one document, and the findings that parsing met."""
+    """Parse one document into its chunks."""
     source = text.splitlines()
     chunks, findings, current = [], [], None
     for token in MarkdownIt("commonmark").parse(text):
@@ -130,7 +137,11 @@ def parse(path, text):
                 attrs[key] = value
         current = Chunk(path, start + 1, match.group(1), lines, attrs)
         chunks.append(current)
-    return chunks, findings
+    return Document(path, chunks, findings)
+
+
+def read(paths):
+    return [parse(str(path), Path(path).read_text()) for path in paths]
 
 
 def check_labels(chunk):
@@ -200,10 +211,9 @@ def check_stamps(chunk):
 def check(paths, retired):
     """Return every finding in the given documents."""
     findings, seen = [], {}
-    for path in paths:
-        chunks, parse_findings = parse(str(path), Path(path).read_text())
-        findings += parse_findings
-        for chunk in chunks:
+    for document in read(paths):
+        findings += document.findings
+        for chunk in document.chunks:
             findings += check_labels(chunk)
             findings += check_one_shall(chunk)
             findings += check_anchor(chunk, seen, retired)
