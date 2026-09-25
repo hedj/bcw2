@@ -52,7 +52,9 @@ from sphinx.util.nodes import make_refnode
 import ste_lint
 
 RULES = {"REQUIREMENT", "PARAMETER", "DEFINITION"}
-ANCHORED = RULES | {"GOAL"}
+ANCHORED = RULES | {"GOAL", "TARGET"}
+# The labels whose chunks carry a value.
+VALUED = {"PARAMETER", "TARGET"}
 KINDS = ["tutorial", "how-to", "reference", "explanation"]
 ANCHOR = re.compile(r"[a-z][a-z0-9-]*(\.[a-z0-9-]+)+")
 SHALL = re.compile(r"\bshall\b", re.IGNORECASE)
@@ -184,7 +186,7 @@ CHUNK_DIRECTIVES = {
     "definition": chunk_directive("DEFINITION", True, ["parent", "never"]),
     "rationale": chunk_directive("RATIONALE", False, []),
     "discussion": chunk_directive("DISCUSSION", False, []),
-    "target": chunk_directive("TARGET", False, []),
+    "target": chunk_directive("TARGET", True, ["parent", "value", "unit"]),
     "open": chunk_directive("OPEN", False, [], titled=True),
 }
 
@@ -817,7 +819,7 @@ FUNCTIONS = {"clog2": lambda number: max(0, number - 1).bit_length(), "min": min
 
 
 class NoValue(Exception):
-    """A PARAMETER whose value does not evaluate, with the reason as its message."""
+    """A value that does not evaluate, with the reason as its message."""
 
 
 def constant_name(anchor):
@@ -846,15 +848,15 @@ def compute(node, names):
 
 
 def parameter_values(documents):
-    """The value of each PARAMETER that evaluates, and the reason for each that does not.
+    """The value of each PARAMETER and TARGET that evaluates, and the reason for each that does not.
 
-    A value names another PARAMETER by its anchor. The anchors become Python
+    A value names a PARAMETER by its anchor, and never a TARGET. The anchors become Python
     names before the parse, because Python would read a hyphen as a minus sign.
     """
     chunks = {}
     for document in documents:
         for chunk in document.chunks:
-            if chunk.label == "PARAMETER" and chunk.anchor is not None:
+            if chunk.label in VALUED and chunk.anchor is not None:
                 chunks.setdefault(chunk.anchor, chunk)
     values, failures = {}, {}
 
@@ -876,6 +878,8 @@ def parameter_values(documents):
             for other in names.values():
                 if other not in chunks:
                     raise NoValue(f"{other} is not a PARAMETER in the book")
+                if chunks[other].label == "TARGET":
+                    raise NoValue(f"{other} is a TARGET, and a value names only PARAMETERs")
                 if other in path + [anchor]:
                     cycle = (path + [anchor])[(path + [anchor]).index(other):]
                     for member in cycle:
@@ -901,9 +905,11 @@ def parameter_values(documents):
 
 
 # implements: doc.parameter-values
+# implements: doc.target-values
 def check_parameter_values(documents):
     for anchor, (chunk, reason) in parameter_values(documents)[1].items():
-        yield Finding(chunk.path, chunk.option_line("value"), "parameter-values", anchor, reason,
+        name = "target-values" if chunk.label == "TARGET" else "parameter-values"
+        yield Finding(chunk.path, chunk.option_line("value"), name, anchor, reason,
                       "write the value as an integer, or an expression of integers, PARAMETER anchors, "
                       "+ - * // % ** and clog2, min and max, with a space on each side of a minus sign")
 
@@ -922,19 +928,38 @@ def check_constant_names(documents):
                               "choose an anchor whose constant name no other PARAMETER has")
 
 
-# implements: doc.param-citations
-def check_param_citations(documents):
+def anchor_labels(documents):
+    """The label of the first chunk with each anchor."""
     labels = {}
     for document in documents:
         for chunk in document.chunks:
             if chunk.anchor is not None:
                 labels.setdefault(chunk.anchor, chunk.label)
+    return labels
+
+
+# implements: doc.target-parents
+def check_target_parents(documents):
+    labels = anchor_labels(documents)
+    for document in documents:
+        for chunk in document.chunks:
+            for parent in parents(chunk):
+                if labels.get(parent) == "TARGET":
+                    yield Finding(chunk.path, chunk.option_line("parent"), "target-parents", chunk.anchor,
+                                  f"the parent {parent} is a TARGET, which a measurement of the finished "
+                                  "hardware decides", "name the rule or GOAL that the chunk serves")
+
+
+# implements: doc.param-citations
+def check_param_citations(documents):
+    labels = anchor_labels(documents)
     for document in documents:
         for number, anchor, kind in document.citations:
-            if kind == "param" and anchor in labels and labels[anchor] != "PARAMETER":
+            if kind == "param" and anchor in labels and labels[anchor] not in VALUED:
                 yield Finding(document.path, number, "param-citations", None,
-                              f"the param citation names {anchor}, which is a {labels[anchor]}, not a PARAMETER",
-                              "cite it with the role rule, or name a PARAMETER")
+                              f"the param citation names {anchor}, which is a {labels[anchor]}, "
+                              "not a PARAMETER or a TARGET",
+                              "cite it with the role rule, or name a PARAMETER or a TARGET")
 
 
 def crowded(documents):
@@ -971,6 +996,7 @@ def check(documents, retired=(), tools=(), general=None):
     findings += check_parameter_values(documents)
     findings += check_constant_names(documents)
     findings += check_param_citations(documents)
+    findings += check_target_parents(documents)
     if general is not None:
         findings += check_known_words(documents, general)
         findings += check_general_words(documents, general)

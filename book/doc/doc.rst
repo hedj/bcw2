@@ -20,7 +20,8 @@ The chapters are written in reStructuredText. Each GOAL and each rule is a direc
 ``:parent:``, stand on the lines below the directive. A twin stands inside its rule as a
 ``twin`` directive. ``tools/bcw.py`` is the Sphinx extension that defines these directives,
 checks the rules and tangles the code. The tangle also writes the value of each PARAMETER as a
-constant, which the Verilog and the twins read. A heading of level 1 has ``=`` above and below it. Level
+constant, which the Verilog and the twins read. A TARGET is a figure that the finished
+hardware is measured against, so nothing in the design rests on it. A heading of level 1 has ``=`` above and below it. Level
 2 has ``=`` below it, level 3 has ``-`` and level 4 has ``~``.
 
 ``make weave`` builds the reader edition, as HTML and as a PDF. It moves each RATIONALE and
@@ -111,8 +112,8 @@ Terms and marking
 .. definition:: doc.allowed-options
    :parent: doc.traceable
 
-   The :dfn:`allowed options` of a GOAL are ``parent`` alone. A PARAMETER allows ``parent``,
-   ``value`` and ``unit``, and a REQUIREMENT allows ``parent`` and ``impl``. A DEFINITION allows
+   The :dfn:`allowed options` of a GOAL are ``parent`` alone. A PARAMETER and a TARGET allow
+   ``parent``, ``value`` and ``unit``, and a REQUIREMENT allows ``parent`` and ``impl``. A DEFINITION allows
    ``parent`` and ``never``, and no other label allows an option.
 
 .. requirement:: doc.attribute-keys
@@ -142,8 +143,8 @@ Terms and marking
 .. requirement:: doc.anchors
    :parent: doc.traceable
 
-   Where a chunk is a rule or a GOAL, the chunk shall carry a unique anchor that is not
-   retired.
+   Where a chunk is a rule or a GOAL or a TARGET, the chunk shall carry a unique anchor that
+   is not retired.
 
 .. requirement:: doc.stamps
    :parent: doc.read-is-checked
@@ -222,13 +223,13 @@ Sentences
 .. requirement:: doc.linter
    :parent: doc.one-reading, doc.one-engineer
 
-   Where a chunk is a rule or a GOAL, the chunk shall have no finding of level
+   Where a chunk carries an anchor, the chunk shall have no finding of level
    ``advisory-free`` from ``tools/ste_lint.py``.
 
 .. requirement:: doc.vocabulary
    :parent: doc.one-reading
 
-   Where a chunk is a rule or a GOAL, the chunk shall hold no word from the ``never`` option
+   Where a chunk carries an anchor, the chunk shall hold no word from the ``never`` option
    of a DEFINITION.
 
 .. definition:: doc.general-word
@@ -246,7 +247,7 @@ Sentences
 .. requirement:: doc.known-words
    :parent: doc.one-reading
 
-   Where a chunk is a rule or a GOAL, the chunk shall hold only known words in its English
+   Where a chunk carries an anchor, the chunk shall hold only known words in its English
    outside quotations.
 
 .. requirement:: doc.general-words
@@ -296,7 +297,8 @@ Layout
 .. requirement:: doc.argument-budget
    :parent: doc.one-engineer, doc.rules-apart
 
-   Where a section holds a rule or a GOAL, the section shall hold at most one RATIONALE or
+   Where a section holds a chunk that carries an anchor, the section shall hold at most one
+   RATIONALE or
    DISCUSSION, of 40 words or fewer.
 
 .. definition:: doc.code-block
@@ -377,8 +379,8 @@ Parameters
 .. definition:: doc.parameter-value
    :parent: doc.one-source
 
-   A :dfn:`parameter value` is the ``value`` option of a PARAMETER. It is an integer, or an
-   expression of integers, the anchors of other PARAMETERs and parentheses. It can use the
+   A :dfn:`parameter value` is the ``value`` option of a PARAMETER or a TARGET. It is an
+   integer, or an expression of integers, the anchors of PARAMETERs and parentheses. It can use the
    operators ``+``, ``-``, ``*``, ``//``, ``%`` and ``**``, and the functions ``clog2``, ``min``
    and ``max``. An exponent is 1024 or less, and a minus sign has a space on each side.
 
@@ -402,10 +404,30 @@ Parameters
 .. requirement:: doc.param-citations
    :parent: doc.traceable
 
-   Where a citation uses the role ``param``, the citation shall name a PARAMETER.
+   Where a citation uses the role ``param``, the citation shall name a PARAMETER or a TARGET.
 
 .. rationale::
 
    The tangle writes each PARAMETER as a constant in ``build/rtl/bcw_params.sv`` and
    ``build/model/bcw_params.py``, so the Verilog and the twins read one value. The weave shows the
    value where the text cites it.
+
+Targets
+=======
+
+.. requirement:: doc.target-values
+   :parent: doc.one-source
+
+   Where a chunk is a TARGET, the chunk shall carry a parameter value that evaluates to an
+   integer.
+
+.. requirement:: doc.target-parents
+   :parent: doc.traceable
+
+   No chunk shall name a TARGET in its ``parent`` option.
+
+.. rationale::
+
+   A measurement of the finished hardware decides a TARGET. No design decision can rest on a
+   goal that nobody has met yet, so no chunk serves a TARGET and no value names one. The tangle
+   writes no TARGET.

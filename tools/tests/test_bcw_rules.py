@@ -873,6 +873,83 @@ class ParameterTangleTest(unittest.TestCase):
             self.assertEqual(linemap.lookup(str(path), 4), ("book/core/core.rst", line(text, ":value: 8")))
 
 
+def target(anchor, value, parent="core.core", unit=None, text="The number of threads."):
+    """A TARGET chunk to add at the end of GOOD. value or parent None leaves out that option."""
+    lines = [f"\n.. target:: {anchor}"]
+    lines += [f"   :parent: {parent}"] if parent is not None else []
+    lines += [f"   :value: {value}"] if value is not None else []
+    lines += [f"   :unit: {unit}"] if unit else []
+    return "\n".join(lines) + f"\n\n   {text}\n"
+
+
+class TargetTest(unittest.TestCase):
+    """doc.target-values, doc.target-parents, and the rules that a TARGET shares with the rules"""
+
+    def test_a_target_with_its_options_passes_and_its_value_can_derive_from_a_parameter(self):
+        book = Book({"core/core.rst": GOOD + THREADS + target("core.aim", "core.threads * 2", "core.threads",
+                                                             "threads")})
+        self.assertEqual(book.tuples(), [])
+        self.assertEqual(book.values["core.aim"], 16)
+
+    def test_a_target_without_an_anchor_is_an_error_on_its_line(self):
+        text = GOOD + "\n.. target::\n\n   The number of threads.\n"
+        book = Book({"core/core.rst": text})
+        self.assertEqual([(path, number) for path, number, _ in book.others()],
+                         [("book/core/core.rst", line(text, ".. target::"))])
+        self.assertIn("1 argument(s) required, 0 supplied", book.warnings)
+
+    def test_a_target_without_a_value_is_a_finding_on_the_directive_line(self):
+        text = GOOD + target("core.aim", None)
+        self.assertEqual(findings(text), [(line(text, ".. target:: core.aim"), "target-values", "core.aim")])
+
+    def test_a_target_value_that_names_a_target_is_a_finding(self):
+        text = GOOD + target("core.aim", "8") + target("core.other", "core.aim + 1")
+        book = Book({"core/core.rst": text})
+        self.assertEqual(book.tuples(), [("book/core/core.rst", line(text, ":value: core.aim + 1"), "target-values",
+                                          "core.other")])
+        self.assertIn("core.aim is a TARGET", book.findings[0].message)
+
+    def test_a_parameter_value_that_names_a_target_is_a_finding(self):
+        text = GOOD + target("core.aim", "8") + parameter("core.x", "core.aim")
+        book = Book({"core/core.rst": text})
+        self.assertEqual(book.tuples(), [("book/core/core.rst", line(text, ":value: core.aim"), "parameter-values",
+                                          "core.x")])
+        self.assertIn("core.aim is a TARGET", book.findings[0].message)
+        self.assertNotIn("core.x", book.values)
+
+    def test_a_parent_that_names_a_target_is_a_finding_on_the_parent_line(self):
+        for parents in ["core.aim", "core.core, core.aim"]:
+            with self.subTest(parents=parents):
+                text = GOOD + target("core.aim", "8") + parameter("core.x", "1", parent=parents)
+                self.assertEqual(findings(text), [(line(text, f":parent: {parents}"), "target-parents", "core.x")])
+
+    def test_a_target_without_a_parent_does_not_reach_a_goal(self):
+        text = GOOD + target("core.aim", "8", parent=None)
+        self.assertEqual(findings(text), [(line(text, ".. target:: core.aim"), "reaches-goal", "core.aim")])
+
+    def test_the_word_checks_read_a_target(self):
+        text = GOOD + target("core.aim", "8", text="The aim of the threads.")
+        self.assertEqual(only("known-words", text, general=GENERAL | {"the", "of"}),
+                         [(line(text, "The aim of"), "known-words", "core.aim")])
+
+    def test_a_param_citation_of_a_target_passes(self):
+        text = (GOOD + target("core.aim", "8")).replace("eight cycles apart.", "eight cycles apart, of :param:`core.aim`.")
+        self.assertEqual(findings(text), [])
+
+    def test_the_tangle_writes_no_target(self):
+        text = GOOD + THREADS + target("core.aim", "8") + target("core.threads-aim", "core.threads")
+        book = Book({"core/core.rst": text}, tangle=True)
+        self.assertEqual(book.tuples(), [])
+        for path in ["build/rtl/bcw_params.sv", "build/model/bcw_params.py"]:
+            with self.subTest(path=path):
+                self.assertIn("CORE_THREADS", book.files[path])
+                self.assertNotIn("AIM", book.files[path])
+
+    def test_a_target_shares_no_constant_name_with_a_parameter(self):
+        text = GOOD + parameter("core.turn-width", "3") + target("core.turn.width", "3")
+        self.assertEqual(findings(text), [])
+
+
 class TangleTest(unittest.TestCase):
     """The tangle writes each file of a twin or a source, with a marker before each block."""
 
