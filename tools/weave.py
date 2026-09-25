@@ -1,0 +1,243 @@
+"""The weave: the reader edition of the book, as HTML and as LaTeX for the PDF.
+
+make weave runs Sphinx with this extension and tools/bcw.py. The weave reads
+and checks nothing itself. It orders and reshapes what bcw.py reads:
+
+- The index holds the directive chapters. It lists the chapters in the order
+  of bcw.chapter_order: one numbered toctree for each kind, with the kind as
+  its caption. Sphinx reads the index last, so that the order is known.
+- At doctree-read, after bcw.py reads a chapter, each chunk becomes a container
+  whose id is its anchor. Its first line shows its label and its anchor, and a
+  "Serves:" line links to each parent.
+- Each RATIONALE and DISCUSSION moves to a last section, Explanation, under a
+  link back to the section that it came from. A "Why:" line links to it from
+  its old place.
+- At doctree-resolved, the HTML shows each twin and each source in a closed
+  <details>. The LaTeX prints each twin in small text, moves each source to a
+  last section, Implementation, and starts each kind with a \\part.
+"""
+
+import html
+
+from docutils import nodes
+from docutils.statemachine import StringList
+from sphinx import addnodes
+from sphinx.util.docutils import SphinxDirective
+
+import bcw
+
+CAPTIONS = {"tutorial": "Tutorials", "how-to": "How-to guides", "reference": "Reference",
+            "explanation": "Explanation"}
+LEFT_OUT = "Unordered"
+MOVED = {"RATIONALE", "DISCUSSION"}
+
+
+def read_index_last(app, env, docnames):
+    """Read the index after every chapter, so that the chapters directive knows the order."""
+    if app.config.root_doc in docnames:
+        docnames.remove(app.config.root_doc)
+        docnames.append(app.config.root_doc)
+
+
+def parts(env):
+    """(caption, [docname]) for each part of the book, in order.
+
+    A chapter that the chapter order leaves out, or whose kind is not known,
+    goes in a last part.
+    """
+    documents = {document.name: document for document in env.bcw_documents.values()}
+    order = bcw.chapter_order(list(documents.values()))[0]
+    result, placed = [], set()
+    for kind in bcw.KINDS:
+        names = [name for name in order if documents[name].kind == kind]
+        if names:
+            result.append((CAPTIONS[kind], [documents[name].docname for name in names]))
+            placed.update(names)
+    rest = sorted(name for name in documents if name not in placed)
+    if rest:
+        result.append((LEFT_OUT, [documents[name].docname for name in rest]))
+    return result
+
+
+class ChaptersDirective(SphinxDirective):
+    """The chapters of the book: one numbered toctree for each part."""
+
+    def run(self):
+        lines = []
+        for caption, docnames in parts(self.env):
+            lines += [".. toctree::", "   :numbered:", f"   :caption: {caption}", ""]
+            lines += [f"   {docname}" for docname in docnames] + [""]
+        node = nodes.Element()
+        self.state.nested_parse(StringList(lines, self.get_source_info()[0]), self.content_offset, node)
+        return node.children
+
+
+def link(anchor, docname):
+    """A link to the chunk with the anchor, which Sphinx resolves."""
+    return addnodes.pending_xref("", nodes.literal(text=anchor), refdomain="std", reftype="ref",
+                                 reftarget=anchor, refexplicit=True, refwarn=False, refdoc=docname)
+
+
+def container(chunk, docname):
+    """The chunk as a container of standard nodes."""
+    result = nodes.container(classes=["chunk", chunk["label"].lower()], ids=chunk["ids"])
+    head = nodes.paragraph(classes=["chunk-label"])
+    head += nodes.strong(text=chunk["label"])
+    if chunk["anchor"]:
+        head += [nodes.Text(" "), nodes.literal(text=chunk["anchor"])]
+    if chunk.get("title"):
+        head += nodes.Text(" " + chunk["title"])
+    result += head
+    result += chunk.children
+    parents = [entry.strip() for entry in chunk["options"].get("parent", "").split(",") if entry.strip()]
+    if parents:
+        serves = nodes.paragraph(classes=["chunk-serves"])
+        serves += nodes.Text("Serves: ")
+        for number, parent in enumerate(parents):
+            if number:
+                serves += nodes.Text(", ")
+            serves += link(parent, docname)
+        result += serves
+    return result
+
+
+def new_id(root, node, prefix):
+    """Give node the id prefix-n, with the first n that no node of the chapter at root has."""
+    used = {ident for element in root.findall(nodes.Element) for ident in element["ids"]}
+    number = 1
+    while f"{prefix}-{number}" in used:
+        number += 1
+    node["ids"].append(f"{prefix}-{number}")
+
+
+def last_section(root, title, prefix):
+    """A new section at the end of the title section of the chapter at root."""
+    section = nodes.section()
+    new_id(root, section, prefix)
+    section += nodes.title(text=title)
+    top = next((child for child in root.children if isinstance(child, nodes.section)), root)
+    top += section
+    return section
+
+
+def enclosing_section(node):
+    while not isinstance(node, nodes.section):
+        node = node.parent
+    return node
+
+
+def reshape(app, doctree):
+    """Make each chunk a container, and move each argument to the Explanation section."""
+    docname = app.env.docname
+    if docname == app.config.root_doc:
+        return
+    moved = []
+    for chunk in list(doctree.findall(bcw.chunk)):
+        box = container(chunk, docname)
+        chunk.replace_self(box)
+        if chunk["label"] in MOVED:
+            moved.append(box)
+    if not moved:
+        return
+    explanation = last_section(doctree, "Explanation", "explanation")
+    for box in moved:
+        origin = enclosing_section(box.parent)
+        item = nodes.container(classes=["explanation"])
+        new_id(doctree, item, "why")
+        item += nodes.rubric("", "", nodes.reference("", origin[0].astext(), refid=origin["ids"][0]))
+        why = nodes.paragraph(classes=["chunk-why"])
+        why += [nodes.Text("Why: "), nodes.reference("", "see the explanation", refid=item["ids"][0])]
+        box.replace_self(why)
+        item += box
+        explanation += item
+
+
+def summary(block):
+    if block["bcw"] == "twin":
+        return "Formal twin"
+    kind = "Verilog" if block["target"].endswith((".v", ".sv")) else "Source"
+    return f"{kind}: {block['target']}"
+
+
+def code_blocks(root, kind):
+    return [block for block in list(root.findall(nodes.literal_block)) if block.get("bcw") == kind]
+
+
+def wrap(block, before, after):
+    parent = block.parent
+    parent.insert(parent.index(block), before)
+    parent.insert(parent.index(block) + 1, after)
+
+
+def weave_html(doctree):
+    for block in code_blocks(doctree, "twin") + code_blocks(doctree, "source"):
+        wrap(block, nodes.raw("", f"<details><summary>{html.escape(summary(block))}</summary>", format="html"),
+             nodes.raw("", "</details>", format="html"))
+
+
+def weave_latex_chapter(root):
+    # LaTeX labels the ids of a target, but not the ids of a container.
+    for box in list(root.findall(nodes.container)):
+        if box["ids"]:
+            box.insert(0, nodes.target(ids=box["ids"]))
+            box["ids"] = []
+    for block in code_blocks(root, "twin"):
+        label = nodes.paragraph("", "", nodes.emphasis(text=summary(block)))
+        block.parent.insert(block.parent.index(block), label)
+        wrap(block, nodes.raw("", r"\begingroup\fvset{fontsize=\small}", format="latex"),
+             nodes.raw("", r"\endgroup", format="latex"))
+    sources = code_blocks(root, "source")
+    if not sources:
+        return
+    implementation = last_section(root, "Implementation", "implementation")
+    for block in sources:
+        item = nodes.container(classes=["implementation"])
+        target = nodes.target()
+        new_id(root, target, "source")
+        item += [target, nodes.rubric(text=summary(block))]
+        pointer = nodes.paragraph()
+        pointer += [nodes.Text(summary(block).split(":")[0] + ": "),
+                    nodes.reference("", block["target"], refid=target["ids"][0])]
+        block.replace_self(pointer)
+        item += block
+        implementation += item
+
+
+def weave_latex(app, doctree, docname):
+    files = list(doctree.findall(addnodes.start_of_file))
+    if files:
+        first = {}
+        for caption, docnames in parts(app.env):
+            first[docnames[0]] = caption
+        for start in files:
+            weave_latex_chapter(start)
+            if start["docname"] in first:
+                start.parent.insert(start.parent.index(start),
+                                    nodes.raw("", f"\\part{{{first[start['docname']]}}}", format="latex"))
+    elif docname != app.config.root_doc:
+        weave_latex_chapter(doctree)
+
+
+def weave(app, doctree, docname):
+    if app.builder.format == "html":
+        weave_html(doctree)
+    elif app.builder.format == "latex":
+        weave_latex(app, doctree, docname)
+
+
+# The fonts of texlive-fonts-recommended, in place of Sphinx's default TeX Gyre fonts.
+FONTS = r"\usepackage{mathptmx}\usepackage[scaled=.9]{helvet}\usepackage{courier}"
+
+
+def set_fonts(app, config):
+    config.latex_elements = {"fontpkg": FONTS, **config.latex_elements}
+
+
+def setup(app):
+    app.setup_extension("bcw")
+    app.connect("config-inited", set_fonts)
+    app.add_directive("chapters", ChaptersDirective)
+    app.connect("env-before-read-docs", read_index_last)
+    app.connect("doctree-read", reshape, priority=450)
+    app.connect("doctree-resolved", weave)
+    return {"parallel_read_safe": False, "env_version": 1}

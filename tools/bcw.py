@@ -145,7 +145,8 @@ class ChunkDirective(SphinxDirective):
 
     def run(self):
         node = chunk(label=self.label, anchor=self.arguments[0] if self.required_arguments else None,
-                     options=dict(self.options))
+                     options=dict(self.options),
+                     title=self.arguments[0] if self.optional_arguments and self.arguments else None)
         node.source, node.line = self.get_source_info()
         node["option_lines"] = {}
         for offset, text in enumerate(self.block_text.splitlines()[1:], 1):
@@ -196,7 +197,17 @@ class CodeDirective(SphinxDirective):
         node["options"] = dict(self.options)
         node["target"] = self.arguments[0] if self.required_arguments else self.options.get("file")
         node["first"] = self.content_offset + 1
+        node["language"] = language(node["target"], self.kind)
         return [node]
+
+
+def language(target, kind):
+    """The language that Sphinx highlights a code block in: a twin is Python."""
+    if kind == "twin" or (target or "").endswith(".py"):
+        return "python"
+    if (target or "").endswith((".v", ".sv")):
+        return "verilog"
+    return "none"
 
 
 class TwinDirective(CodeDirective):
@@ -248,7 +259,7 @@ def read_document(app, doctree):
     if docname == app.config.root_doc:
         return
     path = relative(app, docname)
-    document = Document(path, docname.split("/")[-1], docname, app.env.metadata[docname].get("kind"))
+    document = Document(path, docname.split("/")[-1], docname, None)
     tops = [0]
 
     def walk(node, level, top, section, owner):
@@ -327,6 +338,13 @@ def paragraph_prose(paragraph):
 
     walk(paragraph)
     return [(paragraph.line + offset, text) for offset, text in enumerate("".join(parts).split("\n"))]
+
+
+def read_kind(app, doctree):
+    """Take the kind of a chapter from its metadata, which Sphinx collects after read_document."""
+    document = app.env.bcw_documents.get(app.env.docname)
+    if document is not None:
+        document.kind = app.env.metadata[app.env.docname].get("kind")
 
 
 def purge_document(app, env, docname):
@@ -869,7 +887,10 @@ def setup(app):
     app.add_directive("check", CheckDirective)
     app.add_role("rule", RuleRole())
     app.connect("builder-inited", init_environment)
-    app.connect("doctree-read", read_document)
+    # Before Sphinx's own collectors at 500, so that the weave can add sections that
+    # the table of contents then holds.
+    app.connect("doctree-read", read_document, priority=400)
+    app.connect("doctree-read", read_kind, priority=600)
     app.connect("env-purge-doc", purge_document)
     app.connect("env-check-consistency", check_book)
     app.connect("build-finished", tangle)

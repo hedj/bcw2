@@ -9,7 +9,9 @@ sys.path.insert(0, str(TOOLS))
 
 project = "BCW-2 Soubou"
 root_doc = "index"
-extensions = ["bcw"]
+extensions = ["bcw", "weave"]
+latex_documents = [(root_doc, "bcw2.tex", project, "BCW-2", "manual")]
+latex_engine = "pdflatex"
 # Each finding already names its check, so Sphinx does not add its type.
 show_warning_types = False
 

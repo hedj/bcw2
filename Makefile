@@ -2,6 +2,7 @@
 #
 #   make tangle   tangle the book into build/
 #   make check    the checks of the book, Verilator lint and a load of each twin
+#   make weave    the reader edition, as build/html/index.html and build/latex/bcw2.pdf
 #   make test     the tests of the tools
 #   make clean    remove build/
 #
@@ -19,7 +20,7 @@ MAP := $(PY) tools/linemap.py
 SPHINX := $(PY) -m sphinx -E -q -b dummy -c tools book build/sphinx
 RELATIVE := sed "s|$(CURDIR)/||"
 
-.PHONY: tangle check test clean
+.PHONY: tangle check weave test clean
 
 tangle:
 	$(SPHINX) 2>&1 | $(RELATIVE)
@@ -32,6 +33,11 @@ check:
 	@for f in $$(find build/model -name '*.py' | sort); do \
 	    $(PY) -c 'import runpy, sys; runpy.run_path(sys.argv[1])' "$$f" 2>&1 | $(MAP) || exit 1; \
 	done
+
+# The weave reports findings but does not stop on them: make check is the gate.
+weave:
+	$(PY) -m sphinx -E -q -b html -c tools book build/html 2>&1 | $(RELATIVE)
+	LATEXMKOPTS=-quiet $(PY) -m sphinx -M latexpdf book build -E -q -c tools 2>&1 | $(RELATIVE)
 
 test:
 	$(PY) -m unittest discover -s tools/tests

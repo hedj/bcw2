@@ -21,6 +21,9 @@ The chapters are written in reStructuredText. Each GOAL and each rule is a direc
 checks the rules and tangles the code. A heading of level 1 has ``=`` above and below it. Level
 2 has ``=`` below it, level 3 has ``-`` and level 4 has ``~``.
 
+``make weave`` builds the reader edition, as HTML and as a PDF. It moves each RATIONALE and
+DISCUSSION to an Explanation section at the end of its chapter.
+
 ``book/retired-anchors.txt`` lists the anchors that no chunk can use again, and
 ``book/general-words.txt`` lists the words that need no definition. ``make check`` also prints
 the number of rules with more than two parents, because a long list of parents says little.

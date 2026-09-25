@@ -11,6 +11,7 @@ import contextlib
 import hashlib
 import io
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -112,15 +113,19 @@ class Book:
     chapters maps each path under book/ to its text. general and retired are
     sets of words and anchors, or None for no list file. tools maps the name of
     each file in tools/ to its text. With tangle, the tangle writes under the
-    temporary folder.
+    temporary folder. builder names the Sphinx builder, and output keeps the text
+    of each HTML and LaTeX file that it writes. index replaces the index, which
+    lists the chapters by default. With pdf, latexmk makes a PDF of the LaTeX,
+    and pdf keeps its exit status and the size of the PDF.
     """
 
-    def __init__(self, chapters, general=None, retired=None, tools=None, tangle=False, **overrides):
+    def __init__(self, chapters, general=None, retired=None, tools=None, tangle=False, builder="dummy",
+                 index=None, pdf=False, **overrides):
         directory = tempfile.TemporaryDirectory()
         self.root = Path(directory.name)
         try:
             source = self.root / "book"
-            index = "Book\n====\n\n.. toctree::\n\n" + "".join(
+            index = index or "Book\n====\n\n.. toctree::\n\n" + "".join(
                 f"   {Path(relative).with_suffix('')}\n" for relative in chapters)
             for relative, text in {"index.rst": index, **chapters}.items():
                 (source / relative).parent.mkdir(parents=True, exist_ok=True)
@@ -141,7 +146,7 @@ class Book:
                 overrides["bcw_tangle_root"] = str(self.root)
             warnings = io.StringIO()
             with docutils_namespace():
-                app = Sphinx(str(source), None, str(self.root / "out"), str(self.root / "doctrees"), "dummy",
+                app = Sphinx(str(source), None, str(self.root / "out"), str(self.root / "doctrees"), builder,
                              confoverrides=overrides, status=None, warning=warnings, freshenv=True)
                 app.build()
                 self.resolved = {name: app.env.get_and_resolve_doctree(name, app.builder)
@@ -153,6 +158,14 @@ class Book:
             self.warnings = warnings.getvalue().replace(str(self.root) + "/", "")
             self.files = {str(path.relative_to(self.root)): path.read_text()
                           for path in sorted(self.root.glob("build/**/*")) if path.is_file()}
+            self.output = {str(path.relative_to(self.root / "out")): path.read_text()
+                           for path in sorted((self.root / "out").glob("**/*"))
+                           if path.suffix in (".html", ".tex")}
+            if pdf:
+                result = subprocess.run(["latexmk", "-pdf", "-interaction=nonstopmode", "-halt-on-error"],
+                                        cwd=self.root / "out", capture_output=True, text=True)
+                made = sorted((self.root / "out").glob("*.pdf"))
+                self.pdf = (result.returncode, made[0].stat().st_size if made else 0, result.stdout[-2000:])
         finally:
             directory.cleanup()
 
