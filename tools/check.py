@@ -144,6 +144,7 @@ def read(paths):
     return [parse(str(path), Path(path).read_text()) for path in paths]
 
 
+# implements: doc.labels
 def check_labels(chunk):
     if chunk.label not in LABELS:
         yield Finding(chunk.path, chunk.line, "labels", chunk.anchor,
@@ -166,6 +167,7 @@ def check_one_shall(chunk):
             return
 
 
+# implements: doc.anchors
 def check_anchor(chunk, seen, retired):
     for key in chunk.attrs:
         if key not in ATTRIBUTE_KEYS:
@@ -193,6 +195,7 @@ def check_anchor(chunk, seen, retired):
         seen[anchor] = f"{chunk.path}:{chunk.line}"
 
 
+# implements: doc.stamps
 def check_stamps(chunk):
     for block in chunk.blocks:
         if "formal" not in block.classes:
