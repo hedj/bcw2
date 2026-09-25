@@ -588,12 +588,22 @@ def check_chapter_kind(document):
                       "start the chapter with a :kind: field, such as :kind: reference")
 
 
+def section_number(heading):
+    """Whether the heading starts with a section number, such as 2., 4.2 or the 1 of 1 Core.
+
+    A number without a full stop that a word in lower case follows is a count,
+    such as the 8 of 8 threads.
+    """
+    match = NUMBERED.match(heading)
+    return bool(match) and ("." in match.group(0) or not heading[match.end():][:1].islower())
+
+
 # implements: doc.heading-numbers
 def check_heading_numbers(document):
     for number, _, text in document.sections:
-        if NUMBERED.match(text):
+        if section_number(text):
             yield Finding(document.path, number, "heading-numbers", None,
-                          f"the heading {text!r} starts with a number",
+                          f"the heading {text!r} starts with a section number",
                           "remove the number, because the weave numbers the chapters and sections")
 
 

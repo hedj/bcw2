@@ -704,14 +704,16 @@ class HeadingNumbersTest(unittest.TestCase):
         for old, new in [("Rotation\n========", "2. Rotation\n==========="),
                          ("Rotation\n========", "4.2 Legs\n========"),
                          ("====\nCore\n====", "======\n1 Core\n======"),
-                         ("Goals\n=====", "3.\n=====")]:
+                         ("Goals\n=====", "3.\n====="), ("Goals\n=====", "12\n====="),
+                         ("Rotation\n========", "2.1 rotation\n============")]:
             with self.subTest(new=new):
                 text = GOOD.replace(old, new)
                 title = [part for part in new.splitlines() if not set(part) <= {"="}][0]
                 self.assertEqual(only("heading-numbers", text), [(line(text, title), "heading-numbers", None)])
 
-    def test_a_heading_that_starts_with_a_word_or_a_compound_passes(self):
-        for new in ["Rotation 2\n==========", "64-bit counters\n===============", "v2 rotation\n==========="]:
+    def test_a_heading_that_starts_with_a_word_a_compound_or_a_count_passes(self):
+        for new in ["Rotation 2\n==========", "64-bit counters\n===============", "v2 rotation\n===========",
+                    "8 threads\n=========", "2 cycles apart\n=============="]:
             with self.subTest(new=new):
                 self.assertEqual(only("heading-numbers", GOOD.replace("Rotation\n========", new)), [])
 

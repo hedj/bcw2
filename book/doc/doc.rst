@@ -362,10 +362,18 @@ Chapters
 
    The chapter order shall hold every chapter.
 
+.. definition:: doc.section-number
+   :parent: doc.one-source
+
+   A :dfn:`section number` is a number at the start of a heading that holds a full stop, such as
+   ``2.`` or ``4.2``. A number that ends the heading, or that a word with a capital letter
+   follows, such as the ``1`` of ``1 Core``, is a section number too. A count, such as the ``8``
+   of ``8 threads``, is not.
+
 .. requirement:: doc.heading-numbers
    :parent: doc.one-source
 
-   No chapter shall hold a heading that starts with a number.
+   No chapter shall hold a heading that starts with a section number.
 
 .. rationale::
 
