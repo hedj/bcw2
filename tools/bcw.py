@@ -853,6 +853,13 @@ def chapter_order(documents):
     return order, sorted(set(part) - set(order))
 
 
+def book_order(documents):
+    """The documents in the chapter order, then the chapters that it leaves out, by name."""
+    order, left = chapter_order(documents)
+    position = {name: index for index, name in enumerate(order + left)}
+    return sorted(documents, key=lambda document: position[document.name])
+
+
 # implements: doc.chapters-ordered
 def check_chapters_ordered(documents):
     left = chapter_order(documents)[1]
@@ -1037,9 +1044,9 @@ def fragment_uses(block):
 
 
 def fragments(documents):
-    """The blocks of each fragment, by name, in the order that the tangle reads them."""
+    """The blocks of each fragment, by name, in the chapter order."""
     result = {}
-    for document in documents:
+    for document in book_order(documents):
         for block in document.blocks:
             if is_fragment(block):
                 result.setdefault(block.target, []).append(block)
@@ -1230,7 +1237,7 @@ def tangle(app, exception):
     tangle_parameters(app, root)
     documents = [app.env.bcw_documents[name] for name in sorted(app.env.bcw_documents)]
     files = {}
-    for document in documents:
+    for document in book_order(documents):
         for block in document.blocks:
             if (block.kind == "twin" and block.target) or writes_file(block):
                 files.setdefault(block.target, []).append(block)

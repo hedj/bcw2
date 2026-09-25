@@ -454,7 +454,8 @@ Fragments
    :parent: doc.one-source
 
    A :dfn:`fragment` is the code of the ``source`` directives with one fragment name, joined in
-   the order that ``make tangle`` reads the directives.
+   the chapter order. Within a chapter, the directives join in the order of their lines. The
+   code blocks of one file join in the same order.
 
 .. definition:: doc.fragment-use
    :parent: doc.one-source

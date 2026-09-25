@@ -1050,6 +1050,12 @@ class FragmentTest:
         assert findings(text) == [(line(text, ".. source:: :core.pair-logic"), "fragment-cycles", None),
                                   (line(text, ".. source:: :core.other"), "fragment-cycles", None)]
 
+    def test_the_first_block_of_a_fragment_in_the_chapter_order_carries_its_finding(self):
+        zeta = chapter("Zeta", kind="tutorial", body=source(":core.pair-logic", "// zeta"))
+        alpha = chapter("Alpha", body=source(":core.pair-logic", "// alpha"))
+        book = Book({"alpha/alpha.rst": alpha, "zeta/zeta.rst": zeta})
+        assert book.tuples() == [("book/zeta/zeta.rst", line(zeta, ".. source::"), "fragments-used", None)]
+
     @pytest.mark.parametrize("target", ["rtl/core/pair.v", "src/pair.v", "Core_Pair", "core", "core.pair-logic",
                                         "pair.v", ":Core_Pair"])
     def test_a_target_outside_build_that_is_no_fragment_name_is_a_finding(self, target):
@@ -1094,6 +1100,16 @@ class TangleTest:
 
     def test_without_a_root_nothing_is_tangled(self):
         assert Book({"core/core.rst": GOOD}).files == {}
+
+    def test_blocks_of_one_file_in_two_chapters_join_in_the_chapter_order(self):
+        # A tutorial comes before a reference in the chapter order, so zeta comes before alpha.
+        zeta = chapter("Zeta", kind="tutorial", body=source("build/rtl/core/pair.v", "// zeta"))
+        alpha = chapter("Alpha", body=source("build/rtl/core/pair.v", "// alpha"))
+        book = Book({"alpha/alpha.rst": alpha, "zeta/zeta.rst": zeta}, tangle=True)
+        assert book.tuples() == []
+        assert book.files["build/rtl/core/pair.v"] == (f"// bcw: book/zeta/zeta.rst:{line(zeta, '// zeta')}\n// zeta\n"
+                                                       f"// bcw: book/alpha/alpha.rst:{line(alpha, '// alpha')}\n"
+                                                       "// alpha\n")
 
 
 class FragmentTangleTest:
@@ -1168,6 +1184,16 @@ class FragmentTangleTest:
         path.write_text(tangled)
         number = next(n for n, content in enumerate(lines, 1) if later in content)
         assert linemap.lookup(str(path), number) == ("book/core/core.rst", line(text, later))
+
+    def test_the_blocks_of_a_fragment_in_two_chapters_join_in_the_chapter_order(self):
+        # A tutorial comes before a reference in the chapter order, so zeta comes before alpha.
+        zeta = chapter("Zeta", kind="tutorial", body=source(":core.pair-logic", "// zeta"))
+        alpha = chapter("Alpha", body=source(":core.pair-logic", "// alpha"))
+        book = Book({"alpha/alpha.rst": alpha, "core/core.rst": GOOD + SKELETON, "zeta/zeta.rst": zeta}, tangle=True)
+        assert book.tuples() == []
+        assert (f"    // bcw: book/zeta/zeta.rst:{line(zeta, '// zeta')}\n    // zeta\n"
+                f"    // bcw: book/alpha/alpha.rst:{line(alpha, '// alpha')}\n    // alpha\n"
+                in book.files["build/rtl/core/pair.v"])
 
     def test_a_use_of_no_fragment_stays_as_it_is(self):
         tangled = Book({"core/core.rst": GOOD + SKELETON}, tangle=True).files["build/rtl/core/pair.v"]

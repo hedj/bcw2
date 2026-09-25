@@ -85,13 +85,14 @@ fragment in place of that line, with the indentation of the line:
 
        assign b = a;
 
-So the code of a rule can stand next to the rule, and a skeleton elsewhere
-can put a module in order. A marker before each fragment keeps each line of
-the tangled file traceable to its chapter line. No marker follows a line
-that ends in a backslash, because that line goes on in the next one. So a
-line that goes on across the edge of a fragment maps to the wrong chapter
-line. The rules of fragments are in the section Fragments of
-book/doc/doc.rst.
+So the code of a rule can stand next to the rule, and a skeleton elsewhere can
+put a module in order. The blocks of one fragment, or of one file, join in the
+chapter order (doc.chapter-order), which is the order of the reader edition. A
+marker before each fragment keeps each line of the tangled file traceable to
+its chapter line. No marker follows a line that ends in a backslash, because
+that line goes on in the next one. So a line that goes on across the edge of a
+fragment maps to the wrong chapter line. The rules of fragments are in the
+section Fragments of book/doc/doc.rst.
 
 
 The tools
