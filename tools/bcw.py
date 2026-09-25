@@ -1185,30 +1185,41 @@ def check_book(app, env):
 # The tangle
 
 
-def expand(blocks, defined, comment, indent="", active=()):
-    """The tangled lines of blocks, each after indent, with each fragment use replaced by its fragment.
+def expand(blocks, defined, indent="", active=()):
+    """(text, chapter path, chapter line, indent) of each tangled line of blocks, each after indent.
 
-    A marker comment before each block, and before each fragment, names the chapter
-    line of the code that follows it. After a fragment, a marker names the line
-    where the block goes on. A use of a fragment that no source defines, or that is
-    already being expanded, stays as it is: the checks report it.
+    Each fragment use is replaced by the lines of its fragment, with the indentation
+    of the use added. A use of a fragment that no source defines, or that is already
+    being expanded, stays as it is: the checks report it.
     """
     lines = []
     for block in blocks:
-        lines.append(f"{indent}{comment} bcw: {block.path}:{block.first}")
-        resume = False
         for offset, text in enumerate(block.text.splitlines()):
             match = USE.match(text) if block.kind == "source" else None
             if match and match["name"] in defined and match["name"] not in active:
-                lines += expand(defined[match["name"]], defined, comment, indent + match["indent"],
-                                active + (match["name"],))
-                resume = True
-                continue
-            if resume:
-                lines.append(f"{indent}{comment} bcw: {block.path}:{block.first + offset}")
-                resume = False
-            lines.append(indent + text if text else text)
+                lines += expand(defined[match["name"]], defined, indent + match["indent"], active + (match["name"],))
+            else:
+                lines.append((indent + text if text else text, block.path, block.first + offset, indent))
     return lines
+
+
+def with_markers(lines, comment):
+    """The text of the tangled lines, with a marker comment wherever tools/linemap.py needs one.
+
+    A marker names the chapter line of the line after it, at the indentation of its
+    block. It stands before each line whose place the lines above would not give,
+    such as the first line of a block or of a fragment, or the line after a
+    fragment. A line that ends in a backslash goes on in the next line, in Python and
+    in a Verilog macro, so no marker follows it: the marker waits for the next line.
+    """
+    result, place, after = [], None, ""
+    for text, path, number, indent in lines:
+        if (path, number) != place and not after.endswith("\\"):
+            result.append(f"{indent}{comment} bcw: {path}:{number}")
+            place = (path, number)
+        result.append(text)
+        place, after = (place[0], place[1] + 1), text
+    return result
 
 
 def tangle(app, exception):
@@ -1226,7 +1237,7 @@ def tangle(app, exception):
     defined = fragments(documents)
     for target, blocks in files.items():
         comment = "#" if target.endswith(".py") else "//"
-        lines = expand(blocks, defined, comment)
+        lines = with_markers(expand(blocks, defined), comment)
         path = Path(root) / target
         path.parent.mkdir(parents=True, exist_ok=True)
         text = "\n".join(lines) + "\n"

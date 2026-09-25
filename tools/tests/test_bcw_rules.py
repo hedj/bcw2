@@ -1139,6 +1139,36 @@ class FragmentTangleTest:
         assert names["RESULT"] == 2
         assert f"    # bcw: book/core/core.rst:{line(text, 'y = x + 1')}\n    y = x + 1\n    return y\n" in tangled
 
+    # A line that ends in a backslash goes on in the next line, in Python and in a
+    # Verilog macro, so no marker can stand between the two.
+    BACKSLASH = {
+        "a fragment ends in a backslash": (
+            source("build/model/b.py", "def f(x):", "    <<:core.sum>>", "        1", "    return total", "",
+                   "RESULT = f(1)") + source(":core.sum", "total = x + \\"), "return total"),
+        "an outer line ends in a backslash": (
+            source("build/model/b.py", "def f(x):", "    total = x + \\", "    <<:core.one>>", "    return total", "",
+                   "RESULT = f(1)") + source(":core.one", "1"), "return total"),
+        "a block ends in a backslash": (
+            source("build/model/b.py", "RESULT = 1 + \\") + source("build/model/b.py", "    1", "", "SECOND = 2"),
+            "SECOND = 2"),
+    }
+
+    @pytest.mark.parametrize("case", BACKSLASH)
+    def test_no_marker_follows_a_line_that_ends_in_a_backslash(self, case, tmp_path):
+        extra, later = self.BACKSLASH[case]
+        text = GOOD + extra
+        tangled = Book({"core/core.rst": text}, tangle=True).files["build/model/b.py"]
+        names = {}
+        exec(tangled, names)
+        assert names["RESULT"] == 2
+        lines = tangled.splitlines()
+        assert not any(first.endswith("\\") and "bcw:" in second for first, second in zip(lines, lines[1:])), tangled
+        # The first line after the continuation maps to its chapter line again.
+        path = tmp_path / "b.py"
+        path.write_text(tangled)
+        number = next(n for n, content in enumerate(lines, 1) if later in content)
+        assert linemap.lookup(str(path), number) == ("book/core/core.rst", line(text, later))
+
     def test_a_use_of_no_fragment_stays_as_it_is(self):
         tangled = Book({"core/core.rst": GOOD + SKELETON}, tangle=True).files["build/rtl/core/pair.v"]
         assert "    <<:core.pair-logic>>\n" in tangled
