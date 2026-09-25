@@ -96,10 +96,14 @@ GENERAL = {"the", "shall", "give", "after", "thread", "t", "to", "a", "is", "cyc
 WARNING = re.compile(r"^(?:(?P<path>[^\s:]+?)(?::(?P<line>\d+))?: )?(?:WARNING|ERROR|CRITICAL|SEVERE): (?P<text>.*)$")
 
 
-def line(text, needle):
-    """The 1-based number of the first line of text that holds needle."""
+def line(text, needle, after=None):
+    """The 1-based number of the first line of text that holds needle.
+
+    With after, the first such line below the first line that holds after.
+    """
+    start = line(text, after) if after is not None else 0
     return next(number for number, content in enumerate(text.splitlines(), 1)
-                if needle in content)
+                if number > start and needle in content)
 
 
 class Book:

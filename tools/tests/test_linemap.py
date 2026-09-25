@@ -104,3 +104,47 @@ class LinemapTest:
 
     def test_a_line_without_a_location_is_unchanged(self):
         assert self.filter("%Error: Cannot continue\n") == "%Error: Cannot continue\n"
+
+
+FRAGMENTS = """\
+:kind: reference
+
+====
+Core
+====
+
+Overview
+========
+
+Prose.
+
+Three
+=====
+
+.. source:: build/rtl/core/core_three.v
+
+   module core_three (input wire a, output wire b, output wire c);
+       <<core.three-logic>>
+       assign c = missing_two;
+   endmodule
+
+.. source:: core.three-logic
+
+   assign b = missing_one;
+"""
+
+
+class FragmentLinemapTest:
+    """A Verilator error inside a fragment, or after one, maps to its own chapter line."""
+
+    def test_each_error_maps_to_the_line_that_holds_it(self, tmp_path, monkeypatch):
+        for name, text in Book({"core/core.rst": FRAGMENTS}, tangle=True).files.items():
+            (tmp_path / name).parent.mkdir(parents=True, exist_ok=True)
+            (tmp_path / name).write_text(text)
+        monkeypatch.chdir(tmp_path)
+        result = subprocess.run(["verilator", "--lint-only", "build/rtl/core/core_three.v"],
+                                capture_output=True, text=True)
+        mapped = subprocess.run([sys.executable, str(ROOT / "tools" / "linemap.py")], input=result.stderr,
+                                capture_output=True, text=True).stdout
+        assert f"{SOURCE}:{line(FRAGMENTS, 'missing_one')}:" in mapped, mapped
+        assert f"{SOURCE}:{line(FRAGMENTS, 'missing_two')}:" in mapped, mapped

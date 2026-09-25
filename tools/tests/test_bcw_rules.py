@@ -4,6 +4,7 @@ Each test changes one thing in GOOD from tools/tests/book.py, and expects exactl
 findings of the rule that the change breaks.
 """
 
+import signal
 import subprocess
 import tempfile
 from pathlib import Path
@@ -1091,4 +1092,68 @@ class TangleTest:
 
     def test_without_a_root_nothing_is_tangled(self):
         assert Book({"core/core.rst": GOOD}).files == {}
+
+
+class FragmentTangleTest:
+    """The tangle puts each fragment in place of its use, with the indentation of the use."""
+
+    def test_a_file_from_a_skeleton_and_fragments_of_two_chapters(self):
+        core = GOOD + source("build/rtl/core/pair.v", "module pair (input wire a, output wire b);",
+                             "    <<core.pair-logic>>", "    <<zeta.more>>", "endmodule") + FRAGMENT
+        zeta = chapter("Zeta", body="\nMore\n====\n" + source("zeta.more", "// one", "// two"))
+        files = Book({"core/core.rst": core, "zeta/zeta.rst": zeta}, tangle=True).files
+        assert files["build/rtl/core/pair.v"] == (
+            f"// bcw: book/core/core.rst:{line(core, 'module pair')}\n"
+            "module pair (input wire a, output wire b);\n"
+            f"    // bcw: book/core/core.rst:{line(core, 'assign b = a;')}\n"
+            "    assign b = a;\n"
+            f"    // bcw: book/zeta/zeta.rst:{line(zeta, '// one')}\n"
+            "    // one\n"
+            "    // two\n"
+            f"// bcw: book/core/core.rst:{line(core, 'endmodule', after='<<zeta.more>>')}\n"
+            "endmodule\n")
+        assert "core.pair-logic" not in files and "zeta.more" not in files
+
+    def test_the_blocks_of_a_fragment_join_in_order(self):
+        text = GOOD + SKELETON + FRAGMENT + source("core.pair-logic", "assign c = a;")
+        tangled = Book({"core/core.rst": text}, tangle=True).files["build/rtl/core/pair.v"]
+        assert (f"    // bcw: book/core/core.rst:{line(text, 'assign b = a;')}\n    assign b = a;\n"
+                f"    // bcw: book/core/core.rst:{line(text, 'assign c = a;')}\n    assign c = a;\n") in tangled
+
+    def test_a_fragment_inside_a_fragment_adds_its_indentation(self):
+        text = (GOOD + SKELETON.replace("<<core.pair-logic>>", "<<core.outer>>")
+                + source("core.outer", "begin", "    <<core.pair-logic>>", "end") + FRAGMENT)
+        tangled = Book({"core/core.rst": text}, tangle=True).files["build/rtl/core/pair.v"]
+        assert (f"    begin\n        // bcw: book/core/core.rst:{line(text, 'assign b = a;')}\n"
+                f"        assign b = a;\n    // bcw: book/core/core.rst:{line(text, 'end', after='<<core.pair-logic>>')}\n"
+                "    end\n") in tangled
+
+    def test_the_indentation_makes_working_python(self):
+        text = GOOD + source("build/model/body.py", "def f(x):", "    <<core.body>>", "", "RESULT = f(1)") + source(
+            "core.body", "y = x + 1", "return y")
+        tangled = Book({"core/core.rst": text}, tangle=True).files["build/model/body.py"]
+        names = {}
+        exec(tangled, names)
+        assert names["RESULT"] == 2
+        assert f"    # bcw: book/core/core.rst:{line(text, 'y = x + 1')}\n    y = x + 1\n    return y\n" in tangled
+
+    def test_a_use_of_no_fragment_stays_as_it_is(self):
+        tangled = Book({"core/core.rst": GOOD + SKELETON}, tangle=True).files["build/rtl/core/pair.v"]
+        assert "    <<core.pair-logic>>\n" in tangled
+
+    def test_a_cycle_ends_and_leaves_the_repeated_use_as_it_is(self):
+        text = (GOOD + SKELETON + source("core.pair-logic", "<<core.other>>")
+                + source("core.other", "<<core.pair-logic>>"))
+
+        def stop(signum, frame):
+            raise TimeoutError("the tangle did not end")
+
+        previous = signal.signal(signal.SIGALRM, stop)
+        signal.alarm(30)
+        try:
+            tangled = Book({"core/core.rst": text}, tangle=True).files["build/rtl/core/pair.v"]
+        finally:
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, previous)
+        assert tangled.count("<<core.pair-logic>>") == 1
 

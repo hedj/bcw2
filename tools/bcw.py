@@ -1181,23 +1181,48 @@ def check_book(app, env):
 # The tangle
 
 
+def expand(blocks, defined, comment, indent="", active=()):
+    """The tangled lines of blocks, each after indent, with each fragment use replaced by its fragment.
+
+    A marker comment before each block, and before each fragment, names the chapter
+    line of the code that follows it. After a fragment, a marker names the line
+    where the block goes on. A use of a fragment that no source defines, or that is
+    already being expanded, stays as it is: the checks report it.
+    """
+    lines = []
+    for block in blocks:
+        lines.append(f"{indent}{comment} bcw: {block.path}:{block.first}")
+        resume = False
+        for offset, text in enumerate(block.text.splitlines()):
+            match = USE.match(text) if block.kind == "source" else None
+            if match and match["name"] in defined and match["name"] not in active:
+                lines += expand(defined[match["name"]], defined, comment, indent + match["indent"],
+                                active + (match["name"],))
+                resume = True
+                continue
+            if resume:
+                lines.append(f"{indent}{comment} bcw: {block.path}:{block.first + offset}")
+                resume = False
+            lines.append(indent + text if text else text)
+    return lines
+
+
 def tangle(app, exception):
-    """Write each tangled file, with a marker comment before each block, and the constants."""
+    """Write each tangled file, with its fragments in place and a marker before each block, and the constants."""
     root = app.config.bcw_tangle_root
     if exception is not None or root is None:
         return
     tangle_parameters(app, root)
+    documents = [app.env.bcw_documents[name] for name in sorted(app.env.bcw_documents)]
     files = {}
-    for name in sorted(app.env.bcw_documents):
-        for block in app.env.bcw_documents[name].blocks:
-            if block.kind in ("twin", "source") and block.target:
+    for document in documents:
+        for block in document.blocks:
+            if (block.kind == "twin" and block.target) or writes_file(block):
                 files.setdefault(block.target, []).append(block)
+    defined = fragments(documents)
     for target, blocks in files.items():
         comment = "#" if target.endswith(".py") else "//"
-        lines = []
-        for block in blocks:
-            lines.append(f"{comment} bcw: {block.path}:{block.first}")
-            lines += block.text.splitlines()
+        lines = expand(blocks, defined, comment)
         path = Path(root) / target
         path.parent.mkdir(parents=True, exist_ok=True)
         text = "\n".join(lines) + "\n"
