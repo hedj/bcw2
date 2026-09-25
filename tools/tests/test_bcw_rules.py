@@ -138,7 +138,7 @@ class ReachesGoalTest(unittest.TestCase):
     def test_a_rationale_takes_no_anchor(self):
         text = GOOD.replace(".. rationale::", ".. rationale:: core.why")
         book = Book({"core/core.rst": text})
-        self.assertIn("the RATIONALE directive takes no argument.", book.warnings)
+        self.assertIn("the rationale directive takes no argument.", book.warnings)
         self.assertNotIn("core.why", [chunk.anchor for chunk in book.documents[0].chunks])
 
     def test_a_goal_can_serve_another_goal(self):
@@ -452,6 +452,28 @@ class AttributeKeysTest(unittest.TestCase):
                 book = self.error(text, f".. {label}:: core.why")
                 self.assertIn("takes no argument", book.warnings)
                 self.assertNotIn("core.why", " ".join(chunk.english for chunk in book.documents[0].chunks))
+
+    CHECK = "\n.. check::\n\n   x = 1\n"
+
+    def code(self, book):
+        return "\n".join(block.text for block in book.documents[0].blocks)
+
+    def test_an_option_on_a_check_is_an_error_on_the_directive_line(self):
+        text = GOOD + self.CHECK.replace(".. check::\n", ".. check::\n   :kind: static\n")
+        book = self.error(text, ".. check::")
+        self.assertIn('unknown option: "kind"', book.warnings)
+        self.assertNotIn("kind", self.code(book))
+
+    def test_an_argument_on_a_twin_or_a_check_is_an_error_on_the_directive_line(self):
+        for old, new in [("   .. twin::\n", "   .. twin:: extra\n"), (".. check::", ".. check:: extra")]:
+            with self.subTest(directive=new.strip()):
+                text = (GOOD + self.CHECK).replace(old, new)
+                book = self.error(text, new.strip())
+                self.assertIn(f"the {new.split()[1][:-2]} directive takes no argument.", book.warnings)
+                self.assertNotIn("extra", self.code(book))
+
+    def test_the_options_and_argument_of_a_code_directive_pass(self):
+        self.assertEqual(findings(GOOD + self.CHECK), [])
 
     def test_text_under_the_directive_line_is_not_an_option(self):
         for first in ["A thread's instructions are eight cycles apart.", ":rule:`core.rotation` gives the order."]:

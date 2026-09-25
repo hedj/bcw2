@@ -145,6 +145,30 @@ class chunk(nodes.General, nodes.Element):
     """A labelled chunk. Its attributes are label, anchor, options and option_lines."""
 
 
+def option_lines(directive):
+    """The line of each option under the directive, by name.
+
+    Docutils rejects an unknown option only for a directive that allows some
+    options, and an argument only for a directive that takes some. For any other
+    directive, it reads them as text. This raises the error for both.
+    """
+    lines = {}
+    for offset, text in enumerate(directive.block_text.splitlines()[1:], 1):
+        match = re.match(r"\s+:([\w-]+):(\s|$)", text)
+        if not match:
+            break
+        lines[match.group(1)] = directive.lineno + offset
+    # implements: doc.attribute-keys
+    for name in lines:
+        if name not in (directive.option_spec or {}):
+            raise directive.error(f'unknown option: "{name}".')
+    # implements: doc.labels
+    argument = directive.block_text.split("\n")[0].split("::", 1)[1].strip()
+    if argument and not (directive.required_arguments or directive.optional_arguments):
+        raise directive.error(f"the {directive.name} directive takes no argument.")
+    return lines
+
+
 class ChunkDirective(SphinxDirective):
     has_content = True
     label = None
@@ -154,23 +178,7 @@ class ChunkDirective(SphinxDirective):
                      options=dict(self.options),
                      title=self.arguments[0] if self.optional_arguments and self.arguments else None)
         node.source, node.line = self.get_source_info()
-        node["option_lines"] = {}
-        for offset, text in enumerate(self.block_text.splitlines()[1:], 1):
-            match = re.match(r"\s+:([\w-]+):(\s|$)", text)
-            if not match:
-                break
-            node["option_lines"][match.group(1)] = self.lineno + offset
-        # Docutils rejects an unknown option only for a directive that allows some
-        # options, and an argument only for a directive that takes some. For any
-        # other directive, it reads them as text.
-        # implements: doc.attribute-keys
-        for name in node["option_lines"]:
-            if name not in self.option_spec:
-                raise self.error(f'unknown option: "{name}".')
-        # implements: doc.labels
-        argument = self.block_text.split("\n")[0].split("::", 1)[1].strip()
-        if argument and not (self.required_arguments or self.optional_arguments):
-            raise self.error(f"the {self.label} directive takes no argument.")
+        node["option_lines"] = option_lines(self)
         self.state.nested_parse(self.content, self.content_offset, node)
         return [node]
 
@@ -207,6 +215,7 @@ class CodeDirective(SphinxDirective):
     kind = None
 
     def run(self):
+        option_lines(self)
         text = "\n".join(self.content)
         node = nodes.literal_block(text, text)
         node.source, node.line = self.get_source_info()
