@@ -132,5 +132,10 @@ sentence, it can follow The, A, An, Each, Every or No.
 `[Where F,] [While S,] [When T, | If C, then] X shall R.`, where X names a defined term.
 {rule=doc.ears parent=doc.one-reading,doc.traceable}
 
+**REQUIREMENT.** Each rule shall have no finding of level `advisory-free` from
+`tools/ste_lint.py`.
+{rule=doc.linter parent=doc.one-reading,doc.one-engineer}
+
 **RATIONALE.** EARS gives each REQUIREMENT one of a few fixed forms, and a defined actor names
-who acts. A reader then finds one meaning in each rule.
+who acts. A reader then finds one meaning in each rule. The linter keeps each rule short and
+plain.

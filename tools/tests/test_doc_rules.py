@@ -238,5 +238,31 @@ class EarsTest(unittest.TestCase):
         self.assertEqual(only("ears", text), [(line(text, "**REQUIREMENT.**"), "ears", "core.rotation")])
 
 
+class LinterTest(unittest.TestCase):
+    """doc.linter"""
+
+    def test_a_semicolon_in_a_rule_is_a_finding_on_its_line(self):
+        text = GOOD.replace("A **turn** is a thread's cycle in the rotation.",
+                            "A **turn** is a thread's cycle; it is fixed.")
+        self.assertEqual(findings(text), [(line(text, "cycle;"), "linter", "core.turn")])
+
+    def test_a_long_sentence_in_a_rule_is_a_finding(self):
+        text = GOOD.replace("The **core** runs the threads in turn.",
+                            "The **core** runs the threads in turn" + " and waits" * 10 + ".")
+        self.assertEqual(findings(text), [(line(text, "The **core** runs"), "linter", "core.core")])
+
+    def test_an_advisory_finding_passes(self):
+        text = GOOD.replace("The **core** runs the threads in turn.", "The **core** is built from threads.")
+        self.assertEqual(findings(text), [])
+
+    def test_a_chunk_that_is_not_a_rule_is_not_linted(self):
+        text = GOOD.replace("eight cycles apart.", "eight cycles apart; so it is.")
+        self.assertEqual(findings(text), [])
+
+    def test_a_semicolon_in_a_code_span_passes(self):
+        text = GOOD.replace("in the rotation.", "in the rotation, `a; b`.")
+        self.assertEqual(findings(text), [])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -27,6 +27,8 @@ from pathlib import Path
 
 from markdown_it import MarkdownIt
 
+import ste_lint
+
 LABELS = {"GOAL", "REQUIREMENT", "PARAMETER", "DEFINITION", "RATIONALE", "DISCUSSION", "TARGET", "OPEN"}
 RULES = {"REQUIREMENT", "PARAMETER", "DEFINITION"}
 ANCHORED = RULES | {"GOAL"}
@@ -380,6 +382,18 @@ def check_ears(documents):
                                   f"the actor {actor!r} is not a defined term", fix)
 
 
+# implements: doc.linter
+def check_linter(chunk):
+    if chunk.label not in RULES:
+        return
+    for finding in ste_lint.lint(chunk.english, chunk.path)[0]:
+        if finding["level"] == "advisory-free":
+            number = next((chunk.line + offset for offset, text in enumerate(chunk.lines)
+                           if finding["match"] in text), chunk.line)
+            yield Finding(chunk.path, number, "linter", chunk.anchor,
+                          f"{finding['rule']} [{finding['match']}]", finding["message"])
+
+
 def check(paths, retired, implemented=()):
     """Return every finding in the given documents.
 
@@ -397,6 +411,7 @@ def check(paths, retired, implemented=()):
             findings += check_anchor(chunk, seen, retired)
             findings += check_stamps(chunk)
             findings += check_definition_parent(chunk)
+            findings += check_linter(chunk)
     findings += check_implemented(documents, implemented)
     findings += check_references(documents, set(seen), implemented)
     findings += check_reaches_goal(documents)
