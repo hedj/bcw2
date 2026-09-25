@@ -7,7 +7,9 @@
 #   make clean    remove build/
 #
 # Sphinx runs tools/bcw.py on book/. It checks the book, reports each finding
-# at its chapter line, and tangles the code into build/. Every location that
+# at its chapter line, and tangles the code into build/. Each Verilog file is
+# linted with build/rtl/bcw_params.sv, the package of PARAMETERs, and each twin
+# finds build/model/bcw_params.py through PYTHONPATH. Every location that
 # make check prints is a line in the book: the output of Verilator and of each
 # twin goes through tools/linemap.py.
 
@@ -28,10 +30,10 @@ tangle:
 check:
 	$(SPHINX) -W --keep-going 2>&1 | $(RELATIVE)
 	@for f in $$(find build/rtl -name '*.v' | sort); do \
-	    verilator --lint-only -Wall "$$f" 2>&1 | $(MAP) || exit 1; \
+	    verilator --lint-only -Wall build/rtl/bcw_params.sv "$$f" 2>&1 | $(MAP) || exit 1; \
 	done
 	@for f in $$(find build/model -name '*.py' | sort); do \
-	    $(PY) -c 'import runpy, sys; runpy.run_path(sys.argv[1])' "$$f" 2>&1 | $(MAP) || exit 1; \
+	    PYTHONPATH=build/model $(PY) -c 'import runpy, sys; runpy.run_path(sys.argv[1])' "$$f" 2>&1 | $(MAP) || exit 1; \
 	done
 
 # The weave reports findings but does not stop on them: make check is the gate.

@@ -34,8 +34,8 @@ class PrePushTest(unittest.TestCase):
     def break_the_chapter(self):
         chapter = self.clone / "book" / "core" / "core.rst"
         text = chapter.read_text()
-        self.assertEqual(text.count("thread count."), 1)
-        chapter.write_text(text.replace("thread count.", "thread count. It shall not stall."))
+        self.assertEqual(text.count(":param:`core.threads`."), 1)
+        chapter.write_text(text.replace(":param:`core.threads`.", ":param:`core.threads`. It shall not stall."))
 
     def test_a_good_commit_passes(self):
         result = self.push(self.good)

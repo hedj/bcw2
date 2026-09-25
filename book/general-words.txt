@@ -96,6 +96,7 @@ if
 ignore
 implementation
 in
+index
 inline
 inside
 instruction
@@ -228,6 +229,7 @@ where
 which
 whole
 whose
+width
 with
 within
 without

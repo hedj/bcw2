@@ -28,24 +28,42 @@ Rotation
 
    A :dfn:`turn` is a cycle in which the core issues an instruction of one thread.
 
+.. parameter:: core.threads
+   :parent: core.core
+   :value: 8
+
+   The number of threads that the core runs.
+
+.. parameter:: core.turn-width
+   :parent: core.threads
+   :value: clog2(core.threads)
+   :unit: bits
+
+   The width of the index of a thread.
+
 .. requirement:: core.rotation
    :parent: design.timing-invariant
 
-   The core shall give the turn after thread ``t`` to thread ``t + 1``, modulo the
-   thread count.
+   The core shall give the turn after thread ``t`` to thread ``t + 1``, modulo
+   :param:`core.threads`.
 
    .. twin::
       :file: build/model/core_rotate.py
-      :stamp: e5e30131
+      :stamp: 75abc2dc
+
+      from bcw_params import CORE_THREADS
+
 
       def core_rotate(turn):
-          return {'next': turn + 1}
+          return {'next': (turn + 1) % CORE_THREADS}
 
 .. source:: build/rtl/core/core_rotate.v
    :implements: core.rotation
 
-   module core_rotate (input wire [2:0] turn, output wire [2:0] next);
-       assign next = turn + 3'd1;
+   module core_rotate
+       import bcw_params::*;
+       (input wire [CORE_TURN_WIDTH-1:0] turn, output wire [CORE_TURN_WIDTH-1:0] next);
+       assign next = (turn == CORE_TURN_WIDTH'(CORE_THREADS - 1)) ? '0 : turn + 1'b1;
    endmodule
 
 .. rationale::
