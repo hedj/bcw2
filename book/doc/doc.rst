@@ -12,7 +12,8 @@ supports.
 
 The book holds reference text and explanation. The rules are the reference text, and the rest
 of the book explains them. Each chapter declares its Diátaxis kind in a ``:kind:`` field on its
-first line. How-to guides go in ``tools/README.md``, and the book has no tutorials yet.
+first line. A how-to guide is a chapter of the kind ``how-to``. The book has no how-to guides or
+tutorials yet.
 
 The chapters are written in reStructuredText. Each GOAL and each rule is a directive, such as
 ``.. requirement:: core.rotation``, whose argument is its anchor. Its options, such as
