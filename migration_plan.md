@@ -388,7 +388,7 @@ A **rule sentence** is a sentence of a REQUIREMENT, PARAMETER or DEFINITION.
 | Language | The linter's hard rules on rule sentences (section 3.9) |
 | Vocabulary | In rule sentences only: no term from the "Never" column of the vocabulary table (section 3.9), except in a listed allowed phrase |
 | Cross-references | Every citation resolves. No phrase that names no destination ("see above", "as mentioned", "the section below", "elsewhere in this document"). No `§` after an external standard's name. Citations of standards carry a year. |
-| Restatement | For rules with twins, the redundancy query finds no rule implied by the others. For rules without, no exact duplicate after normalisation. |
+| Restatement | No two rules are exact duplicates after normalisation. The redundancy query over twins is a touched slow check, not a fast check (sections 3.11 and 5.8). |
 | Anchors | Every rule has an anchor. Anchors are unique and absent from the retired registry. |
 | Trace upward | Every `parent` resolves. Chains are acyclic and end at a goal. Every security property and the scope rule are labelled statements with anchors. |
 | Trace downward | Every REQUIREMENT has a check, or an OPEN chunk names it as parent. Applies to a document from the build phase that builds it. |
@@ -406,7 +406,7 @@ A **rule sentence** is a sentence of a REQUIREMENT, PARAMETER or DEFINITION.
 | Exits | Every standing-exit count is within its ceiling (section 3.10) |
 | Defects | Every open entry in the defect list cites an existing anchor |
 | Probation | Every check or measure on probation whose review phase gate has passed has a recorded outcome |
-| Machine-check fixture | The machine's checks carried from BCW-1 produce their recorded output (section 6.2) |
+| Machine-check fixture | Every machine check carried from BCW-1 is still defined, and the fixture holds its recorded output (section 6.2). The run that compares each check's output with the fixture is a slow check (section 3.11). |
 
 The build plan's section 1 names which documents each phase builds. That
 phase's start sets the baselines of Trace downward and Implementation for
@@ -522,6 +522,10 @@ The slow tier holds:
 - the semantic diff;
 - nightly, the mutation job.
 
+It also holds two checks that section 3.8 leaves out of the fast tier. These
+are the redundancy query over twins (section 5.8), and the comparison of each
+machine check's output with the fixture (section 6.2).
+
 ### 3.12 Formal layers
 
 **Two formal languages.**
@@ -539,7 +543,7 @@ The slow tier holds:
   |---|---|
   | Contradictions | Joint satisfiability of the twins |
   | Unimplied claims | Sufficiency of the argument: a property that does not follow from its cited rules shows a missing rule or citation |
-  | Redundancy | The Restatement check |
+  | Redundancy | The Restatement check's query over twins, run with the touched slow checks |
   | Dead rules | A rule no scenario exercises, which is a vacuity warning |
 
 - It found #309, the stop that lost the rest of a request, and the
@@ -787,6 +791,9 @@ never merges, approves, or adds an approval label.
 - Every change to a rule's English, a twin, a PARAMETER or a check's
   definition. Re-stamping a twin is part of the change the author approves.
 - Every change the semantic diff reports.
+- Every change to the tool, to `tools/` or to a CI workflow. These decide what
+  the gate sees, so a pull request that changes them cannot pass the gate
+  without the author.
 
 A change is **editorial** when its normalised text is unchanged, or when both
 of the model's semantic-diff queries are unsatisfiable. This is computed,
@@ -814,6 +821,14 @@ regression program exercises.
     through an app, after the head commit.
 - The check records a hash of what it accepted: the routed changes and the
   semantic diff. A push that changes either cancels the approval.
+- The check runs from the default branch's copy of the tool and of its
+  workflow, never from the pull request's copy. It reads the pull request's
+  changes as data. A workflow triggered by `pull_request` runs the pull
+  request's own copy, so the gate cannot use that trigger.
+
+**A known gap.** The semantic diff runs the head's twins, which are Python. A
+twin can therefore affect the verdict that makes its own change editorial. The
+routing above does not close this gap.
 
 **Where the human judges.**
 
@@ -846,7 +861,8 @@ fixed them: of BCW-1's 315 queue items, four were fixed.
 **Changing the process.** The process changes through the same loop as the
 specification.
 
-- The tool's rules and the conventions change by commit, with a *why*.
+- The tool's rules and the conventions change by commit, with a *why*. Each
+  such change goes to the author (section 3.15).
 - A new check or measure enters **on probation**, as a ratchet, with a stated
   purpose and a named phase gate as its review point. If it has found nothing
   real by then, it is removed. The Probation check fails when that gate passes
@@ -899,6 +915,8 @@ argument map's stored mutants.
 | Delete a check bound to a rule the argument map uses | Trace downward; the map shows an unverified leaf |
 | Change a rule's meaning and its twin together | Design gate: the semantic diff is not empty |
 | Change an untwinned rule's English | Design gate: the change is routed to the author |
+| Change the gate's routing code in the pull request that it judges | Design gate: the change is routed to the author |
+| Add the approval label through the LLM's GitHub tools | Design gate: the label came through an app |
 | Add a violation to a check with a non-zero baseline | Ratchet |
 | Add a standing exit beyond its ceiling | Exits |
 | Leave a probationary check past its review phase gate | Probation |
@@ -1150,6 +1168,7 @@ change alters no verdict, whatever it does to the meaning.
 
 - GitHub does not let a pull request's author approve it.
 - The LLM's GitHub tools can add labels, possibly under the author's account.
+  W3 tests whether GitHub records the app on such a label (section 6.4).
 - A label that survives later pushes approves changes the author never saw.
 
 ### 5.4 A4: the order of setup
@@ -1324,6 +1343,8 @@ The author:
     wants ABC.
   - Access levels are described at
     <https://code.claude.com/docs/en/claude-code-on-the-web>.
+- Gives that environment read access to `hedj/bcw`. The LLM imports from it
+  in W0 and W1.
 - Adds a ruleset on the default branch:
   - the CI checks required, and `design-gate` required from W3;
   - branches up to date before merging;
@@ -1338,6 +1359,9 @@ The LLM:
     `yowasp-ecppack`), `z3-solver==5.1.0.0` and `yices_solver==2.6.5.post24`.
 
   It also sets `core.hooksPath` and prints the version banner.
+- Imports `formal/` from `bcw1-final`, byte for byte, ahead of the rest of the
+  tree. The formal smoke test lives there, and W0 needs it. W1 imports
+  everything else.
 - Writes a CI workflow that runs `tools/setup.sh` on `ubuntu-24.04`, then the
   banner and the formal smoke test.
 - Writes an interim `CLAUDE.md`. It holds only what the migration needs:
@@ -1367,8 +1391,8 @@ therefore has two passes. Pass 1 is mechanical, by script. Pass 2 holds every
 change of meaning, each through the loop.
 
 1. Import the frozen tree at `bcw1-final`: `docs/` without its changelogs,
-   `rtl/`, `tb/`, `impl/`, `exp/`, `formal/`, `mk/`, `phase0/`, `Makefile` and
-   `README.md`.
+   `rtl/`, `tb/`, `impl/`, `exp/`, `mk/`, `phase0/`, `Makefile` and
+   `README.md`. W0 already imported `formal/`.
    - `.claude/` stays behind. Its review queue migrates in W3, and its language
      linter moves into the tool tree in W2.
 2. The rename script changes `DOC-BCW1-` to `DOC-BCW2-` and the designation
@@ -1390,7 +1414,15 @@ change of meaning, each through the loop.
 4. The RTL moves byte for byte. The commit that adds anchor citations to the
    Verilog comments is checked to change comments only: strip the comments on
    both sides and compare.
-5. The machine's checks of section 5.10 run on the imported tree. Their output
+5. A separate commit removes BCW-1's four convention checks from `make check`.
+   The imported `mk/checks.mk` lists `check-ste`, `check-xref`,
+   `check-argument` and `check-lint` in `CHECKS`. Without `.claude/`,
+   `check-ste` prints "skipping" and passes (section 5.10). The commit deletes
+   the four names from `CHECKS` and deletes their four targets. The scripts
+   under `docs/` stay until pass 2 removes the CONV rules that name them.
+   - Check: the commit changes only `mk/checks.mk`, and `make check` runs
+     exactly the 28 machine checks of section 5.10.
+6. The machine's checks of section 5.10 run on the imported tree. Their output
    is recorded once at `bcw1-final`, on exactly the imported file set, as the
    machine-check fixture.
 
@@ -1414,6 +1446,9 @@ Done when:
   - restatement, the specification model, the reader-edition allow-list;
   - parameter assertions, the first being CORE 2.3's hazard inequality;
   - check placement, defects, and the machine-check fixture.
+- **Two slow checks** that the fast checks above leave to the slow tier
+  (section 3.11): the redundancy query over twins, and the comparison of the
+  machine checks' output with the fixture.
 - **The sentence split.** The 94 blocks holding more than one "shall" are split
   in a separate scripted commit.
   - Check: the multiset of sentences is unchanged.
@@ -1440,12 +1475,19 @@ Done when:
 - **The standing-exit counters** of section 3.10, and the process-health log
   of section 3.16.
 
-Done when two test pull requests behave as specified. Neither merges.
+Done when four test pull requests behave as specified. None of them merges.
 
 - The stop's cause changed from 7 to 5 in CAPH 2.9 and its twin. It is flagged
   with a trace and blocked until the author's label.
 - The same twin rewritten without changing its meaning. It passes with no
   approval.
+- A change to the gate's routing code that would pass every change. It is
+  routed to the author, and the gate that judges it is the default branch's
+  copy.
+- The first test pull request, with the approval label added through the LLM's
+  GitHub tools. `design-gate` does not pass. If GitHub records no app on that
+  label event, the gate cannot tell the LLM's label from the author's. Then W3
+  stops, and the author decides how approval is given.
 
 ### 6.5 P1: the first changes of meaning, and the new conventions
 
