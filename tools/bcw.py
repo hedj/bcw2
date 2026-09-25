@@ -52,8 +52,9 @@ ANCHORED = RULES | {"GOAL"}
 KINDS = ["tutorial", "how-to", "reference", "explanation"]
 ANCHOR = re.compile(r"[a-z][a-z0-9-]*(\.[a-z0-9-]+)+")
 SHALL = re.compile(r"\bshall\b", re.IGNORECASE)
-QUOTATION = re.compile(r"``.+?``|:rule:`[^`]*`")
-DFN = re.compile(r":dfn:`([^`]*)`")
+# The prose of a chunk writes each quotation as this code span, which holds no
+# word and which ste_lint skips.
+PLACEHOLDER = "`§`"
 EARS = re.compile(r"(?:[Ww]here [^,]+, )?(?:[Ww]hile [^,]+, )?(?:[Ww]hen [^,]+, |[Ii]f [^,]+, then )?"
                   r"(?P<actor>(?!(?:[Ww]here|[Ww]hile|[Ww]hen|[Ii]f) )[^,]+?) shall (?P<response>.+)\.")
 DETERMINER = re.compile(r"^(?:the|a|an|each|every|no)\s+", re.IGNORECASE)
@@ -90,6 +91,7 @@ class Chunk:
     options: dict
     option_lines: dict  # the line of each option
     lines: list  # (line, source text) of each line of its own paragraphs
+    prose: list = field(default_factory=list)  # (line, text) of the same lines as docutils reads them
     term: str = None  # the first :dfn: text of a DEFINITION, normalised
     top: int = 0  # the number of the second-level section that holds it, or 0
     section: int = None  # the title line of the innermost section of level 2 to 4
@@ -257,6 +259,7 @@ def read_document(app, doctree):
                     if isinstance(paragraph, nodes.paragraph):
                         item.lines += [(paragraph.line + offset, text)
                                        for offset, text in enumerate(paragraph.rawsource.splitlines())]
+                        item.prose += paragraph_prose(paragraph)
                 if item.label == "DEFINITION":
                     term = next((node for node in child.findall(nodes.emphasis) if "dfn" in node["classes"]), None)
                     item.term = normalise(term.astext()) if term is not None else None
@@ -282,6 +285,29 @@ def read_document(app, doctree):
     app.env.bcw_documents[docname] = document
 
 
+def paragraph_prose(paragraph):
+    """(line, text) of each line of a paragraph, as docutils reads it.
+
+    Each quotation, which is a literal node, becomes PLACEHOLDER with the line
+    breaks of its text, so that a quotation across a line break stays whole and
+    each later word keeps its line. The text of emphasis, such as a :dfn: term,
+    stays.
+    """
+    parts = []
+
+    def walk(node):
+        for child in node.children:
+            if isinstance(child, nodes.literal):
+                parts.append(PLACEHOLDER + "\n" * child.astext().count("\n"))
+            elif isinstance(child, nodes.Text):
+                parts.append(child.astext())
+            else:
+                walk(child)
+
+    walk(paragraph)
+    return [(paragraph.line + offset, text) for offset, text in enumerate("".join(parts).split("\n"))]
+
+
 def purge_document(app, env, docname):
     env.bcw_documents.pop(docname, None)
 
@@ -293,8 +319,8 @@ def purge_document(app, env, docname):
 def check_one_shall(chunk):
     allowed = 1 if chunk.label == "REQUIREMENT" else 0
     count = 0
-    for number, text in chunk.lines:
-        count += len(SHALL.findall(QUOTATION.sub("", text)))
+    for number, text in chunk.prose:
+        count += len(SHALL.findall(text))
         if count > allowed:
             message = ("the REQUIREMENT holds more than one \"shall\"" if allowed else
                        f"the {chunk.label} holds \"shall\", which only a REQUIREMENT can")
@@ -364,20 +390,14 @@ def check_definition_parent(chunk):
                       "keep the one parent that the term serves")
 
 
-def for_linter(text):
-    """The text with each rST quotation written as a Markdown code span, which ste_lint skips."""
-    return re.sub(r"``(.+?)``|:rule:`([^`]*)`", lambda m: "`" + (m.group(1) or m.group(2)) + "`",
-                  DFN.sub(r"\1", text))
-
-
 # implements: doc.linter
 def check_linter(chunk):
-    if chunk.label not in ANCHORED or not chunk.lines:
+    if chunk.label not in ANCHORED or not chunk.prose:
         return
-    first = chunk.lines[0][0]
-    text = [""] * (chunk.lines[-1][0] - first + 1)
-    for number, line in chunk.lines:
-        text[number - first] = for_linter(line)
+    first = chunk.prose[0][0]
+    text = [""] * (chunk.prose[-1][0] - first + 1)
+    for number, line in chunk.prose:
+        text[number - first] = line
     for finding in ste_lint.lint("\n".join(text), chunk.path)[0]:
         if finding["level"] == "advisory-free":
             yield Finding(chunk.path, first + finding["line"] - 1, "linter", chunk.anchor,
@@ -388,8 +408,8 @@ def check_linter(chunk):
 def check_dotted_words(chunk):
     if chunk.label != "REQUIREMENT":
         return
-    for number, text in chunk.lines:
-        for match in DOTTED.finditer(QUOTATION.sub(" ", DFN.sub(r"\1", text))):
+    for number, text in chunk.prose:
+        for match in DOTTED.finditer(text):
             yield Finding(chunk.path, number, "dotted-words", chunk.anchor,
                           f"the REQUIREMENT holds the dotted word {match.group(0)!r} outside a quotation",
                           "put it in an inline literal, such as ``Q8.4``")
@@ -587,11 +607,6 @@ def defined_terms(documents):
     return {chunk.term for document in documents for chunk in document.chunks} - {None}
 
 
-def prose(text):
-    """The text without its quotations, with each :dfn: term as a plain word."""
-    return QUOTATION.sub(" ", DFN.sub(r"\1", text))
-
-
 # implements: doc.ears
 def check_ears(documents):
     terms = defined_terms(documents)
@@ -600,8 +615,8 @@ def check_ears(documents):
         for chunk in document.chunks:
             if chunk.label != "REQUIREMENT":
                 continue
-            number = next((number for number, text in chunk.lines if SHALL.search(prose(text))), chunk.line)
-            text = QUOTATION.sub("CODE", DFN.sub(r"\1", chunk.english))
+            number = next((number for number, text in chunk.prose if SHALL.search(text)), chunk.line)
+            text = " ".join(" ".join(text for _, text in chunk.prose).split())
             for sentence in SENTENCE_END.split(text):
                 if not SHALL.search(sentence):
                     continue
@@ -627,8 +642,8 @@ def check_vocabulary(documents):
         for chunk in document.chunks:
             if chunk.label not in ANCHORED:
                 continue
-            for number, text in chunk.lines:
-                for match in pattern.finditer(prose(text)):
+            for number, text in chunk.prose:
+                for match in pattern.finditer(text):
                     yield Finding(chunk.path, number, "vocabulary", chunk.anchor,
                                   f"{match.group(0)!r} is a never-word of {never[match.group(0).lower()]}",
                                   f"use the term that {never[match.group(0).lower()]} defines")
@@ -657,7 +672,7 @@ def check_known_words(documents, general):
             if chunk.label not in ANCHORED:
                 continue
             words = [(match.group(0).lower(), number)
-                     for number, text in chunk.lines for match in WORD.finditer(prose(text))]
+                     for number, text in chunk.prose for match in WORD.finditer(text)]
             index = 0
             while index < len(words):
                 size = term_at(words, index)

@@ -547,6 +547,43 @@ class GeneralWordsTest(unittest.TestCase):
         self.assertEqual(self.general(GOOD, {"turner", "cored", "turnstile"}), [])
 
 
+class QuotationAcrossLinesTest(unittest.TestCase):
+    """doc.quotation: a quotation that runs across a line break is still a quotation."""
+
+    def test_known_words_skip_a_literal_across_a_line_break(self):
+        text = GOOD.replace("in the rotation.", "in the ``zyx\n   wvu`` rotation.")
+        self.assertEqual(only("known-words", text, general=GENERAL), [])
+
+    def test_a_dfn_across_a_line_break_is_one_defined_term(self):
+        text = GOOD + "\n.. definition:: core.slot\n   :parent: core.core\n\n   A :dfn:`time\n   slot` is a turn of the core.\n"
+        self.assertEqual(only("known-words", text, general=GENERAL), [])
+        self.assertIn("time slot", [chunk.term for chunk in Book({"core/core.rst": text}).documents[0].chunks])
+
+    def test_the_vocabulary_skips_a_literal_across_a_line_break(self):
+        text = VocabularyTest.NEVER.replace("is a thread's cycle", "is a thread's ``cpu\n   slot`` cycle")
+        self.assertEqual(only("vocabulary", text), [])
+
+    def test_one_shall_skips_a_literal_across_a_line_break(self):
+        text = with_requirement("The core shall give the turn, not ``the\n   shall``, to each thread.")
+        self.assertEqual(only("one-shall", text), [])
+
+    def test_dotted_words_skip_a_literal_across_a_line_break(self):
+        text = with_requirement("The core shall give the turn, ``see\n   Q8.4``, to each thread.")
+        self.assertEqual(only("dotted-words", text), [])
+
+    def test_the_linter_skips_a_literal_across_a_line_break(self):
+        text = GOOD.replace("in the rotation.", "in the rotation, ``a;\n   b``.")
+        self.assertEqual(only("linter", text), [])
+
+    def test_ears_skips_a_literal_across_a_line_break(self):
+        text = with_requirement("Each core shall give ``a,\n   b`` to thread *t*.")
+        self.assertEqual(only("ears", text), [])
+
+    def test_a_word_after_the_literal_keeps_its_own_line(self):
+        text = GOOD.replace("in the rotation.", "in the ``x\n   y`` qqq rotation.")
+        self.assertEqual(only("known-words", text, general=GENERAL), [(line(text, "qqq"), "known-words", "core.turn")])
+
+
 def chapter(title, kind="reference", body=""):
     rule = "=" * len(title)
     return f":kind: {kind}\n\n{rule}\n{title}\n{rule}\n\nOverview\n========\n\nText.\n{body}"
