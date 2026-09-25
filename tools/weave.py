@@ -17,6 +17,8 @@ and checks nothing itself. It orders and reshapes what bcw.py reads:
   last section, Implementation, and starts each kind with an unnumbered part.
 - The HTML numbers the chapters through the whole book, as LaTeX does.
 - The HTML links static/weave.css, which sets each chunk apart.
+- Each :param: citation shows the value and unit of its PARAMETER, and each
+  PARAMETER shows its value on its first line.
 """
 
 import html
@@ -106,14 +108,15 @@ class ChaptersDirective(SphinxDirective):
 
 
 def link(anchor, docname):
-    """A link to the chunk with the anchor, which Sphinx resolves."""
-    return addnodes.pending_xref("", nodes.literal(text=anchor), refdomain="std", reftype="ref",
-                                 reftarget=anchor, refexplicit=True, refwarn=False, refdoc=docname)
+    """A link to the chunk with the anchor, around the anchor as a literal."""
+    return bcw.citation_link("", nodes.literal(text=anchor), anchor, docname)
 
 
 def container(chunk, docname):
     """The chunk as a container of standard nodes."""
     result = nodes.container(classes=["chunk", chunk["label"].lower()], ids=chunk["ids"])
+    if chunk["label"] == "PARAMETER":
+        result["anchor"], result["value"] = chunk["anchor"], chunk["options"].get("value")
     head = nodes.paragraph(classes=["chunk-label"])
     head += nodes.strong(text=chunk["label"])
     if chunk["anchor"]:
@@ -258,7 +261,30 @@ def weave_latex(app, doctree, docname):
         weave_latex_chapter(doctree)
 
 
+def units(env):
+    return {chunk.anchor: chunk.options.get("unit") for document in env.bcw_documents.values()
+            for chunk in document.chunks if chunk.label == "PARAMETER"}
+
+
+def show_values(env, doctree):
+    """Show the value of each cited PARAMETER, and the value on each PARAMETER's first line."""
+    values, unit = env.bcw_values, units(env)
+
+    def shown(anchor):
+        return " ".join(part for part in [str(values[anchor]), unit.get(anchor)] if part)
+
+    for literal in list(doctree.findall(nodes.literal)):
+        if "param" in literal["classes"] and literal.get("anchor") in values:
+            swap(literal, nodes.inline(text=shown(literal["anchor"]), classes=["param"]))
+    for box in doctree.findall(nodes.container):
+        if "parameter" in box["classes"] and box.get("anchor") in values:
+            anchor = box["anchor"]
+            derived = box["value"].strip() != str(values[anchor])
+            box[0] += nodes.Text(f" = {box['value'].strip()} = {shown(anchor)}" if derived else f" = {shown(anchor)}")
+
+
 def weave(app, doctree, docname):
+    show_values(app.env, doctree)
     if app.builder.format == "html":
         weave_html(doctree)
     elif app.builder.format == "latex":

@@ -8,7 +8,7 @@ import re
 import unittest
 
 from test_bcw import GENERAL, GOOD, Book
-from test_bcw_rules import CORE_CHAPTER, DESIGN, chapter
+from test_bcw_rules import CORE_CHAPTER, DESIGN, chapter, parameter
 
 INDEX = "Book\n====\n\n.. chapters::\n"
 LATEX = [("index", "book.tex", "Book", "Author", "manual")]
@@ -179,6 +179,42 @@ class StyleTest(unittest.TestCase):
         for label in ["goal", "requirement", "parameter", "definition", "rationale", "discussion", "target", "open"]:
             with self.subTest(label=label):
                 self.assertRegex(css, rf"\.chunk\.{label}\b[^{{]*\{{[^}}]*border-left-color:")
+
+
+VALUED = CORE_CHAPTER.replace("eight cycles apart.", "eight cycles apart, one for each of :param:`core.threads`.") + \
+    parameter("core.threads", "8", unit="threads") + \
+    parameter("core.turn-width", "clog2(core.threads)", parent="core.threads", unit="bits", text="The width.") + \
+    parameter("core.spare", "2", text="A spare value.")
+VALUED_BOOK = {**BOOK, "core/core.rst": VALUED}
+
+
+class ValueTest(unittest.TestCase):
+    """The weave shows the value of each PARAMETER where the text cites it, and on its first line."""
+
+    def test_a_citation_shows_the_value_and_unit_as_a_link_to_the_parameter(self):
+        core = weave(VALUED_BOOK, "html").output["core/core.html"]
+        self.assertIn('one for each of <a class="reference internal" href="#core.threads">'
+                      '<span class="param">8 threads</span></a>.', core)
+
+    def test_the_first_line_shows_the_value(self):
+        core = weave(VALUED_BOOK, "html").output["core/core.html"]
+        self.assertRegex(core, r'<strong>PARAMETER</strong> <code[^>]*><span class="pre">core\.threads</span></code>'
+                               r' = 8 threads</p>')
+        self.assertRegex(core, r'<strong>PARAMETER</strong> <code[^>]*><span class="pre">core\.turn-width</span></code>'
+                               r' = clog2\(core\.threads\) = 3 bits</p>')
+        self.assertRegex(core, r'<span class="pre">core\.spare</span></code> = 2</p>')
+
+    def test_the_latex_shows_the_values_too(self):
+        tex = weave(VALUED_BOOK, "latex").output["book.tex"]
+        self.assertIn(r"one for each of {\hyperref[\detokenize{core/core:core.threads}]"
+                      r"{\sphinxcrossref{\DUrole{param}{8 threads}}}}", tex)
+        self.assertIn(r"\sphinxcode{\sphinxupquote{core.threads}} = 8 threads", tex)
+
+    def test_a_citation_of_a_parameter_without_a_value_shows_its_anchor(self):
+        text = VALUED.replace("   :value: 8\n", "")
+        core = weave({**BOOK, "core/core.rst": text}, "html").output["core/core.html"]
+        self.assertRegex(core, r'one for each of <a class="reference internal" href="#core\.threads"><code[^>]*>'
+                               r'<span class="pre">core\.threads</span></code></a>')
 
 
 class ChecksTest(unittest.TestCase):

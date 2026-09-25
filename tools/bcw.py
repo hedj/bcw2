@@ -47,6 +47,7 @@ from docutils.parsers.rst import directives
 from sphinx import addnodes
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective, SphinxRole
+from sphinx.util.nodes import make_refnode
 
 import ste_lint
 
@@ -245,10 +246,27 @@ class CitationRole(SphinxRole):
         literal = nodes.literal(self.rawtext, self.text, classes=[self.kind])
         literal["anchor"] = self.text
         literal["line"] = self.lineno
-        link = addnodes.pending_xref(self.rawtext, literal, refdomain="std", reftype="ref",
-                                     reftarget=self.text, refexplicit=True, refwarn=False,
-                                     refdoc=self.env.docname)
-        return [link], []
+        return [citation_link(self.rawtext, literal, self.text, self.env.docname)], []
+
+
+def citation_link(rawtext, content, anchor, docname):
+    """A link from content to the chunk with the anchor, which resolve_citation resolves.
+
+    It has no domain, so that Sphinx passes it to resolve_citation, which keeps
+    content. Sphinx's own std ref would replace content with plain text.
+    """
+    return addnodes.pending_xref(rawtext, content, refdomain="", reftype="bcw", reftarget=anchor,
+                                 refwarn=False, refdoc=docname)
+
+
+def resolve_citation(app, env, node, content):
+    """Resolve a citation link to the chunk that carries the anchor, or leave it unresolved."""
+    if node.get("reftype") != "bcw":
+        return None
+    target = env.domains.standard_domain.anonlabels.get(node["reftarget"])
+    if target is None:
+        return None
+    return make_refnode(app.builder, node["refdoc"], target[0], target[1], content)
 
 
 # Reading a chapter
@@ -1053,6 +1071,7 @@ def setup(app):
     app.add_directive("check", CheckDirective)
     for kind in CITATIONS:
         app.add_role(kind, CitationRole(kind))
+    app.connect("missing-reference", resolve_citation)
     app.connect("builder-inited", init_environment)
     # Before Sphinx's own collectors at 500, so that the weave can add sections that
     # the table of contents then holds.
