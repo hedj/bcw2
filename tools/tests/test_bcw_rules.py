@@ -1068,10 +1068,14 @@ class FragmentTest:
     def test_a_line_that_holds_more_than_a_fragment_name_is_code(self, code):
         assert findings(GOOD + source("build/rtl/core/pair.v", code)) == []
 
-    def test_a_line_in_a_twin_is_code(self):
-        text = GOOD.replace("      def core_rotate(turn):\n", "      <<:core.none>>\n      def core_rotate(turn):\n")
-        assert text != GOOD
-        assert [f for f in findings(text) if f[1].startswith("fragment")] == []
+    @pytest.mark.parametrize("use", ["<<:core.none>>", "    <<:core.pair-logic>>"])
+    def test_a_fragment_use_in_a_twin_is_a_finding_on_its_line(self, use):
+        text = GOOD.replace("      def core_rotate(turn):\n", f"      {use}\n      def core_rotate(turn):\n") + FRAGMENT
+        assert text != GOOD + FRAGMENT
+        book = Book({"core/core.rst": text})
+        assert ([f[1:] for f in book.tuples() if f[2] != "fragments-used"] ==
+                [(line(text, use), "whole-twins", "core.rotation")])
+        assert "a twin stays whole" in next(f for f in book.findings if f.check == "whole-twins").fix
 
 
 class TangleTest:

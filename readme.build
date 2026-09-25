@@ -91,8 +91,9 @@ chapter order (doc.chapter-order), which is the order of the reader edition. A
 marker before each fragment keeps each line of the tangled file traceable to
 its chapter line. No marker follows a line that ends in a backslash, because
 that line goes on in the next one. So a line that goes on across the edge of a
-fragment maps to the wrong chapter line. The rules of fragments are in the
-section Fragments of book/doc/doc.rst.
+fragment maps to the wrong chapter line. A twin cannot use a fragment, because
+a twin stays whole. The rules of fragments are in the section Fragments of
+book/doc/doc.rst.
 
 
 The tools
