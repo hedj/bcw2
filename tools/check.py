@@ -1,0 +1,224 @@
+"""The fast checks on the book: labels, one-shall, anchors and stamps.
+
+Run it from the repository root: .venv/bin/python tools/check.py [FILE ...]
+With no FILE, it checks every book/**/*.md. It prints each finding as
+
+    book/core/core.md:12: [stamps] core.rotation: message
+        fix: what to do
+
+and exits 1 if it found anything.
+
+A chunk is a top-level paragraph that starts with a bold label, such as
+**REQUIREMENT.** or **OPEN — title.**, with the fenced blocks that follow it
+directly. The last line of the paragraph can be an attribute line, such as
+{rule=core.rotation parent=prop.x}. A fenced block carries pandoc-style
+attributes, such as {.python .formal file=... stamp=...}.
+"""
+
+import hashlib
+import re
+import sys
+from dataclasses import dataclass, field
+from pathlib import Path
+
+from markdown_it import MarkdownIt
+
+LABELS = {"REQUIREMENT", "PARAMETER", "DEFINITION", "RATIONALE", "DISCUSSION", "TARGET", "OPEN"}
+RULES = {"REQUIREMENT", "PARAMETER", "DEFINITION"}
+ATTRIBUTE_KEYS = {"rule", "parent", "impl"}
+LABEL = re.compile(r"\*\*([A-Z][A-Z]+)(?: — [^*]+?)?\.\*\*")
+ATTRIBUTES = re.compile(r"\{([^{}]*)\}\s*")
+ANCHOR = re.compile(r"[a-z][a-z0-9-]*(\.[a-z0-9-]+)+")
+SHALL = re.compile(r"\bshall\b", re.IGNORECASE)
+CODE_SPAN = re.compile(r"`[^`]*`")
+
+
+@dataclass
+class Finding:
+    path: str
+    line: int
+    check: str
+    anchor: str
+    message: str
+    fix: str
+
+    def __str__(self):
+        return (f"{self.path}:{self.line}: [{self.check}] {self.anchor or '-'}: "
+                f"{self.message}\n    fix: {self.fix}")
+
+
+@dataclass
+class Block:
+    line: int
+    classes: set
+    attrs: dict
+
+
+@dataclass
+class Chunk:
+    path: str
+    line: int
+    label: str
+    lines: list  # the paragraph's source lines, without the attribute line
+    attrs: dict
+    blocks: list = field(default_factory=list)
+
+    @property
+    def english(self):
+        text = " ".join(self.lines)
+        return " ".join(LABEL.sub("", text, count=1).split())
+
+    @property
+    def anchor(self):
+        return self.attrs.get("rule")
+
+
+def stamp(chunk):
+    """The review stamp: a hash of the chunk's label and English."""
+    return hashlib.sha256((chunk.label + " " + chunk.english).encode()).hexdigest()[:8]
+
+
+def fence_attributes(info):
+    """Parse a pandoc-style info string, such as {.python .formal file=x stamp=y}."""
+    match = re.fullmatch(r"\s*\{(.*)\}\s*", info)
+    if not match:
+        return set(), {}
+    classes, attrs = set(), {}
+    for word in match.group(1).split():
+        if word.startswith("."):
+            classes.add(word[1:])
+        elif "=" in word:
+            key, _, value = word.partition("=")
+            attrs[key] = value
+    return classes, attrs
+
+
+def parse(path, text):
+    """Return the chunks of one document, and the findings that parsing met."""
+    source = text.splitlines()
+    chunks, findings, current = [], [], None
+    for token in MarkdownIt("commonmark").parse(text):
+        if token.level != 0 or token.type in ("paragraph_close", "inline"):
+            continue
+        if token.type == "fence" and current is not None:
+            classes, attrs = fence_attributes(token.info)
+            current.blocks.append(Block(token.map[0] + 1, classes, attrs))
+            continue
+        if token.type == "fence" and "formal" in fence_attributes(token.info)[0]:
+            findings.append(Finding(path, token.map[0] + 1, "stamps", None,
+                                    "a formal block stands outside any rule chunk",
+                                    "move it directly after the rule that it states"))
+        current = None
+        if token.type != "paragraph_open":
+            continue
+        start, end = token.map
+        lines = source[start:end]
+        match = LABEL.match(lines[0])
+        if not match:
+            continue
+        attrs = {}
+        attribute_line = ATTRIBUTES.fullmatch(lines[-1])
+        if attribute_line:
+            lines = lines[:-1]
+            for word in attribute_line.group(1).split():
+                key, _, value = word.partition("=")
+                attrs[key] = value
+        current = Chunk(path, start + 1, match.group(1), lines, attrs)
+        chunks.append(current)
+    return chunks, findings
+
+
+def check_labels(chunk):
+    if chunk.label not in LABELS:
+        yield Finding(chunk.path, chunk.line, "labels", chunk.anchor,
+                      f"{chunk.label} is not a label",
+                      "use one of " + ", ".join(sorted(LABELS)))
+    elif chunk.label == "REQUIREMENT" and not SHALL.search(CODE_SPAN.sub("", chunk.english)):
+        yield Finding(chunk.path, chunk.line, "labels", chunk.anchor,
+                      "the REQUIREMENT contains no \"shall\"",
+                      "state it with \"shall\", or relabel it DEFINITION")
+
+
+def check_one_shall(chunk):
+    count = 0
+    for offset, line in enumerate(chunk.lines):
+        count += len(SHALL.findall(CODE_SPAN.sub("", line)))
+        if count > 1:
+            yield Finding(chunk.path, chunk.line + offset, "one-shall", chunk.anchor,
+                          "the chunk holds more than one \"shall\"",
+                          "split the chunk at the sentence with the second \"shall\"")
+            return
+
+
+def check_anchor(chunk, seen, retired):
+    for key in chunk.attrs:
+        if key not in ATTRIBUTE_KEYS:
+            yield Finding(chunk.path, chunk.line, "anchors", chunk.anchor,
+                          f"unknown attribute {key}",
+                          "use only " + ", ".join(sorted(ATTRIBUTE_KEYS)))
+    anchor = chunk.anchor
+    if chunk.label in RULES and anchor is None:
+        yield Finding(chunk.path, chunk.line, "anchors", None,
+                      f"the {chunk.label} has no anchor",
+                      "end the paragraph with an attribute line such as {rule=core.name}")
+    if anchor is None:
+        return
+    if not ANCHOR.fullmatch(anchor):
+        yield Finding(chunk.path, chunk.line, "anchors", anchor,
+                      "the anchor is not lower-case words joined by dots",
+                      "write it as chapter.name, for example core.rotation")
+    elif anchor in retired:
+        yield Finding(chunk.path, chunk.line, "anchors", anchor,
+                      "the anchor is retired", "choose a new anchor")
+    elif anchor in seen:
+        yield Finding(chunk.path, chunk.line, "anchors", anchor,
+                      f"the anchor is also at {seen[anchor]}", "choose a new anchor")
+    else:
+        seen[anchor] = f"{chunk.path}:{chunk.line}"
+
+
+def check_stamps(chunk):
+    for block in chunk.blocks:
+        if "formal" not in block.classes:
+            continue
+        expected = stamp(chunk)
+        if chunk.label not in RULES:
+            yield Finding(chunk.path, block.line, "stamps", chunk.anchor,
+                          f"a formal block follows a {chunk.label}, which is not a rule",
+                          "move it directly after the rule that it states")
+        elif block.attrs.get("stamp") != expected:
+            yield Finding(chunk.path, block.line, "stamps", chunk.anchor,
+                          "the rule's English changed since its twin was last read",
+                          f"read the twin against the rule, then set stamp={expected}")
+
+
+def check(paths, retired):
+    """Return every finding in the given documents."""
+    findings, seen = [], {}
+    for path in paths:
+        chunks, parse_findings = parse(str(path), Path(path).read_text())
+        findings += parse_findings
+        for chunk in chunks:
+            findings += check_labels(chunk)
+            findings += check_one_shall(chunk)
+            findings += check_anchor(chunk, seen, retired)
+            findings += check_stamps(chunk)
+    return sorted(findings, key=lambda f: (f.path, f.line, f.check))
+
+
+def main(argv):
+    paths = argv or sorted(str(p) for p in Path("book").glob("**/*.md"))
+    retired_file = Path("book/retired-anchors.txt")
+    retired = set()
+    if retired_file.exists():
+        retired = {line.strip() for line in retired_file.read_text().splitlines()
+                   if line.strip() and not line.startswith("#")}
+    findings = check(paths, retired)
+    for finding in findings:
+        print(finding)
+    print(f"check: {len(paths)} documents, {len(findings)} findings")
+    return 1 if findings else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

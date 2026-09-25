@@ -2,3 +2,4 @@ build/
 scratch/
 .venv/
 .entangled/
+__pycache__/
