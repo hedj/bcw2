@@ -136,11 +136,10 @@ class ReachesGoalTest(unittest.TestCase):
                                           (line(text, ".. definition:: core.orphan"), "reaches-goal", "core.orphan")])
 
     def test_a_rationale_takes_no_anchor(self):
-        # A directive without arguments reads the text on its first line as content.
         text = GOOD.replace(".. rationale::", ".. rationale:: core.why")
         book = Book({"core/core.rst": text})
-        rationale = [chunk for chunk in book.documents[0].chunks if chunk.label == "RATIONALE"][0]
-        self.assertEqual((rationale.anchor, rationale.lines[0]), (None, (line(text, "core.why"), "core.why")))
+        self.assertIn("the RATIONALE directive takes no argument.", book.warnings)
+        self.assertNotIn("core.why", [chunk.anchor for chunk in book.documents[0].chunks])
 
     def test_a_goal_can_serve_another_goal(self):
         text = GOOD.replace(CORE, CORE.replace("core.timing", "core.sub"))
@@ -426,6 +425,41 @@ class AttributeKeysTest(unittest.TestCase):
     def test_the_options_of_each_label_pass(self):
         text = GOOD.replace(TURN, TURN + "   :never: slot\n").replace(ROTATION, ROTATION + "   :impl: none\n")
         self.assertEqual(findings(text), [])
+
+    # A RATIONALE, a DISCUSSION and an OPEN allow no option. Docutils reads an
+    # option line under such a directive as text, so the extension rejects it.
+    NO_OPTIONS = [(".. rationale::", ".. rationale::"), (".. rationale::", ".. discussion::"),
+                  (".. open:: The thread count is not settled.", ".. open:: The thread count is not settled.")]
+
+    def error(self, text, needle):
+        """The chunks of text, after a check that text has one error, on the line of needle."""
+        book = Book({"core/core.rst": text})
+        self.assertEqual(book.tuples(), [("book/core/core.rst", line(text, needle), "sphinx", None)])
+        return book
+
+    def test_an_option_on_a_label_that_allows_none_is_an_error_on_the_directive_line(self):
+        for old, new in self.NO_OPTIONS:
+            with self.subTest(label=new):
+                text = GOOD.replace(old, new + "\n   :parent: core.core")
+                book = self.error(text, new)
+                self.assertIn('unknown option: "parent"', book.warnings)
+                self.assertNotIn("parent", " ".join(chunk.english for chunk in book.documents[0].chunks))
+
+    def test_an_argument_on_a_label_that_takes_none_is_an_error_on_the_directive_line(self):
+        for label in ["rationale", "discussion"]:
+            with self.subTest(label=label):
+                text = GOOD.replace(".. rationale::", f".. {label}:: core.why")
+                book = self.error(text, f".. {label}:: core.why")
+                self.assertIn("takes no argument", book.warnings)
+                self.assertNotIn("core.why", " ".join(chunk.english for chunk in book.documents[0].chunks))
+
+    def test_text_under_the_directive_line_is_not_an_option(self):
+        for first in ["A thread's instructions are eight cycles apart.", ":rule:`core.rotation` gives the order."]:
+            with self.subTest(first=first):
+                text = GOOD.replace(".. rationale::\n\n   A thread's instructions are eight cycles apart.",
+                                    f".. rationale::\n   {first}")
+                self.assertNotEqual(text, GOOD)
+                self.assertEqual(findings(text), [])
 
 
 class KnownWordsTest(unittest.TestCase):

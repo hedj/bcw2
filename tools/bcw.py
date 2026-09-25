@@ -156,10 +156,21 @@ class ChunkDirective(SphinxDirective):
         node.source, node.line = self.get_source_info()
         node["option_lines"] = {}
         for offset, text in enumerate(self.block_text.splitlines()[1:], 1):
-            match = re.match(r"\s+:([\w-]+):", text)
+            match = re.match(r"\s+:([\w-]+):(\s|$)", text)
             if not match:
                 break
             node["option_lines"][match.group(1)] = self.lineno + offset
+        # Docutils rejects an unknown option only for a directive that allows some
+        # options, and an argument only for a directive that takes some. For any
+        # other directive, it reads them as text.
+        # implements: doc.attribute-keys
+        for name in node["option_lines"]:
+            if name not in self.option_spec:
+                raise self.error(f'unknown option: "{name}".')
+        # implements: doc.labels
+        argument = self.block_text.split("\n")[0].split("::", 1)[1].strip()
+        if argument and not (self.required_arguments or self.optional_arguments):
+            raise self.error(f"the {self.label} directive takes no argument.")
         self.state.nested_parse(self.content, self.content_offset, node)
         return [node]
 
