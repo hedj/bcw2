@@ -1,0 +1,21 @@
+#!/bin/sh
+# Enter the pinned build environment of the book, which flake.nix defines.
+#
+#   ./dev              open a shell in the environment
+#   ./dev make check   run one command in the environment
+#
+# It needs Nix (https://nixos.org/download). The first run downloads the tools
+# into /nix/store. It also points Git at tools/hooks, so that the pre-push hook
+# runs.
+set -e
+root=$(cd "$(dirname "$0")" && pwd)
+if ! command -v nix >/dev/null 2>&1; then
+    echo "dev: Nix is not installed. Install it from https://nixos.org/download, then run ./dev again." >&2
+    exit 1
+fi
+git -C "$root" config core.hooksPath tools/hooks
+nix="nix --extra-experimental-features nix-command --extra-experimental-features flakes"
+if [ $# -eq 0 ]; then
+    exec $nix develop "$root"
+fi
+exec $nix develop "$root" --command "$@"

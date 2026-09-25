@@ -4,8 +4,8 @@ As a filter, it rewrites every location in a tangled file, such as
 build/rtl/core/core_rotate.v:9 or File "build/model/x.py", line 3, to the
 chapter and line that hold that code:
 
-    verilator --lint-only -Wall build/rtl/core/core_rotate.v 2>&1 | \
-        .venv/bin/python tools/linemap.py
+    verilator --lint-only -Wall build/rtl/bcw_params.sv build/rtl/core/core_rotate.v 2>&1 | \
+        python3 tools/linemap.py
 
 It keeps the rest of each line. If it cannot map a location, it leaves the
 location unchanged and adds a note.

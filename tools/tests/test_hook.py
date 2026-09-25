@@ -18,7 +18,6 @@ class PrePushTest(unittest.TestCase):
         self.addCleanup(directory.cleanup)
         self.clone = Path(directory.name) / "clone"
         subprocess.run(["git", "clone", "--quiet", str(ROOT), str(self.clone)], check=True)
-        os.symlink(ROOT / ".venv", self.clone / ".venv")
         self.good = self.git("rev-parse", "HEAD")
 
     def git(self, *args):

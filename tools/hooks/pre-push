@@ -4,20 +4,20 @@
 # worktree, and stops the push if either fails. The working directory, with
 # any edits that are not committed, plays no part.
 #
-# tools/setup.sh installs the hook: git config core.hooksPath tools/hooks
+# ./dev installs the hook: git config core.hooksPath tools/hooks. Each target
+# runs through the ./dev of the pushed commit, so in the environment that
+# the commit pins.
 # PRE_PUSH_TARGETS sets the make targets. The hook's own test sets it to
 # "check", because make test would run that test again.
-root=$(git rev-parse --show-toplevel) || exit 1
 targets=${PRE_PUSH_TARGETS:-test check}
 zero=0000000000000000000000000000000000000000
 while read -r local_ref local_sha remote_ref remote_sha; do
     [ "$local_sha" = "$zero" ] && continue
     tree=$(mktemp -d)
     git worktree add --quiet --detach "$tree" "$local_sha" || exit 1
-    ln -s "$root/.venv" "$tree/.venv"
     status=0
     for target in $targets; do
-        (cd "$tree" && make -s "$target") || { status=1; break; }
+        (cd "$tree" && ./dev make -s "$target") || { status=1; break; }
     done
     git worktree remove --force "$tree"
     if [ "$status" -ne 0 ]; then
