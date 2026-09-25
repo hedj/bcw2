@@ -144,7 +144,7 @@ Documents include documentation, READMEs, runbooks, error messages, and release 
 - Use only the modals "can", "will", and "must". Do not use "should", "would", "may", "might", or "could". Exception: in a rule of the specification, keep the modal that the rule has. Write "shall" in a new REQUIREMENT.
 - Write complete grammar: no contractions, keep articles, and keep "that".
 - Do not use semicolons or em-dashes.
-- As a verb, write "make sure that" for check, verify, confirm, validate, and ensure. Write "configuration" for config, settings, and options. Keep each term that the Terms section or a project document defines, such as the noun "check" in `migration_plan.md`.
+- As a verb, write "make sure that" for check, verify, confirm, validate, and ensure. Write "configuration" for config, settings, and options. Keep each term that the Terms section or a project document defines.
 - Keep noun chains to three words or fewer.
 - Define a concept term at its first use, in fewer than ten words, with one term per sentence. Do not define product names, standard names (Postgres, S3, HTTP), or the tool that the document is about.
 - Name the host, the flag, or the prior step that a command depends on. Do not assume that the reader already has it.
