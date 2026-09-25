@@ -41,6 +41,20 @@ Rotation
 
    The width of the index of a thread.
 
+.. parameter:: core.clock
+   :parent: core.core
+   :value: 110 * 10 ** 6
+   :unit: Hz
+
+   The number of cycles in a second.
+
+.. target:: core.timing-closure
+   :parent: core.clock
+   :value: core.clock
+   :unit: Hz
+
+   The core meets timing at :param:`core.clock`.
+
 .. requirement:: core.rotation
    :parent: design.timing-invariant
 
