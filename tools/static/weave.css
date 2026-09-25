@@ -1,6 +1,7 @@
 /* The stylesheet of the weave. Each chunk stands apart from the prose around
    it: a light background, and a bar on its left side whose colour tells its
-   label. tools/weave.py adds this file to every HTML page. */
+   label. A REQUIREMENT and a DEFINITION also have a background tinted in the
+   colour of their bar. tools/weave.py adds this file to every HTML page. */
 
 .chunk {
     border-left: 4px solid #999999;
@@ -22,9 +23,15 @@ p.chunk-why {
 }
 
 .chunk.goal { border-left-color: #7b3fa0; }
-.chunk.requirement { border-left-color: #1f5fbf; }
+.chunk.requirement {
+    border-left-color: #1f5fbf;
+    background: #edf3fc;
+}
 .chunk.parameter { border-left-color: #0e7c86; }
-.chunk.definition { border-left-color: #2e7d32; }
+.chunk.definition {
+    border-left-color: #2e7d32;
+    background: #edf6ee;
+}
 .chunk.rationale,
 .chunk.discussion { border-left-color: #8a8a8a; }
 .chunk.target,

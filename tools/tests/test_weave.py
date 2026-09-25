@@ -133,6 +133,15 @@ class StyleTest(unittest.TestCase):
                 self.assertRegex(self.book.output[page],
                                  rf'<link rel="stylesheet" type="text/css" href="{prefix}_static/weave\.css[^"]*" />')
 
+    def test_a_requirement_and_a_definition_have_their_own_background(self):
+        css = self.book.output["_static/weave.css"]
+
+        def background(selector):
+            return re.search(rf"(?s){re.escape(selector)} \{{[^}}]*background: ([^;]+);", css).group(1)
+
+        colours = [background(".chunk"), background(".chunk.requirement"), background(".chunk.definition")]
+        self.assertEqual(len(set(colours)), 3, colours)
+
     def test_each_chunk_has_a_border_and_each_label_its_colour(self):
         css = self.book.output["_static/weave.css"]
         self.assertRegex(css, r"(?s)\.chunk \{[^}]*border-left:")
