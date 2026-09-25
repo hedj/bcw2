@@ -429,6 +429,32 @@ def check_overview_first(document):
                           "move it after the overview, which holds explanation only")
 
 
+ARGUMENT = {"RATIONALE", "DISCUSSION"}
+
+
+# implements: doc.argument-budget
+def check_argument_budget(document):
+    starts = [number for number, level in document.headings if 2 <= level <= 4]
+    sections = {}
+    for chunk in document.chunks:
+        above = [number for number in starts if number < chunk.line]
+        if above:
+            sections.setdefault(above[-1], []).append(chunk)
+    for chunks in sections.values():
+        if not any(chunk.label in RULES for chunk in chunks):
+            continue
+        arguments = [chunk for chunk in chunks if chunk.label in ARGUMENT]
+        for chunk in arguments[1:]:
+            yield Finding(chunk.path, chunk.line, "argument-budget", chunk.anchor,
+                          "the section already holds a RATIONALE or DISCUSSION",
+                          "merge the argument into the first block of the section")
+        for chunk in arguments:
+            if len(chunk.english.split()) > 40:
+                yield Finding(chunk.path, chunk.line, "argument-budget", chunk.anchor,
+                              f"the argument has {len(chunk.english.split())} words",
+                              "cut it to 40 words, or move the explanation to the overview")
+
+
 def check(paths, retired, implemented=()):
     """Return every finding in the given documents.
 
@@ -441,6 +467,7 @@ def check(paths, retired, implemented=()):
     for document in documents:
         findings += document.findings
         findings += check_overview_first(document)
+        findings += check_argument_budget(document)
         for chunk in document.chunks:
             findings += check_labels(chunk)
             findings += check_one_shall(chunk)

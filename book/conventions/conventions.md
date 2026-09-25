@@ -147,5 +147,14 @@ The linter keeps each rule short and plain. A `never=` list keeps one word for e
 **REQUIREMENT.** Each chunk shall stand after the second `##` heading of its chapter.
 {rule=doc.overview-first parent=doc.rules-apart,doc.one-engineer}
 
+**DEFINITION.** A **section** is the text after a heading of level 2, 3 or 4, up to the next
+heading of those levels.
+{rule=doc.section parent=doc.one-engineer}
+
+**REQUIREMENT.** Where a section holds a rule, the section shall hold at most one RATIONALE or
+DISCUSSION, of 40 words or fewer.
+{rule=doc.argument-budget parent=doc.one-engineer,doc.rules-apart}
+
 **RATIONALE.** A reader meets the purpose of a chapter before its rules. Diátaxis keeps
-explanation apart from reference in the same way.
+explanation apart from reference in the same way. The budget keeps argument short and next to
+its rule.

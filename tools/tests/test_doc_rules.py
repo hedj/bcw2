@@ -316,5 +316,38 @@ class OverviewFirstTest(unittest.TestCase):
         self.assertEqual(findings(text), [(line(text, "Still the overview"), "overview-first", None)])
 
 
+def words(count):
+    return " ".join(["word"] * (count - 1)) + " end."
+
+
+class ArgumentBudgetTest(unittest.TestCase):
+    """doc.argument-budget"""
+
+    THREAD = "**Thread.** An unlabelled bold paragraph is prose."
+
+    def test_a_second_argument_block_in_a_section_with_a_rule_is_a_finding(self):
+        text = GOOD.replace(self.THREAD, self.THREAD + "\n\n**DISCUSSION.** Another view.")
+        self.assertEqual(findings(text), [(line(text, "Another view"), "argument-budget", None)])
+
+    def test_an_argument_block_of_41_words_is_a_finding(self):
+        text = GOOD.replace("A thread's instructions are eight cycles apart.", words(41))
+        self.assertEqual(findings(text), [(line(text, "word word"), "argument-budget", None)])
+
+    def test_an_argument_block_of_40_words_passes(self):
+        self.assertEqual(findings(GOOD.replace("A thread's instructions are eight cycles apart.", words(40))), [])
+
+    def test_a_level_three_heading_starts_a_new_section(self):
+        text = GOOD.replace(self.THREAD, self.THREAD + "\n\n### 2.1 More\n\n**DISCUSSION.** Another view.")
+        self.assertEqual(findings(text), [])
+
+    def test_a_level_five_heading_does_not_start_a_section(self):
+        text = GOOD.replace(self.THREAD, self.THREAD + "\n\n##### More\n\n**DISCUSSION.** Another view.")
+        self.assertEqual(findings(text), [(line(text, "Another view"), "argument-budget", None)])
+
+    def test_a_section_without_a_rule_has_no_budget(self):
+        text = GOOD + "\n## 4. Notes\n\n**DISCUSSION.** One.\n\n**DISCUSSION.** " + words(50) + "\n"
+        self.assertEqual(findings(text), [])
+
+
 if __name__ == "__main__":
     unittest.main()
