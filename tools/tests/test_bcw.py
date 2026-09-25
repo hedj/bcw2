@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import warnings
 from pathlib import Path
 
 from sphinx.application import Sphinx
@@ -149,7 +150,7 @@ class Book:
                 app = Sphinx(str(source), None, str(self.root / "out"), str(self.root / "doctrees"), builder,
                              confoverrides=overrides, status=None, warning=warnings, freshenv=True)
                 app.build()
-                self.resolved = {name: app.env.get_and_resolve_doctree(name, app.builder)
+                self.resolved = {name: app.env.get_and_resolve_doctree(name, app.builder, tags=app.builder.tags)
                                  for name in sorted(app.env.found_docs)}
             self.findings = app.env.bcw_findings
             self.values = app.env.bcw_values
@@ -186,6 +187,14 @@ class Book:
         return sorted(found, key=lambda f: (f[0], f[1] or 0, f[2]))
 
 
+def deprecations(build):
+    """The message of each warning of a Sphinx deprecation that build() gives."""
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        build()
+    return [str(warning.message) for warning in caught if warning.category.__name__.startswith("RemovedInSphinx")]
+
+
 def findings(text, retired=None, tools=None, general=None):
     """The findings on text as the chapter book/core/core.rst, as (line, check, anchor).
 
@@ -205,6 +214,9 @@ class GoodTest(unittest.TestCase):
         book = Book({"core/core.rst": GOOD}, general=GENERAL)
         self.assertEqual(book.findings, [])
         self.assertEqual(book.warnings, "")
+
+    def test_the_build_gives_no_sphinx_deprecation_warning(self):
+        self.assertEqual(deprecations(lambda: Book({"core/core.rst": GOOD})), [])
 
     def test_the_reading_of_good(self):
         document = Book({"core/core.rst": GOOD}).documents[0]

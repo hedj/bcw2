@@ -7,7 +7,7 @@ HTML or LaTeX that Sphinx writes.
 import re
 import unittest
 
-from test_bcw import GENERAL, GOOD, Book
+from test_bcw import GENERAL, GOOD, Book, deprecations
 from test_bcw_rules import CORE_CHAPTER, DESIGN, chapter, parameter, target
 
 INDEX = "Book\n====\n\n.. chapters::\n"
@@ -249,6 +249,11 @@ class TargetValueTest(unittest.TestCase):
 class ChecksTest(unittest.TestCase):
     def test_the_weave_leaves_the_checks_unchanged(self):
         self.assertEqual(Book({"core/core.rst": GOOD}, general=GENERAL, extensions=["bcw", "weave"]).tuples(), [])
+
+    def test_the_weave_gives_no_sphinx_deprecation_warning(self):
+        for builder in ["html", "latex"]:
+            with self.subTest(builder=builder):
+                self.assertEqual(deprecations(lambda: weave(BOOK, builder)), [])
 
 
 class PdfTest(unittest.TestCase):
