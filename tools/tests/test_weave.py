@@ -114,6 +114,9 @@ class ExplanationTest(unittest.TestCase):
         self.assertLess(match.start(), self.heading)
         self.assertGreater(self.core.index(f'id="{match.group(1)}"'), self.heading)
 
+    def test_the_why_line_is_not_styled_as_a_chunk(self):
+        self.assertIn('<p class="chunk-why">Why:', self.core)
+
     def test_it_links_back_to_the_section_that_it_came_from(self):
         self.assertIn('<a class="reference internal" href="#rotation">Rotation</a>', self.core[self.heading:])
 

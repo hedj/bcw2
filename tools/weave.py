@@ -128,6 +128,11 @@ def enclosing_section(node):
     return node
 
 
+def swap(old, new):
+    """Put new in the place of old. replace_self would copy the classes of old to new."""
+    old.parent.replace(old, new)
+
+
 def reshape(app, doctree):
     """Make each chunk a container, and move each argument to the Explanation section."""
     docname = app.env.docname
@@ -136,7 +141,7 @@ def reshape(app, doctree):
     moved = []
     for chunk in list(doctree.findall(bcw.chunk)):
         box = container(chunk, docname)
-        chunk.replace_self(box)
+        swap(chunk, box)
         if chunk["label"] in MOVED:
             moved.append(box)
     if not moved:
@@ -149,7 +154,7 @@ def reshape(app, doctree):
         item += nodes.rubric("", "", nodes.reference("", origin[0].astext(), refid=origin["ids"][0]))
         why = nodes.paragraph(classes=["chunk-why"])
         why += [nodes.Text("Why: "), nodes.reference("", "see the explanation", refid=item["ids"][0])]
-        box.replace_self(why)
+        swap(box, why)
         item += box
         explanation += item
 
@@ -200,7 +205,7 @@ def weave_latex_chapter(root):
         pointer = nodes.paragraph()
         pointer += [nodes.Text(summary(block).split(":")[0] + ": "),
                     nodes.reference("", block["target"], refid=target["ids"][0])]
-        block.replace_self(pointer)
+        swap(block, pointer)
         item += block
         implementation += item
 
