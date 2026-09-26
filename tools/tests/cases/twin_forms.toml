@@ -1,4 +1,5 @@
-# doc.twin-forms and doc.twin-language: each form outside the twin language is a finding on its line.
+# verifies: doc.twin-forms
+# each form outside the twin language is a finding on its line.
 
 [[case]]
 name = "a condition with == passes"

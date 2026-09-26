@@ -1,4 +1,4 @@
-# doc.definition-parent
+# verifies: doc.definition-parent
 
 [[case]]
 name = "a definition with two parents is a finding on the option line"

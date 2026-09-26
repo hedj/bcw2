@@ -1,4 +1,4 @@
-# doc.heading-numbers
+# verifies: doc.heading-numbers
 
 [[case]]
 name = "a numbered heading is a finding on its line [Rotation\\n========-2. Rotation\\n===========]"

@@ -117,7 +117,7 @@ class Book:
 
     chapters maps each path under book/ to its text. general and retired are
     sets of words and anchors, or None for no list file. tools maps the name of
-    each file in tools/ to its text. With tangle, the tangle writes under the
+    each file in tools/ to its text, and tests the name of each file in tools/tests/. With tangle, the tangle writes under the
     temporary folder. builder names the Sphinx builder, and output keeps the text
     of each HTML, CSS and LaTeX file that it writes. index replaces the index, which
     lists the chapters by default. With pdf, latexmk makes a PDF of the LaTeX,
@@ -126,7 +126,7 @@ class Book:
     twice in one folder.
     """
 
-    def __init__(self, chapters, general=None, retired=None, tools=None, tangle=False, builder="dummy",
+    def __init__(self, chapters, general=None, retired=None, tools=None, tangle=False, builder="dummy", tests=None,
                  index=None, pdf=False, root=None, **overrides):
         directory = tempfile.TemporaryDirectory() if root is None else None
         self.root = Path(directory.name if root is None else root)
@@ -149,6 +149,11 @@ class Book:
                 for name, text in tools.items():
                     (self.root / "tools" / name).write_text(text)
                 overrides["bcw_tools"] = [str(self.root / "tools" / name) for name in sorted(tools)]
+            if tests is not None:
+                (self.root / "tools" / "tests").mkdir(parents=True)
+                for name, text in tests.items():
+                    (self.root / "tools" / "tests" / name).write_text(text)
+                overrides["bcw_tests"] = [str(self.root / "tools" / "tests" / name) for name in sorted(tests)]
             if tangle:
                 overrides["bcw_tangle_root"] = str(self.root)
             warnings = io.StringIO()
@@ -203,14 +208,14 @@ def deprecations(build):
     return [str(warning.message) for warning in caught if warning.category.__name__.startswith("RemovedInSphinx")]
 
 
-def findings(text, retired=None, tools=None, general=None):
+def findings(text, retired=None, tools=None, general=None, tests=None):
     """The findings on text as the chapter book/core/core.rst, as (line, check, anchor).
 
     With general=None, the extension skips doc.known-words, so that a test of
     another rule can add new words.
     """
     return [(number, name, anchor) for path, number, name, anchor
-            in Book({"core/core.rst": text}, general, retired, tools).tuples()]
+            in Book({"core/core.rst": text}, general, retired, tools, tests=tests).tuples()]
 
 
 def only(check_name, text, **options):

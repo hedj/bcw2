@@ -1,4 +1,4 @@
-# doc.dotted-words
+# verifies: doc.dotted-words
 
 [[case]]
 name = "a dotted word in a requirement is a finding on its line [Q8.4]"

@@ -1,4 +1,4 @@
-# doc.references
+# verifies: doc.references
 
 [[case]]
 name = "an unknown parent is a finding on the option line"

@@ -47,6 +47,7 @@ class GoodTest:
                                      (line(GOOD, "Rotation"), 2, "Rotation"), (line(GOOD, "Goals"), 2, "Goals")]
 
 
+# verifies: doc.labels
 class LabelsTest:
     """doc.labels: the extension registers a directive for each label. ParseErrorTest has an unknown label."""
 
@@ -56,6 +57,7 @@ class LabelsTest:
                  "target"])
 
 
+# verifies: doc.anchors
 class AnchorsTest:
     """doc.anchors"""
 
@@ -71,6 +73,7 @@ class AnchorsTest:
                 [f for f in book.findings if f.check == "anchors"][0].message)
 
 
+# verifies: doc.stamps
 class StampsTest:
     """doc.stamps"""
 

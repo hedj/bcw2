@@ -1,4 +1,4 @@
-# doc.stamps
+# verifies: doc.stamps
 
 [[case]]
 name = "a missing stamp is a finding"

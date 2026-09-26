@@ -1,4 +1,4 @@
-# doc.check and doc.check-kinds
+# verifies: doc.check-kinds
 
 [[case]]
 name = "a test, a proof and a proof of equivalence pass"

@@ -1,4 +1,4 @@
-# doc.verified
+# verifies: doc.verified
 
 [[case]]
 name = "a REQUIREMENT that no check verifies is a finding on its directive line"
@@ -31,8 +31,23 @@ old = "   :parent: core.timing\n\n   The core shall"
 new = "   :parent: core.timing\n   :verify: none\n\n   The core shall"
 
 [[case]]
-name = "an implements comment in a tool verifies it"
+name = "an implements comment in a tool does not verify it"
 tools = {"tool.py" = "# implements: core.rotation\n"}
+findings = [
+    {check = "verified", anchor = "core.rotation", at = ".. requirement:: core.rotation"},
+]
+
+[[case.replace]]
+old = '''
+.. check:: equiv
+   :verifies: core.rotation
+   :module: core_rotate
+'''
+new = ""
+
+[[case]]
+name = "a verifies comment in a test verifies it"
+tests = {"test_tool.py" = "# verifies: core.rotation\n"}
 findings = []
 
 [[case.replace]]

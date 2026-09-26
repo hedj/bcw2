@@ -1,4 +1,5 @@
-# doc.vocabulary and doc.never-on-definition
+# verifies: doc.vocabulary
+# The cases also cover the retired rule doc.never-on-definition.
 
 [[case]]
 name = "a definition with never words passes"

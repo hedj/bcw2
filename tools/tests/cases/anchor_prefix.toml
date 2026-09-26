@@ -1,4 +1,4 @@
-# doc.anchor-prefix
+# verifies: doc.anchor-prefix
 
 [[case]]
 name = "an anchor of another chapter is a finding on the directive line"

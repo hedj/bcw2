@@ -1,4 +1,4 @@
-# doc.one-block
+# verifies: doc.one-block
 
 [[case]]
 name = "a second block of a file or a fragment is a finding on its directive line [a file]"

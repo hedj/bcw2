@@ -1,4 +1,4 @@
-# doc.parameter-value and doc.parameter-values
+# verifies: doc.parameter-values
 
 [[case]]
 name = "a missing value is a finding on the directive line"

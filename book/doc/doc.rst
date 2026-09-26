@@ -200,7 +200,8 @@ Trace
    :parent: doc.traceable
 
    A :dfn:`reference` is an entry in a ``parent``, ``implements`` or ``verifies`` option, an
-   ``implements:`` comment in ``tools/``, or a citation.
+   ``implements:`` comment in ``tools/``, a ``verifies:`` comment in ``tools/tests/``, or a
+   citation.
 
 .. definition:: doc.check
    :parent: doc.traceable
@@ -220,7 +221,8 @@ Trace
    :parent: doc.traceable
 
    Where a rule is a REQUIREMENT, the rule shall appear in the ``verifies`` option of a check
-   directive or in an ``implements:`` comment, or carry ``verify`` with the value ``none``.
+   directive or in a ``verifies:`` comment in ``tools/tests/``, or carry ``verify`` with the value
+   ``none``.
 
 .. definition:: doc.citation
    :parent: doc.traceable
@@ -245,9 +247,9 @@ Trace
 
 .. rationale::
 
-   A ``source`` directive names the requirements that it implements in its ``implements``
-   option. A check in ``tools/`` names its rule in an ``# implements:`` comment, so each
-   documentation rule traces down to its script.
+   A ``source`` directive or an ``# implements:`` comment names what implements a rule. A check
+   directive or a ``# verifies:`` comment in ``tools/tests/`` names what verifies it, so each
+   rule traces down to its code and its test.
 
 Chapters
 --------

@@ -1,4 +1,4 @@
-# doc.ears
+# verifies: doc.ears
 
 [[case]]
 name = "every clause in order passes [Where a trace exists, while the core runs, when a thread waits, the core shall wait.]"

@@ -1,4 +1,4 @@
-# doc.anchors
+# verifies: doc.anchors
 
 [[case]]
 name = "an anchor outside the grammar is a finding"

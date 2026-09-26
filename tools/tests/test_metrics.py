@@ -148,9 +148,9 @@ def node(anchor, position, label="REQUIREMENT", chapter="core"):
     return {"anchor": anchor, "label": label, "chapter": chapter, "position": position}
 
 
-def design(tmp_path, nodes, edges, implemented=(), verified=()):
+def design(tmp_path, nodes, edges, unimplemented=(), unverified=()):
     """The design section that tools/metrics.py prints for a design graph in build/design.json."""
-    graph = {"nodes": nodes, "edges": edges, "implemented": list(implemented), "verified": list(verified)}
+    graph = {"nodes": nodes, "edges": edges, "unimplemented": list(unimplemented), "unverified": list(unverified)}
     return measure(tmp_path, {"build/design.json": json.dumps(graph)})["design"]
 
 
@@ -195,7 +195,7 @@ class DesignTest:
 
     def test_requirements_without_an_implementation_or_a_check_are_orphans(self, tmp_path):
         nodes = [node("a", 0), node("b", 1), node("g", 2, "GOAL")]
-        result = design(tmp_path, nodes, [], implemented=["a"], verified=[])
+        result = design(tmp_path, nodes, [], unimplemented=["b"], unverified=["a", "b"])
         assert (result["unimplemented"], result["unverified"]) == (1, 2)
 
     def test_without_a_design_graph_there_is_no_design_section(self, tmp_path):

@@ -1,4 +1,4 @@
-# doc.chapter-title
+# verifies: doc.chapter-title
 
 [[case]]
 name = "a chapter without a title is a finding on line 1"

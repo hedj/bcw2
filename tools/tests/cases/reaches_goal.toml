@@ -1,4 +1,4 @@
-# doc.reaches-goal
+# verifies: doc.reaches-goal
 
 [[case]]
 name = "a rule without a parent is a finding on its directive"

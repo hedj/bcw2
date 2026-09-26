@@ -1,4 +1,4 @@
-# doc.chapter-kind
+# verifies: doc.chapter-kind
 
 [[case]]
 name = "each kind passes [tutorial]"

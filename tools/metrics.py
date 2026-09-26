@@ -147,7 +147,6 @@ def design_measures(graph):
     interactivity = [len(targets) for targets in needs.values()]
     live = [sum(position[anchor] < place and any(position[other] >= place for other in dependants[anchor])
                 for anchor in position) for place in sorted(position.values())]
-    requirements = {node["anchor"] for node in graph["nodes"] if node["label"] == "REQUIREMENT"}
     return {"elements": count,
             "interactivity_mean": sum(interactivity) / count if count else 0,
             "interactivity_max": max(interactivity, default=0),
@@ -161,8 +160,8 @@ def design_measures(graph):
                                       for source, targets in needs.items() for target in targets),
             "vocabulary": {name: len(used) for name, used in sorted(terms.items())},
             "vocabulary_total": len(set().union(*terms.values())),
-            "unimplemented": len(requirements - set(graph["implemented"])),
-            "unverified": len(requirements - set(graph["verified"]))}
+            "unimplemented": len(graph["unimplemented"]),
+            "unverified": len(graph["unverified"])}
 
 
 def main():

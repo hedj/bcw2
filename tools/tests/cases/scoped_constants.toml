@@ -1,4 +1,4 @@
-# doc.scoped-constants
+# verifies: doc.scoped-constants
 
 [[case]]
 name = "an import of bcw_params in a Verilog block is a finding on its line"

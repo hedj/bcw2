@@ -1,4 +1,4 @@
-# doc.constant-name and doc.constant-names
+# verifies: doc.constant-names
 
 [[case]]
 name = "two parameters with one constant name are a finding"

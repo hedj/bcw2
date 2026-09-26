@@ -1,4 +1,4 @@
-# doc.linter
+# verifies: doc.linter
 
 [[case]]
 name = "a semicolon in a rule is a finding on its line"

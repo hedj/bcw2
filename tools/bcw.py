@@ -29,6 +29,7 @@ build/design.json, the design graph that tools/metrics.py measures.
 
 Configuration values, which tools/conf.py sets:
     bcw_tools            the files whose "# implements:" comments count
+    bcw_tests            the files whose "# verifies:" comments count
     bcw_general_words    the list of general words, or None to skip the checks
                          that need it
     bcw_retired_anchors  the list of retired anchors, or None
@@ -81,6 +82,7 @@ WORD = re.compile(r"[^\W\d_][^\W_]*(?:['’-][^\W_]+)*")
 SIBILANTS = ("s", "x", "z", "ch", "sh")
 CITATIONS = ["rule", "param"]
 IMPLEMENTS = re.compile(r"^[ \t]*# implements: (\S+)[ \t]*$", re.MULTILINE)
+VERIFIES = re.compile(r"^[ \t]*# verifies: (\S+)[ \t]*$", re.MULTILINE)
 
 logger = logging.getLogger(__name__)
 
@@ -698,12 +700,12 @@ def check_heading_numbers(document):
 # The checks on the whole book
 
 
-def tool_implements(paths):
-    """(path, line, anchor) for each "# implements:" comment in the given files."""
+def comments(paths, pattern):
+    """(path, line, anchor) for each comment of the pattern, such as IMPLEMENTS, in the given files."""
     found = []
     for path in paths:
         text = Path(path).read_text()
-        for match in IMPLEMENTS.finditer(text):
+        for match in pattern.finditer(text):
             found.append((str(path), text.count("\n", 0, match.start()) + 1, match.group(1)))
     return found
 
@@ -717,21 +719,30 @@ def verifies(block):
     return [entry.strip() for entry in block.options.get("verifies", "").split(",") if entry.strip()]
 
 
+def orphans(documents, comments, kind, links, option):
+    """The REQUIREMENTs that no block of the kind names in its links and no comment names, unless
+    they carry the option with the value none."""
+    named = {anchor for _, _, anchor in comments}
+    named.update(anchor for document in documents for block in document.blocks if block.kind == kind
+                 for anchor in links(block))
+    return [chunk for document in documents for chunk in document.chunks
+            if chunk.label == "REQUIREMENT" and chunk.anchor not in named and chunk.options.get(option) != "none"]
+
+
+def unimplemented(documents, tools):
+    return orphans(documents, tools, "source", implements, "impl")
+
+
+def unverified(documents, tests):
+    return orphans(documents, tests, "check", verifies, "verify")
+
+
 # implements: doc.implemented
 def check_implemented(documents, tools):
-    named = {anchor for _, _, anchor in tools}
-    for document in documents:
-        for block in document.blocks:
-            if block.kind == "source":
-                named.update(implements(block))
-    for document in documents:
-        for chunk in document.chunks:
-            if (chunk.label == "REQUIREMENT" and chunk.anchor not in named
-                    and chunk.options.get("impl") != "none"):
-                yield Finding(chunk.path, chunk.line, "implemented", chunk.anchor,
-                              "no source directive and no check implements the REQUIREMENT",
-                              "name it in an :implements: list or an implements: comment, "
-                              "or set :impl: none")
+    for chunk in unimplemented(documents, tools):
+        yield Finding(chunk.path, chunk.line, "implemented", chunk.anchor,
+                      "no source directive and no check implements the REQUIREMENT",
+                      "name it in an :implements: list or an implements: comment, or set :impl: none")
 
 
 # The kinds of a check: a testbench that Verilator runs, properties that SymbiYosys proves, and a
@@ -769,19 +780,12 @@ def check_check_kinds(documents):
 
 
 # implements: doc.verified
-def check_verified(documents, tools):
-    named = {anchor for _, _, anchor in tools}
-    for document in documents:
-        for block in document.blocks:
-            if block.kind == "check":
-                named.update(verifies(block))
-    for document in documents:
-        for chunk in document.chunks:
-            if (chunk.label == "REQUIREMENT" and chunk.anchor not in named
-                    and chunk.options.get("verify") != "none"):
-                yield Finding(chunk.path, chunk.line, "verified", chunk.anchor,
-                              "no check verifies the REQUIREMENT, and no implements: comment names it",
-                              "name it in the :verifies: list of a check, or set :verify: none")
+def check_verified(documents, tests):
+    for chunk in unverified(documents, tests):
+        yield Finding(chunk.path, chunk.line, "verified", chunk.anchor,
+                      "no check verifies the REQUIREMENT, and no verifies: comment in a test names it",
+                      "name it in the :verifies: list of a check or in a # verifies: comment of a test, "
+                      "or set :verify: none")
 
 
 # implements: doc.references
@@ -1313,10 +1317,11 @@ def crowded(documents):
                if chunk.label in RULES and len(parents(chunk)) > 2)
 
 
-def check(model, retired=(), tools=(), general=None):
+def check(model, retired=(), tools=(), general=None, tests=()):
     """Return every finding in the book of the model, in order of path, line and check.
 
-    tools holds the (path, line, anchor) of each "# implements:" comment. With
+    tools holds the (path, line, anchor) of each "# implements:" comment, and tests
+    of each "# verifies:" comment. With
     general=None, doc.known-words and doc.general-words are not checked, so that a
     test of another rule can use words that no list holds.
     """
@@ -1335,8 +1340,8 @@ def check(model, retired=(), tools=(), general=None):
             findings += check_anchor_prefix(chunk)
     findings += check_implemented(documents, tools)
     findings += check_check_kinds(documents)
-    findings += check_verified(documents, tools)
-    findings += check_references(documents, set(seen), tools)
+    findings += check_verified(documents, tests)
+    findings += check_references(documents, set(seen), [*tools, *tests])
     findings += check_reaches_goal(documents)
     findings += check_ears(documents)
     findings += check_vocabulary(documents)
@@ -1386,7 +1391,8 @@ def check_book(app, env):
     if config.bcw_general_words is not None:
         general = {word.lower() for word in listed(config.bcw_general_words)}
     retired = listed(config.bcw_retired_anchors) if config.bcw_retired_anchors is not None else set()
-    env.bcw_findings = check(book, retired, tool_implements(config.bcw_tools), general)
+    env.bcw_findings = check(book, retired, comments(config.bcw_tools, IMPLEMENTS), general,
+                             comments(config.bcw_tests, VERIFIES))
     env.bcw_values = book.values
     for finding in env.bcw_findings:
         logger.warning(str(finding), location=f"{finding.path}:{finding.line}", type="bcw", subtype=finding.check)
@@ -1487,17 +1493,18 @@ def tangle(app, exception):
     write(Path(root) / "build" / "checks.json", f'{{"constants": {json.dumps(parameter_constants(book))}, "checks": [\n'
           + ",\n".join(json.dumps(entry) for entry in manifest) + "\n]}\n")
     write(Path(root) / "build" / "design.json",
-          json.dumps(design_graph(book, tool_implements(app.config.bcw_tools)), indent=1) + "\n")
+          json.dumps(design_graph(book, comments(app.config.bcw_tools, IMPLEMENTS),
+                                  comments(app.config.bcw_tests, VERIFIES)), indent=1) + "\n")
 
 
-def design_graph(book, tools):
+def design_graph(book, tools, tests):
     """The design graph that build/design.json holds, for tools/metrics.py.
 
     Its nodes are the anchored chunks in the reading order: the chapter order, then
     the order in each chapter. An edge (a, b, kind) says that a reader needs b to
     understand a: b is a parent of a, a citation in its prose, an anchor in its
-    value, or a defined term in its prose. implemented and verified list the anchors
-    that a source or a tool implements, and that a check verifies.
+    value, or a defined term in its prose. unimplemented and unverified list the
+    REQUIREMENTs that doc.implemented and doc.verified report.
     """
     placed = [(document, chunk) for document in book.ordered for chunk in document.chunks if chunk.anchor]
     first = {}
@@ -1515,14 +1522,11 @@ def design_graph(book, tools):
         needs += [(defines[term], "term") for index in range(len(words))
                   if (term := term_at(words, index, terms)) in defines]
         edges |= {(anchor, name, kind) for name, kind in needs if name in first and name != anchor}
-    blocks = [block for document in book.documents for block in document.blocks]
-    implemented = {name for block in blocks if block.kind == "source" for name in implements(block)}
-    implemented |= {anchor for _, _, anchor in tools}
-    verified = {name for block in blocks if block.kind == "check" for name in verifies(block)}
     return {"nodes": [{"anchor": anchor, "label": chunk.label, "chapter": document.name, "position": position}
                       for position, (anchor, (document, chunk)) in enumerate(first.items())],
             "edges": [list(edge) for edge in sorted(edges)],
-            "implemented": sorted(implemented & set(first)), "verified": sorted(verified & set(first))}
+            "unimplemented": sorted(chunk.anchor for chunk in unimplemented(book.documents, tools)),
+            "unverified": sorted(chunk.anchor for chunk in unverified(book.documents, tests))}
 
 
 # A proof that names no depth looks this many steps from the reset.
@@ -1598,6 +1602,7 @@ def init_environment(app):
 
 def setup(app):
     app.add_config_value("bcw_tools", [], "env")
+    app.add_config_value("bcw_tests", [], "env")
     app.add_config_value("bcw_general_words", None, "env")
     app.add_config_value("bcw_retired_anchors", None, "env")
     app.add_config_value("bcw_tangle_root", None, "env")

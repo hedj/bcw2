@@ -1,4 +1,6 @@
-# doc.target-values, doc.target-parents, and the rules that a TARGET shares with the rules
+# verifies: doc.target-values
+# verifies: doc.target-parents
+# The cases also cover the rules that a TARGET shares with the other rules.
 
 [[case]]
 name = "a target without a value is a finding on the directive line"

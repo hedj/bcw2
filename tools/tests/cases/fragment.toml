@@ -1,4 +1,7 @@
-# doc.source-targets, doc.fragment-uses, doc.fragments-used and doc.fragment-cycles
+# verifies: doc.source-targets
+# verifies: doc.fragment-uses
+# verifies: doc.fragments-used
+# verifies: doc.fragment-cycles
 
 [[case]]
 name = "a skeleton and its fragment pass"

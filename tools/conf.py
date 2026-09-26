@@ -18,6 +18,7 @@ latex_engine = "pdflatex"
 show_warning_types = False
 
 bcw_tools = [str(path) for path in sorted(TOOLS.glob("*.py"))]
+bcw_tests = [str(path) for path in sorted([*(TOOLS / "tests").glob("*.py"), *(TOOLS / "tests" / "cases").glob("*.toml")])]
 bcw_general_words = str(ROOT / "book" / "general-words.txt")
 bcw_retired_anchors = str(ROOT / "book" / "retired-anchors.txt")
 bcw_tangle_root = str(ROOT)

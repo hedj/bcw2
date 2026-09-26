@@ -1,4 +1,5 @@
-# doc.attribute-keys: the options that each label registers pass. ParseErrorTest has the others.
+# verifies: doc.attribute-keys
+# the options that each label registers pass. ParseErrorTest has the others.
 
 [[case]]
 name = "the options of each label pass"

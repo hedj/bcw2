@@ -1,4 +1,4 @@
-# doc.implemented
+# verifies: doc.implemented
 
 [[case]]
 name = "a requirement that nothing implements is a finding"

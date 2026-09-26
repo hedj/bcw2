@@ -1,4 +1,4 @@
-# doc.overview-first
+# verifies: doc.overview-first
 
 [[case]]
 name = "a chunk in the overview is a finding"

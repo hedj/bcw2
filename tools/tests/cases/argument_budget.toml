@@ -1,4 +1,4 @@
-# doc.argument-budget
+# verifies: doc.argument-budget
 
 [[case]]
 name = "a second argument in a section with a rule is a finding"

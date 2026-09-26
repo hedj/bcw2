@@ -1,4 +1,4 @@
-# doc.general-word, doc.known-word and doc.known-words
+# verifies: doc.known-words
 
 [[case]]
 name = "a chapter of general words and defined terms passes"

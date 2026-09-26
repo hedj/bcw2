@@ -14,20 +14,19 @@ is a table [[case]] with these keys:
     general_remove  the general words are GENERAL without these words
     retired         the list of retired anchors
     tools           the files of tools/, by name, whose "# implements:" comments count
+    tests           the files of tools/tests/, by name, whose "# verifies:" comments count
     findings        the findings, in order, as {check, anchor, at, occurrence}: at is
                     a text of the line, and occurrence counts the lines that hold it
 
 Without a general key, the checks that need the general words do not run.
 """
 
-import ast
-import re
 import tomllib
 from pathlib import Path
 
 import pytest
 
-from book import GENERAL, GOOD, ROOT, findings, only
+from book import GENERAL, GOOD, findings, only
 
 CASES = Path(__file__).resolve().parent / "cases"
 
@@ -74,29 +73,6 @@ def expected(case, text):
 def test_the_chapter_of_the_case_gives_its_findings(case):
     text = chapter(case)
     options = {"general": general(case), "retired": set(case["retired"]) if "retired" in case else None,
-               "tools": case.get("tools")}
+               "tools": case.get("tools"), "tests": case.get("tests")}
     found = only(case["only"], text, **options) if "only" in case else findings(text, **options)
     assert found == expected(case, text)
-
-
-def implemented():
-    """The name of each rule that a check of tools/ implements."""
-    return {match for path in sorted((ROOT / "tools").glob("*.py"))
-            for match in re.findall(r"# implements: doc\.([a-z0-9-]+)", path.read_text())}
-
-
-def named_rules():
-    """The name of each rule that a case or a test class names: a check of a finding, or a doc. name in a docstring."""
-    names = {finding["check"] for path in CASES.glob("*.toml")
-             for case in tomllib.loads(path.read_text())["case"] for finding in case["findings"]}
-    for path in CASES.glob("*.toml"):
-        names.update(re.findall(r"doc\.([a-z0-9-]+)", path.read_text().splitlines()[0]))
-    for path in Path(__file__).resolve().parent.glob("test_*.py"):
-        for node in ast.walk(ast.parse(path.read_text())):
-            if isinstance(node, ast.ClassDef) and ast.get_docstring(node):
-                names.update(re.findall(r"doc\.([a-z0-9-]+)", ast.get_docstring(node)))
-    return names
-
-
-def test_each_rule_that_a_check_implements_has_a_test():
-    assert sorted(implemented() - named_rules()) == []

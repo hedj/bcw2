@@ -36,15 +36,18 @@ def words(count):
     return " ".join(["word"] * (count - 1)) + " end."
 
 
+# verifies: doc.implemented
 class ImplementedTest:
     """doc.implemented"""
 
-    def test_tool_implements_reads_whole_comment_lines_only(self, tmp_path):
+    def test_comments_reads_whole_comment_lines_only(self, tmp_path):
         path = tmp_path / "tool.py"
-        path.write_text("# implements: doc.a\n    # implements: doc.b\nx = '# implements: doc.c'\n")
-        assert bcw.tool_implements([path]) == [(str(path), 1, "doc.a"), (str(path), 2, "doc.b")]
+        path.write_text("# implements: doc.a\n    # implements: doc.b\nx = '# implements: doc.c'\n# verifies: doc.d\ny = '# verifies: doc.e'\n")
+        assert bcw.comments([path], bcw.IMPLEMENTS) == [(str(path), 1, "doc.a"), (str(path), 2, "doc.b")]
+        assert bcw.comments([path], bcw.VERIFIES) == [(str(path), 4, "doc.d")]
 
 
+# verifies: doc.references
 class ReferencesTest:
     """doc.references"""
 
@@ -52,7 +55,12 @@ class ReferencesTest:
         book = Book({"core/core.rst": GOOD}, tools={"x.py": "\n\n# implements: doc.gone\n"})
         assert book.tuples() == [("tools/x.py", 3, "references", None)]
 
+    def test_a_test_comment_that_names_no_anchor_is_a_finding(self):
+        book = Book({"core/core.rst": GOOD}, tests={"test_x.py": "\n# verifies: doc.gone\n"})
+        assert book.tuples() == [("tools/tests/test_x.py", 2, "references", None)]
 
+
+# verifies: doc.reaches-goal
 class ReachesGoalTest:
     """doc.reaches-goal"""
 
@@ -85,6 +93,7 @@ class CrowdedTest:
         assert bcw.crowded(book.documents) == 0
 
 
+# verifies: doc.ears
 class EarsTest:
     """doc.ears"""
 
@@ -94,6 +103,7 @@ class EarsTest:
                 ["the sentence does not have the EARS form"])
 
 
+# verifies: doc.known-words
 class KnownWordsTest:
     """doc.general-word, doc.known-word and doc.known-words"""
 
@@ -103,6 +113,7 @@ class KnownWordsTest:
         assert bcw.listed("/nonexistent/general-words.txt") == set()
 
 
+# verifies: doc.general-words
 class GeneralWordsTest:
     """doc.general-words"""
 
@@ -149,6 +160,7 @@ class QuotationAcrossLinesTest:
         assert "time slot" in [chunk.term for chunk in Book({"core/core.rst": text}).documents[0].chunks]
 
 
+# verifies: doc.chapter-path
 class ChapterPathTest:
     """doc.chapter and doc.chapter-path"""
 
@@ -161,6 +173,7 @@ class ChapterPathTest:
                 [("book/" + relative, 1, "chapter-path", None)])
 
 
+# verifies: doc.anchor-prefix
 class AnchorPrefixTest:
     """doc.anchor-prefix"""
 
@@ -175,6 +188,7 @@ def order(chapters):
     return bcw.chapter_order(Book(chapters).documents)
 
 
+# verifies: doc.chapters-ordered
 class ChapterOrderTest:
     """doc.chapter-order and doc.chapters-ordered"""
 
@@ -243,6 +257,7 @@ class CitationLinkTest:
         assert [f for f in book.tuples() if f[2] == "known-words"] == []
 
 
+# verifies: doc.parameter-values
 class ParameterValuesTest:
     """doc.parameter-value and doc.parameter-values"""
 
@@ -282,6 +297,7 @@ class ParameterValuesTest:
         assert Book({"core/core.rst": core, "design/design.rst": design}).values["core.x"] == 16
 
 
+# verifies: doc.constant-names
 class ConstantNamesTest:
     """doc.constant-name and doc.constant-names"""
 
@@ -337,6 +353,8 @@ class ParameterTangleTest:
         assert "Parameter is not used: 'SPARE'" in messages
 
 
+# verifies: doc.target-values
+# verifies: doc.target-parents
 class TargetTest:
     """doc.target-values, doc.target-parents, and the rules that a TARGET shares with the rules"""
 
@@ -380,6 +398,10 @@ FRAGMENT = source(":core.pair-logic", "assign b = a;")
 CHAPTER = "book/core/core.rst"
 
 
+# verifies: doc.source-targets
+# verifies: doc.fragment-uses
+# verifies: doc.fragments-used
+# verifies: doc.fragment-cycles
 class FragmentTest:
     """doc.source-targets, doc.fragment-uses, doc.fragments-used and doc.fragment-cycles"""
 
@@ -394,6 +416,7 @@ class FragmentTest:
         assert f"book/zeta/zeta.rst:{line(zeta, '.. source::')}" in finding.message
 
 
+# verifies: doc.one-block
 class OneBlockTest:
     """doc.one-block"""
 
@@ -415,6 +438,8 @@ class OneBlockTest:
         assert [text for text, _, _ in lines] == code
 
 
+# verifies: doc.labels
+# verifies: doc.attribute-keys
 class ParseErrorTest:
     """doc.labels and doc.attribute-keys: if docutils cannot read a directive, the error is its only finding.
 
@@ -586,11 +611,33 @@ class DesignGraphTest:
         assert ["core.turn-width", "core.threads", "value"] in edges
         assert ["core.turn-width", "core.threads", "parent"] in edges
 
-    def test_the_implemented_and_verified_anchors_come_from_sources_checks_and_tools(self):
-        design = json.loads(Book({"core/core.rst": GOOD}, tangle=True,
-                                 tools={"check.py": "# implements: core.turn\n"}).files["build/design.json"])
-        assert design["implemented"] == ["core.rotation", "core.turn"]
-        assert design["verified"] == ["core.rotation"]
+    CHECK = ".. check:: equiv\n   :verifies: core.rotation\n   :module: core_rotate\n"
+    SOURCE = "   :implements: core.rotation\n"
+
+    def orphans(self, text, **options):
+        design = json.loads(Book({"core/core.rst": text}, tangle=True, **options).files["build/design.json"])
+        return design["unimplemented"], design["unverified"]
+
+    def test_a_requirement_that_a_source_implements_and_a_check_verifies_is_no_orphan(self):
+        assert self.orphans(GOOD) == ([], [])
+
+    def test_a_requirement_without_a_source_or_a_check_is_an_orphan_of_each(self):
+        text = GOOD.replace(self.CHECK, "").replace(self.SOURCE, "")
+        assert self.orphans(text) == (["core.rotation"], ["core.rotation"])
+
+    def test_a_tool_implements_a_requirement_and_a_test_verifies_it(self):
+        text = GOOD.replace(self.CHECK, "").replace(self.SOURCE, "")
+        assert self.orphans(text, tools={"check.py": "# implements: core.rotation\n"},
+                            tests={"test_check.py": "# verifies: core.rotation\n"}) == ([], [])
+
+    def test_a_tool_comment_does_not_verify_a_requirement(self):
+        text = GOOD.replace(self.CHECK, "")
+        assert self.orphans(text, tools={"check.py": "# implements: core.rotation\n"}) == ([], ["core.rotation"])
+
+    def test_impl_none_and_verify_none_are_no_orphans(self):
+        text = GOOD.replace(self.CHECK, "").replace(self.SOURCE, "").replace(
+            "   :parent: core.timing\n\n   The core shall", "   :parent: core.timing\n   :impl: none\n   :verify: none\n\n   The core shall")
+        assert self.orphans(text) == ([], [])
 
 
 

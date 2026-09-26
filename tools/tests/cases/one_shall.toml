@@ -1,4 +1,4 @@
-# doc.one-shall
+# verifies: doc.one-shall
 
 [[case]]
 name = "a requirement without shall is a finding"

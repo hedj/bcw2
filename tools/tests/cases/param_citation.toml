@@ -1,4 +1,4 @@
-# doc.citation and doc.param-citations
+# verifies: doc.param-citations
 
 [[case]]
 name = "a param citation of a parameter passes"

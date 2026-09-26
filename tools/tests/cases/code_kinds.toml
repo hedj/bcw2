@@ -1,4 +1,4 @@
-# doc.code-kinds
+# verifies: doc.code-kinds
 
 [[case]]
 name = "\\n\\n   x = 1\\n-x = 1]"
