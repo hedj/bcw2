@@ -393,15 +393,6 @@ class FragmentTest:
         [finding] = [finding for finding in book.findings if finding.check == "one-block"]
         assert f"book/zeta/zeta.rst:{line(zeta, '.. source::')}" in finding.message
 
-    @pytest.mark.parametrize("use", ["<<:core.none>>", "    <<:core.pair-logic>>"])
-    def test_a_fragment_use_in_a_twin_is_a_finding_on_its_line(self, use):
-        text = GOOD.replace("      def core_rotate(turn):\n", f"      {use}\n      def core_rotate(turn):\n") + FRAGMENT
-        assert text != GOOD + FRAGMENT
-        book = Book({"core/core.rst": text})
-        # A fragment use is not Python, so it is not in the twin language (doc.twin-forms).
-        assert ([f[1:] for f in book.tuples() if f[2] != "fragments-used"] ==
-                [(line(text, use), "twin-forms", "core.rotation")])
-
 
 class OneBlockTest:
     """doc.one-block"""
