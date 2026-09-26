@@ -20,10 +20,27 @@ These rules apply to every task in this repository, as the Proportionality secti
 - Examples of irreversible actions: deleting data outside version control, deploying, sending messages, and publishing packages.
 - A push is not irreversible. To undo a push, push a commit that `git revert` creates.
 - A **public interface** is an API, command, file format, or configuration that something outside the repository uses.
-- **Complexity** is the set of concepts that a reader must understand to change code safely.
-- Concepts include functions, classes, parameters, branches, special cases, configuration options, layers of indirection, and copies of the same logic.
-- A **simplification** is an edit that removes concepts. Renames, reformatting, and moves alone are not simplifications.
-- A **generalisation** is a simplification that replaces two or more similar code paths with one code path.
+- **Complexity** is the set of concepts that a reader must understand to change the repository safely.
+- A **concept** is one named thing that a reader must know.
+- Concepts in code include functions, classes, parameters, branches, special cases, configuration options, layers of indirection, and copies of the same logic.
+- Concepts in interfaces include each command, option, file format field, build output, and rule of a specification. A REQUIREMENT is a rule of a specification.
+- A test is not a concept.
+- A **mechanism** is a distinct way that the repository does one kind of job. For example, two ways to give the PARAMETER values to a tool are two mechanisms.
+- The **system** is every file under version control, except generated files and vendored files.
+- The **metrics** of the system are the three values that `tools/metrics.py` prints. They count the code of the system without its tests.
+  - McCabe complexity: the number of independent paths through each function, summed.
+  - Halstead volume.
+  - Halstead effort.
+- The **measures** of complexity are the number of concepts, the number of mechanisms, and the three metrics.
+- Measure complexity over the whole system. An edit that moves complexity from one file to another does not reduce it.
+- The task neighbourhood still limits where to look for candidates and where to make them (see sections 11.2 and 11.3).
+- A **simplification** is an edit that removes at least one concept, does not increase the number of mechanisms, and makes no metric larger (Occam's razor). Renames, reformatting, and moves alone are not simplifications.
+- A simplification adds no concept, with two exceptions:
+  - It can replace two or more mechanisms with one new mechanism. The concepts of that new mechanism are then allowed.
+  - It can replace one mechanism with one new mechanism, if two or more other measures improve and no measure worsens.
+- An edit that breaks one of these conditions is not a simplification. Report it as a change, with every measure before and after.
+- A **generalisation** is a simplification that replaces two or more similar code paths with one code path. The one path can be one of the existing paths or a new path.
+- **Replaced code** is code that serves only the state before a feature, and that the feature makes unreachable. Its removal is part of the feature, not a simplification.
 - An edit is **behaviour-preserving** if it changes no output, error, side effect, or public interface.
 - A performance change smaller than the spread across runs (see section 5) does not count as a change.
 - A simplification has **functionality loss** if it is not behaviour-preserving.
@@ -80,7 +97,8 @@ These rules apply to every task in this repository, as the Proportionality secti
 ## 5. Measure
 - Support every performance claim with measurements against a control (see section 6). Do not write "this should be faster."
 - Support every complexity claim with counts before and after the edit. Do not write "this is simpler."
-- Count at least lines of code, functions, parameters, and branches. Use a complexity tool if the repository has one.
+- List by name the concepts and the mechanisms that the edit adds or removes.
+- Run `tools/metrics.py` before and after the edit, and report the three metrics.
 - Check units and dimensional consistency in all calculations.
 - Before you measure, write down the expected value. If the measured value differs by more than 10 times, report the difference.
 - For every performance measurement:
@@ -112,6 +130,7 @@ Both you and humans commit to this repository.
 - Commit your own edits as work commits.
 - Before you publish, squash your work commits into published commits.
 - Put each simplification in its own published commit. Do not squash a simplification into a bug fix or a feature commit.
+- Put replaced code in the feature commit.
 - Every published commit must build and pass the full test suite. Existing failures are the only exception (see section 6).
 - Stage files by name. Do not use `git add -A`, `git add .`, or `git commit -a`.
 - Before you commit, review the staged diff. Confirm that it contains only your own edits.
@@ -243,8 +262,8 @@ Each concept in the code is a cost that every future reader pays. Remove concept
   - It changes 200 lines or fewer in total.
 - If any condition is false, propose the simplification. Do not make it.
 - Never make a simplification with functionality loss without human approval (see section 10).
-- A generalisation must reduce total complexity. Count the concepts before and after.
-- If a generalisation adds more concepts (parameters, callbacks, type parameters, configuration) than it removes, reject it.
+- Reject a generalisation that increases the number of mechanisms.
+- Also reject a generalisation that adds a concept other than those of the path that replaces the others.
 - Generalise when 3 or more places share logic. Generalise 2 places only when they must change together to stay correct.
 
 ### 11.4 Simplify safely
@@ -253,10 +272,17 @@ Each concept in the code is a cost that every future reader pays. Remove concept
 - If a simplification makes the task easier, make it first, in its own commit. Then do the task.
 - After a simplification, run the full test suite. Compare the results with the results before the edit.
 - If a test result changes, reverse the simplification or find the cause. Do not edit the test to match (see section 4).
-- Do not delete a test to make a simplification pass. Exception: a test that only runs deleted dead code. Name each such test in the report.
+- Do not delete a test to make a simplification pass.
+- Exception 1: a test that only runs deleted dead code.
+- Exception 2: a test whose subject is a behaviour that an approved simplification removes.
+- Delete each test of exception 2. Do not edit it to test another behaviour.
+- Name each deleted test in the report.
+- Report the number of tests before and after, with the tests added and the tests deleted as separate numbers.
 
 ### 11.5 Report complexity
 - In every final report, state each simplification that you made. Give the counts before and after (see section 5) and the tests that run the code.
+- For each simplification, name the concepts and mechanisms that it removed.
+- Name any new mechanism, and the mechanisms that it replaced. Give every measure before and after.
 - State each proposed simplification with the concepts removed, the functionality lost, the risk, and the effort.
 - Order the proposals by the number of concepts that they remove, largest first.
 - State the rejected candidates and the reason for each.
