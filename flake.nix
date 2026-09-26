@@ -16,7 +16,7 @@
         in
         pkgs.mkShellNoCC {
           packages = [
-            (pkgs.python3.withPackages (ps: [ ps.sphinx ps.z3-solver ps.pytest ps.pytest-xdist ps.radon ]))
+            (pkgs.python3.withPackages (ps: [ ps.sphinx ps.z3-solver ps.pytest ps.pytest-xdist ps.radon ps.textstat ]))
             pkgs.verilator
             pkgs.iverilog
             # The formal tools: yosys writes a module as SMT for z3, and SymbiYosys
@@ -51,6 +51,9 @@
           ];
           # The Makefile stops outside this environment.
           BCW_ENV = "1";
+          # textstat counts English syllables with the CMU dictionary of NLTK. This
+          # pins the dictionary, so that textstat does not download it at run time.
+          NLTK_DATA = "${pkgs.nltk-data.cmudict}";
         };
     in
     {
