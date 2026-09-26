@@ -1,0 +1,22 @@
+# doc.constant-name and doc.constant-names
+
+[[case]]
+name = "two parameters with one constant name are a finding"
+append = '''
+
+.. parameter:: core.turn-width
+   :parent: core.core
+   :value: 3
+
+   The number of threads.
+
+.. parameter:: core.turn.width
+   :parent: core.core
+   :value: 3
+
+   The number of threads.
+'''
+only = "constant-names"
+findings = [
+    {check = "constant-names", anchor = "core.turn.width", at = ".. parameter:: core.turn.width"},
+]

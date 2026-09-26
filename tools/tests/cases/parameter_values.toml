@@ -1,0 +1,37 @@
+# doc.parameter-value and doc.parameter-values
+
+[[case]]
+name = "a missing value is a finding on the directive line"
+append = '''
+
+.. parameter:: core.x
+   :parent: core.core
+
+   The number of threads.
+'''
+only = "parameter-values"
+findings = [
+    {check = "parameter-values", anchor = "core.x", at = ".. parameter:: core.x"},
+]
+
+[[case]]
+name = "a cycle is a finding on each value in it"
+append = '''
+
+.. parameter:: core.a
+   :parent: core.core
+   :value: core.b + 1
+
+   The number of threads.
+
+.. parameter:: core.b
+   :parent: core.core
+   :value: core.a
+
+   The number of threads.
+'''
+only = "parameter-values"
+findings = [
+    {check = "parameter-values", anchor = "core.a", at = ":value: core.b + 1"},
+    {check = "parameter-values", anchor = "core.b", at = ":value: core.a"},
+]

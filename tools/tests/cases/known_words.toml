@@ -1,0 +1,453 @@
+# doc.general-word, doc.known-word and doc.known-words
+
+[[case]]
+name = "a chapter of general words and defined terms passes"
+general = true
+findings = []
+
+[[case]]
+name = "an unknown word in a goal or a rule is a finding on its line [timing-the timing of-core.timing]"
+only = "known-words"
+general_remove = ["timing"]
+findings = [
+    {check = "known-words", anchor = "core.timing", at = "No thread can change the timing of another thread."},
+]
+
+[[case]]
+name = "an unknown word in a goal or a rule is a finding on its line [give-shall give-core.rotation]"
+only = "known-words"
+general_remove = ["give"]
+findings = [
+    {check = "known-words", anchor = "core.rotation", at = "The core shall give the turn after"},
+]
+
+[[case]]
+name = "an unknown word in a goal or a rule is a finding on its line [cycle-A :dfn:`turn`-core.turn]"
+only = "known-words"
+general_remove = ["cycle"]
+findings = [
+    {check = "known-words", anchor = "core.turn", at = "A :dfn:`turn` is a thread's cycle in the rotation."},
+]
+
+[[case]]
+name = "an unknown word in a goal or a rule is a finding on its line [runs-The :dfn:`core`-core.core]"
+only = "known-words"
+general_remove = ["runs"]
+findings = [
+    {check = "known-words", anchor = "core.core", at = "The :dfn:`core` runs the threads in turn."},
+]
+
+[[case]]
+name = "each unknown word is a finding"
+only = "known-words"
+general = true
+findings = [
+    {check = "known-words", anchor = "core.timing", at = "No thread can change the zyx timing wvu of another thread."},
+    {check = "known-words", anchor = "core.timing", at = "No thread can change the zyx timing wvu of another thread."},
+]
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = "   No thread can change the zyx timing wvu of another thread.\n"
+
+[[case]]
+name = "the finding is on the line of the word"
+only = "known-words"
+general_remove = ["t"]
+findings = [
+    {check = "known-words", anchor = "core.rotation", at = "thread *t* to thread *t* + 1."},
+    {check = "known-words", anchor = "core.rotation", at = "thread *t* to thread *t* + 1."},
+]
+
+[[case]]
+name = "a word outside a goal or a rule passes [eight cycles apart.-eight zyx cycles apart.]"
+only = "known-words"
+general = true
+findings = []
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n"
+new = "   A thread's instructions are eight zyx cycles apart.\n"
+
+[[case]]
+name = "a word outside a goal or a rule passes [The thread count is-The zyx thread count is]"
+only = "known-words"
+general = true
+findings = []
+
+[[case.replace]]
+old = ".. open:: The thread count is not settled.\n"
+new = ".. open:: The zyx thread count is not settled.\n"
+
+[[case]]
+name = "a word outside a goal or a rule passes [is prose.-is zyx prose.]"
+only = "known-words"
+general = true
+findings = []
+
+[[case.replace]]
+old = "**Thread.** An unlabelled bold paragraph is prose.\n"
+new = "**Thread.** An unlabelled bold paragraph is zyx prose.\n"
+
+[[case]]
+name = "a word outside a goal or a rule passes [Rotation\\n========-Zyx\\n========]"
+only = "known-words"
+general = true
+findings = []
+
+[[case.replace]]
+old = "Rotation\n"
+new = "Zyx\n"
+
+[[case]]
+name = "a word in a quotation passes [``zyx``]"
+only = "known-words"
+general = true
+findings = []
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = "   No thread can change the ``zyx`` timing of another thread.\n"
+
+[[case]]
+name = "a word in a quotation passes [:rule:`core.core`]"
+only = "known-words"
+general = true
+findings = []
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = "   No thread can change the :rule:`core.core` timing of another thread.\n"
+
+[[case]]
+name = "case does not matter"
+only = "known-words"
+general = true
+findings = []
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = "   No thread can change the TIMING of another thread.\n"
+
+[[case]]
+name = "a defined term needs no listing"
+only = "known-words"
+general_add = ["core", "turn"]
+findings = []
+
+[[case]]
+name = "a defined term needs no listing (2)"
+only = "known-words"
+general = true
+findings = []
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = "   No thread can change the core of another thread.\n"
+
+[[case]]
+name = "a defined term in upper case matches in any case"
+only = "known-words"
+general = true
+findings = []
+
+[[case.replace]]
+old = "   A :dfn:`turn` is a thread's cycle in the rotation.\n"
+new = "   A :dfn:`Turn` is a thread's cycle in the rotation.\n"
+
+[[case]]
+name = "the endings of english plurals and of apostrophe s keep a word known"
+only = "known-words"
+general_add = ["box", "entry", "match"]
+findings = []
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = '''
+   No thread can change the timings, core's, core’s, turns, boxes, matches, entries of another thread.
+'''
+
+[[case]]
+name = "other endings do not [timingly]"
+only = "known-words"
+general_add = ["box"]
+findings = [
+    {check = "known-words", anchor = "core.timing", at = "No thread can change the timingly of another thread."},
+]
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = "   No thread can change the timingly of another thread.\n"
+
+[[case]]
+name = "other endings do not [cored]"
+only = "known-words"
+general_add = ["box"]
+findings = [
+    {check = "known-words", anchor = "core.timing", at = "No thread can change the cored of another thread."},
+]
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = "   No thread can change the cored of another thread.\n"
+
+[[case]]
+name = "other endings do not [turner]"
+only = "known-words"
+general_add = ["box"]
+findings = [
+    {check = "known-words", anchor = "core.timing", at = "No thread can change the turner of another thread."},
+]
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = "   No thread can change the turner of another thread.\n"
+
+[[case]]
+name = "other endings do not [thready]"
+only = "known-words"
+general_add = ["box"]
+findings = [
+    {check = "known-words", anchor = "core.timing", at = "No thread can change the thready of another thread."},
+]
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = "   No thread can change the thready of another thread.\n"
+
+[[case]]
+name = "other endings do not [toes]"
+only = "known-words"
+general_add = ["box"]
+findings = [
+    {check = "known-words", anchor = "core.timing", at = "No thread can change the toes of another thread."},
+]
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = "   No thread can change the toes of another thread.\n"
+
+[[case]]
+name = "other endings do not [turnes]"
+only = "known-words"
+general_add = ["box"]
+findings = [
+    {check = "known-words", anchor = "core.timing", at = "No thread can change the turnes of another thread."},
+]
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = "   No thread can change the turnes of another thread.\n"
+
+[[case]]
+name = "other endings do not [boxs]"
+only = "known-words"
+general_add = ["box"]
+findings = [
+    {check = "known-words", anchor = "core.timing", at = "No thread can change the boxs of another thread."},
+]
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = "   No thread can change the boxs of another thread.\n"
+
+[[case]]
+name = "other endings do not [timingies]"
+only = "known-words"
+general_add = ["box"]
+findings = [
+    {check = "known-words", anchor = "core.timing", at = "No thread can change the timingies of another thread."},
+]
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = "   No thread can change the timingies of another thread.\n"
+
+[[case]]
+name = "the list needs only the base of a plural in ies"
+only = "known-words"
+general_add = ["satisfy"]
+findings = []
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = "   No thread satisfies the timing of another thread.\n"
+
+[[case]]
+name = "a word of a defined term is known only inside the whole term [The core shall give the time slot to thread ``t``.-unknown0]"
+append = '''
+
+.. definition:: core.slot
+   :parent: core.core
+
+   A :dfn:`time slot` is a turn of the core.
+'''
+only = "known-words"
+general = true
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core shall give the time slot to thread ``t``.\n"
+
+[[case]]
+name = "a word of a defined term is known only inside the whole term [The core shall give the time slots to thread ``t``.-unknown1]"
+append = '''
+
+.. definition:: core.slot
+   :parent: core.core
+
+   A :dfn:`time slot` is a turn of the core.
+'''
+only = "known-words"
+general = true
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core shall give the time slots to thread ``t``.\n"
+
+[[case]]
+name = "a word of a defined term is known only inside the whole term [The core shall give the time\\n   slot to thread ``t``.-unknown2]"
+append = '''
+
+.. definition:: core.slot
+   :parent: core.core
+
+   A :dfn:`time slot` is a turn of the core.
+'''
+only = "known-words"
+general = true
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give the time
+   slot to thread ``t``.
+'''
+
+[[case]]
+name = "a word of a defined term is known only inside the whole term [The core shall give the slot to thread ``t``.-unknown3]"
+append = '''
+
+.. definition:: core.slot
+   :parent: core.core
+
+   A :dfn:`time slot` is a turn of the core.
+'''
+only = "known-words"
+general = true
+findings = [
+    {check = "known-words", anchor = "core.rotation", at = "The core shall give the slot to thread ``t``."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core shall give the slot to thread ``t``.\n"
+
+[[case]]
+name = "a word of a defined term is known only inside the whole term [The core shall give the time to thread ``t``.-unknown4]"
+append = '''
+
+.. definition:: core.slot
+   :parent: core.core
+
+   A :dfn:`time slot` is a turn of the core.
+'''
+only = "known-words"
+general = true
+findings = [
+    {check = "known-words", anchor = "core.rotation", at = "The core shall give the time to thread ``t``."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core shall give the time to thread ``t``.\n"
+
+[[case]]
+name = "a word of a defined term is known only inside the whole term [The core shall give the times slot to thread ``t``.-unknown5]"
+append = '''
+
+.. definition:: core.slot
+   :parent: core.core
+
+   A :dfn:`time slot` is a turn of the core.
+'''
+only = "known-words"
+general = true
+findings = [
+    {check = "known-words", anchor = "core.rotation", at = "The core shall give the times slot to thread ``t``."},
+    {check = "known-words", anchor = "core.rotation", at = "The core shall give the times slot to thread ``t``."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core shall give the times slot to thread ``t``.\n"
+
+[[case]]
+name = "the longest defined term wins"
+append = '''
+
+.. definition:: core.slot
+   :parent: core.core
+
+   A :dfn:`time slot` is a turn of the core.
+
+.. definition:: core.time
+   :parent: core.core
+
+   A :dfn:`time` is a zyx.
+'''
+only = "known-words"
+general_add = ["zyx"]
+findings = []
+
+[[case]]
+name = "the longest defined term wins (2)"
+append = '''
+
+.. definition:: core.slot
+   :parent: core.core
+
+   A :dfn:`time slot` is a turn of the core.
+
+.. definition:: core.time
+   :parent: core.core
+
+   A :dfn:`time` is a zyx.
+'''
+only = "known-words"
+general_add = ["zyx"]
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core shall give the time slot of the time to thread ``t``.\n"
+
+[[case]]
+name = "the list is read in lower case and without comments"
+only = "known-words"
+general_list = ["THE", "a", "after", "another", "can", "change", "cycle", "give", "in", "is", "no", "of", "rotation", "runs", "shall", "t", "thread", "timing", "to"]
+findings = []

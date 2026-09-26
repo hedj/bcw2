@@ -1,0 +1,22 @@
+# doc.anchor-prefix
+
+[[case]]
+name = "an anchor of another chapter is a finding on the directive line"
+findings = [
+    {check = "anchor-prefix", anchor = "bank.turn", at = ".. definition:: bank.turn"},
+]
+
+[[case.replace]]
+old = ".. definition:: core.turn\n"
+new = ".. definition:: bank.turn\n"
+
+[[case]]
+name = "a goal is covered"
+only = "anchor-prefix"
+findings = [
+    {check = "anchor-prefix", anchor = "design.timing", at = ".. goal:: design.timing"},
+]
+
+[[case.replace]]
+old = ".. goal:: core.timing\n"
+new = ".. goal:: design.timing\n"

@@ -1,0 +1,395 @@
+# doc.dotted-words
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [Q8.4]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, Q8.4 to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, Q8.4 to each thread.
+'''
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [9.09]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, 9.09 to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, 9.09 to each thread.
+'''
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [v1.2]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, v1.2 to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, v1.2 to each thread.
+'''
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [e.g.]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, e.g. to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, e.g. to each thread.
+'''
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [i.e.]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, i.e. to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, i.e. to each thread.
+'''
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [a.k.a.]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, a.k.a. to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, a.k.a. to each thread.
+'''
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [check.py]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, check.py to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, check.py to each thread.
+'''
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [etc.]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, etc. to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, etc. to each thread.
+'''
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [Etc.]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, Etc. to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, Etc. to each thread.
+'''
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [vs.]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, vs. to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, vs. to each thread.
+'''
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [cf.]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, cf. to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, cf. to each thread.
+'''
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [approx.]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, approx. to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, approx. to each thread.
+'''
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [incl.]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, incl. to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, incl. to each thread.
+'''
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [esp.]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, esp. to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, esp. to each thread.
+'''
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [resp.]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, resp. to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, resp. to each thread.
+'''
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [ca.]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, ca. to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, ca. to each thread.
+'''
+
+[[case]]
+name = "a dotted word in a requirement is a finding on its line [Ca.]"
+only = "dotted-words"
+findings = [
+    {check = "dotted-words", anchor = "core.rotation", at = "the turn, Ca. to each thread."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give
+   the turn, Ca. to each thread.
+'''
+
+[[case]]
+name = "a quoted dotted word passes [``Q8.4``]"
+only = "dotted-words"
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core shall give the turn, ``Q8.4`` to each thread.\n"
+
+[[case]]
+name = "a quoted dotted word passes [``9.09``]"
+only = "dotted-words"
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core shall give the turn, ``9.09`` to each thread.\n"
+
+[[case]]
+name = "a quoted dotted word passes [``e.g.``]"
+only = "dotted-words"
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core shall give the turn, ``e.g.`` to each thread.\n"
+
+[[case]]
+name = "a quoted dotted word passes [``etc.``]"
+only = "dotted-words"
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core shall give the turn, ``etc.`` to each thread.\n"
+
+[[case]]
+name = "a full stop that ends a sentence passes [The core shall give the turn to thread *t* + 1.]"
+only = "dotted-words"
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core shall give the turn to thread *t* + 1.\n"
+
+[[case]]
+name = "a full stop that ends a sentence passes [The core shall give the turn to each thread, the next one etch.]"
+only = "dotted-words"
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core shall give the turn to each thread, the next one etch.\n"
+
+[[case]]
+name = "a full stop that ends a sentence passes [The core shall give the turn to the TVs.]"
+only = "dotted-words"
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core shall give the turn to the TVs.\n"
+
+[[case]]
+name = "a full stop that ends a sentence passes [The core shall give the turn to Africa.]"
+only = "dotted-words"
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core shall give the turn to Africa.\n"
+
+[[case]]
+name = "a dotted word outside a requirement passes"
+only = "dotted-words"
+findings = []
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n"
+new = "   A thread's instructions are eight cycles apart, in Q8.4, e.g. thread 1.\n"

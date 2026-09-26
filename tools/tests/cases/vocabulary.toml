@@ -1,0 +1,124 @@
+# doc.vocabulary and doc.never-on-definition
+
+[[case]]
+name = "a definition with never words passes"
+findings = []
+
+[[case.replace]]
+old = '''
+.. definition:: core.core
+   :parent: core.timing
+'''
+new = '''
+.. definition:: core.core
+   :parent: core.timing
+   :never: cpu, slot
+'''
+
+[[case]]
+name = "a never word in a rule is a finding in any case"
+findings = [
+    {check = "vocabulary", anchor = "core.turn", at = "A :dfn:`turn` is a thread's CPU cycle in the rotation."},
+]
+
+[[case.replace]]
+old = "   A :dfn:`turn` is a thread's cycle in the rotation.\n"
+new = "   A :dfn:`turn` is a thread's CPU cycle in the rotation.\n"
+
+[[case.replace]]
+old = '''
+.. definition:: core.core
+   :parent: core.timing
+'''
+new = '''
+.. definition:: core.core
+   :parent: core.timing
+   :never: cpu, slot
+'''
+
+[[case]]
+name = "a never word in a goal is a finding"
+findings = [
+    {check = "vocabulary", anchor = "core.timing", at = "No thread can change the CPU timing of another thread."},
+]
+
+[[case.replace]]
+old = '''
+.. definition:: core.core
+   :parent: core.timing
+'''
+new = '''
+.. definition:: core.core
+   :parent: core.timing
+   :never: cpu, slot
+'''
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = "   No thread can change the CPU timing of another thread.\n"
+
+[[case]]
+name = "each entry of the never list counts at the start of a line too"
+findings = [
+    {check = "vocabulary", anchor = "core.turn", at = "slot cycle in the rotation."},
+]
+
+[[case.replace]]
+old = "   A :dfn:`turn` is a thread's cycle in the rotation.\n"
+new = '''
+   A :dfn:`turn` is a thread's
+   slot cycle in the rotation.
+'''
+
+[[case.replace]]
+old = '''
+.. definition:: core.core
+   :parent: core.timing
+'''
+new = '''
+.. definition:: core.core
+   :parent: core.timing
+   :never: cpu, slot
+'''
+
+[[case]]
+name = "only whole words count"
+findings = []
+
+[[case.replace]]
+old = "   A :dfn:`turn` is a thread's cycle in the rotation.\n"
+new = "   A :dfn:`turn` is a thread's slotted cycle in the rotation.\n"
+
+[[case.replace]]
+old = '''
+.. definition:: core.core
+   :parent: core.timing
+'''
+new = '''
+.. definition:: core.core
+   :parent: core.timing
+   :never: cpu, slot
+'''
+
+[[case]]
+name = "a never word outside a rule or in a quotation passes"
+findings = []
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n"
+new = "   A thread's instructions are eight cycles apart, not a slot.\n"
+
+[[case.replace]]
+old = "   A :dfn:`turn` is a thread's cycle in the rotation.\n"
+new = "   A :dfn:`turn` is a thread's cycle in the rotation, not a ``slot``.\n"
+
+[[case.replace]]
+old = '''
+.. definition:: core.core
+   :parent: core.timing
+'''
+new = '''
+.. definition:: core.core
+   :parent: core.timing
+   :never: cpu, slot
+'''

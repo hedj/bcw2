@@ -1,0 +1,47 @@
+# doc.one-block
+
+[[case]]
+name = "a second block of a file or a fragment is a finding on its directive line [a file]"
+append = '''
+
+.. source:: build/rtl/core/core_rotate.v
+
+   // more
+'''
+findings = [
+    {check = "one-block", at = ".. source:: build/rtl/core/core_rotate.v", occurrence = 2},
+]
+
+[[case]]
+name = "a second block of a file or a fragment is a finding on its directive line [a fragment]"
+append = '''
+
+.. source:: build/rtl/core/pair.v
+
+   module pair (input wire a, output wire b);
+       <<:core.pair-logic>>
+   endmodule
+
+.. source:: :core.pair-logic
+
+   assign b = a;
+
+.. source:: :core.pair-logic
+
+   assign c = a;
+'''
+findings = [
+    {check = "one-block", at = ".. source:: :core.pair-logic", occurrence = 2},
+]
+
+[[case]]
+name = "a second block of a file or a fragment is a finding on its directive line [the file of a twin]"
+append = '''
+
+.. source:: build/model/core_rotate.py
+
+   MORE = 1
+'''
+findings = [
+    {check = "one-block", at = ".. source:: build/model/core_rotate.py"},
+]

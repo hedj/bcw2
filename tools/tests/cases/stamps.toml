@@ -1,0 +1,63 @@
+# doc.stamps
+
+[[case]]
+name = "a missing stamp is a finding"
+findings = [
+    {check = "stamps", anchor = "core.rotation", at = ".. twin::"},
+]
+
+[[case.replace]]
+old = "      :stamp: a009a1a5\n"
+new = ""
+
+[[case]]
+name = "reflowed english and changed options keep the stamp"
+findings = []
+
+[[case.replace]]
+old = '''
+.. requirement:: core.rotation
+   :parent: core.timing
+'''
+new = '''
+.. requirement:: core.rotation
+   :parent: core.timing, core.core
+'''
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core shall give the turn after thread *t* to thread *t* + 1.\n"
+
+[[case]]
+name = "a twin inside a chunk that is not a rule is a finding"
+findings = [
+    {check = "stamps", at = ".. twin::", occurrence = 2},
+]
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n\n"
+new = '''
+   A thread's instructions are eight cycles apart.
+
+   .. twin::
+
+      x
+
+'''
+
+[[case]]
+name = "a twin outside any chunk is a finding"
+append = '''
+
+Some prose.
+
+.. twin::
+
+   x
+'''
+findings = [
+    {check = "stamps", at = ".. twin::", occurrence = 2},
+]

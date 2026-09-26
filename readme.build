@@ -169,12 +169,33 @@ To run the tests whose names hold a word, give the word after -k:
     ./dev pytest -k boxs
 
 A test that runs over a list of cases runs each case as a test of its own,
-with the case in brackets after the name of the test, for example
-test_other_endings_do_not[boxs].
+with the case in brackets after the name of the test.
+
+Most tests of the rules are cases, which are data and not code. Each file of
+tools/tests/cases holds the cases of one or more rules, in TOML. A case edits
+GOOD and lists the findings of the edited chapter. It names the line of each
+finding by a text that the line holds:
+
+    [[case]]
+    name = "an unknown parent is a finding on the option line"
+    findings = [
+        {check = "references", anchor = "core.turn", at = ":parent: core.nothing"},
+    ]
+
+    [[case.replace]]
+    old = "   :parent: core.core\n"
+    new = "   :parent: core.nothing\n"
+
+tools/tests/test_cases.py runs each case, and its docstring lists the keys of
+a case. To test a rule, add a case. Write a test in Python only if it must
+read more than the findings of one chapter, such as a message, the tangled
+files or the woven pages.
 
 A new check needs a test that fails before the check exists and passes
 after it. A new rule in book/doc/doc.rst needs a check in tools/ that names
-the rule in an "# implements:" comment.
+the rule in an "# implements:" comment. It also needs a test that names the
+rule: a case with a finding of its check, or a test class whose docstring
+names the rule. A test in tools/tests/test_cases.py makes sure of that.
 
 
 Before you push

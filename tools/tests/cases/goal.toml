@@ -1,0 +1,17 @@
+# goal
+
+[[case]]
+name = "a goal needs no shall"
+findings = []
+
+[[case]]
+name = "a twin inside a goal is a finding"
+append = '''
+
+   .. twin::
+
+      x
+'''
+findings = [
+    {check = "stamps", anchor = "core.timing", at = ".. twin::", occurrence = 2},
+]

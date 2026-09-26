@@ -1,0 +1,109 @@
+# doc.quotation: a quotation that runs across a line break is still a quotation.
+
+[[case]]
+name = "known words skip a literal across a line break"
+only = "known-words"
+general = true
+findings = []
+
+[[case.replace]]
+old = "   A :dfn:`turn` is a thread's cycle in the rotation.\n"
+new = '''
+   A :dfn:`turn` is a thread's cycle in the ``zyx
+   wvu`` rotation.
+'''
+
+[[case]]
+name = "the vocabulary skips a literal across a line break"
+only = "vocabulary"
+findings = []
+
+[[case.replace]]
+old = "   A :dfn:`turn` is a thread's cycle in the rotation.\n"
+new = '''
+   A :dfn:`turn` is a thread's ``cpu
+   slot`` cycle in the rotation.
+'''
+
+[[case.replace]]
+old = '''
+.. definition:: core.core
+   :parent: core.timing
+'''
+new = '''
+.. definition:: core.core
+   :parent: core.timing
+   :never: cpu, slot
+'''
+
+[[case]]
+name = "one shall skips a literal across a line break"
+only = "one-shall"
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give the turn, not ``the
+   shall``, to each thread.
+'''
+
+[[case]]
+name = "dotted words skip a literal across a line break"
+only = "dotted-words"
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The core shall give the turn, ``see
+   Q8.4``, to each thread.
+'''
+
+[[case]]
+name = "the linter skips a literal across a line break"
+only = "linter"
+findings = []
+
+[[case.replace]]
+old = "   A :dfn:`turn` is a thread's cycle in the rotation.\n"
+new = '''
+   A :dfn:`turn` is a thread's cycle in the rotation, ``a;
+   b``.
+'''
+
+[[case]]
+name = "ears skips a literal across a line break"
+only = "ears"
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   Each core shall give ``a,
+   b`` to thread *t*.
+'''
+
+[[case]]
+name = "a word after the literal keeps its own line"
+only = "known-words"
+general = true
+findings = [
+    {check = "known-words", anchor = "core.turn", at = "y`` qqq rotation."},
+]
+
+[[case.replace]]
+old = "   A :dfn:`turn` is a thread's cycle in the rotation.\n"
+new = '''
+   A :dfn:`turn` is a thread's cycle in the ``x
+   y`` qqq rotation.
+'''

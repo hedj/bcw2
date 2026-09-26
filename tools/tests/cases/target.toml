@@ -1,0 +1,117 @@
+# doc.target-values, doc.target-parents, and the rules that a TARGET shares with the rules
+
+[[case]]
+name = "a target without a value is a finding on the directive line"
+append = '''
+
+.. target:: core.aim
+   :parent: core.core
+
+   The number of threads.
+'''
+findings = [
+    {check = "target-values", anchor = "core.aim", at = ".. target:: core.aim"},
+]
+
+[[case]]
+name = "a parent that names a target is a finding on the parent line [core.aim]"
+append = '''
+
+.. target:: core.aim
+   :parent: core.core
+   :value: 8
+
+   The number of threads.
+
+.. parameter:: core.x
+   :parent: core.aim
+   :value: 1
+
+   The number of threads.
+'''
+findings = [
+    {check = "target-parents", anchor = "core.x", at = ":parent: core.aim"},
+]
+
+[[case]]
+name = "a parent that names a target is a finding on the parent line [core.core, core.aim]"
+append = '''
+
+.. target:: core.aim
+   :parent: core.core
+   :value: 8
+
+   The number of threads.
+
+.. parameter:: core.x
+   :parent: core.core, core.aim
+   :value: 1
+
+   The number of threads.
+'''
+findings = [
+    {check = "target-parents", anchor = "core.x", at = ":parent: core.core, core.aim"},
+]
+
+[[case]]
+name = "a target without a parent does not reach a goal"
+append = '''
+
+.. target:: core.aim
+   :value: 8
+
+   The number of threads.
+'''
+findings = [
+    {check = "reaches-goal", anchor = "core.aim", at = ".. target:: core.aim"},
+]
+
+[[case]]
+name = "the word checks read a target"
+append = '''
+
+.. target:: core.aim
+   :parent: core.core
+   :value: 8
+
+   The aim of the threads.
+'''
+only = "known-words"
+general = true
+findings = [
+    {check = "known-words", anchor = "core.aim", at = "The aim of the threads."},
+]
+
+[[case]]
+name = "a param citation of a target passes"
+append = '''
+
+.. target:: core.aim
+   :parent: core.core
+   :value: 8
+
+   The number of threads.
+'''
+findings = []
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n"
+new = "   A thread's instructions are eight cycles apart, of :param:`core.aim`.\n"
+
+[[case]]
+name = "a target shares no constant name with a parameter"
+append = '''
+
+.. parameter:: core.turn-width
+   :parent: core.core
+   :value: 3
+
+   The number of threads.
+
+.. target:: core.turn.width
+   :parent: core.core
+   :value: 3
+
+   The number of threads.
+'''
+findings = []

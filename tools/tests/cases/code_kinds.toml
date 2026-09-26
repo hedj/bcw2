@@ -1,0 +1,71 @@
+# doc.code-kinds
+
+[[case]]
+name = "\\n\\n   x = 1\\n-x = 1]"
+findings = [
+    {check = "code-kinds", at = "x = 1"},
+]
+
+[[case.replace]]
+old = "**Thread.** An unlabelled bold paragraph is prose.\n\n"
+new = '''
+**Thread.** An unlabelled bold paragraph is prose.
+
+Example::
+
+   x = 1
+
+
+'''
+
+[[case]]
+name = " python\\n\\n   x = 1\\n-.. code-block]"
+findings = [
+    {check = "code-kinds", at = ".. code-block:: python"},
+]
+
+[[case.replace]]
+old = "**Thread.** An unlabelled bold paragraph is prose.\n\n"
+new = '''
+**Thread.** An unlabelled bold paragraph is prose.
+
+.. code-block:: python
+
+   x = 1
+
+
+'''
+
+[[case]]
+name = "a block inside a list item is a finding"
+findings = [
+    {check = "code-kinds", at = "x = 1"},
+]
+
+[[case.replace]]
+old = "**Thread.** An unlabelled bold paragraph is prose.\n\n"
+new = '''
+**Thread.** An unlabelled bold paragraph is prose.
+
+- An item::
+
+     x = 1
+
+
+'''
+
+[[case]]
+name = "a check passes"
+findings = []
+
+[[case.replace]]
+old = "**Thread.** An unlabelled bold paragraph is prose.\n\n"
+new = '''
+**Thread.** An unlabelled bold paragraph is prose.
+
+.. check::
+
+   x = 1
+
+
+'''

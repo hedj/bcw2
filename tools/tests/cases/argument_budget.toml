@@ -1,0 +1,137 @@
+# doc.argument-budget
+
+[[case]]
+name = "a second argument in a section with a rule is a finding"
+findings = [
+    {check = "argument-budget", at = ".. discussion::"},
+]
+
+[[case.replace]]
+old = "**Thread.** An unlabelled bold paragraph is prose.\n\n"
+new = '''
+**Thread.** An unlabelled bold paragraph is prose.
+
+.. discussion::
+
+   Another view.
+
+'''
+
+[[case]]
+name = "an argument of 41 words is a finding"
+findings = [
+    {check = "argument-budget", at = ".. rationale::"},
+]
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n"
+new = '''
+   word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word end.
+'''
+
+[[case]]
+name = "an argument of 40 words passes"
+findings = []
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n"
+new = '''
+   word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word end.
+'''
+
+[[case]]
+name = "a third level section starts a new section"
+findings = []
+
+[[case.replace]]
+old = "**Thread.** An unlabelled bold paragraph is prose.\n\n"
+new = '''
+**Thread.** An unlabelled bold paragraph is prose.
+
+More
+----
+
+.. discussion::
+
+   Another view.
+
+'''
+
+[[case]]
+name = "a fifth level section does not start a section"
+findings = [
+    {check = "argument-budget", at = ".. discussion::", occurrence = 2},
+]
+
+[[case.replace]]
+old = "**Thread.** An unlabelled bold paragraph is prose.\n\n"
+new = '''
+**Thread.** An unlabelled bold paragraph is prose.
+
+A
+-
+
+B
+~
+
+.. goal:: core.b
+
+   A goal.
+
+.. discussion::
+
+   One.
+
+C
+^
+
+.. discussion::
+
+   Two.
+
+'''
+
+[[case]]
+name = "a second argument in a section with a goal is a finding"
+append = '''
+
+.. discussion::
+
+   One.
+
+.. discussion::
+
+   Two.
+'''
+findings = [
+    {check = "argument-budget", at = ".. discussion::", occurrence = 2},
+]
+
+[[case]]
+name = "an argument of 41 words in a section with a goal is a finding"
+append = '''
+
+.. rationale::
+
+   word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word end.
+'''
+findings = [
+    {check = "argument-budget", at = ".. rationale::", occurrence = 2},
+]
+
+[[case]]
+name = "a section without a rule or a goal has no budget"
+append = '''
+
+Notes
+=====
+
+.. discussion::
+
+   One.
+
+.. discussion::
+
+   word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word end.
+'''
+findings = []

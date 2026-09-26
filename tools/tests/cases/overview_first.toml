@@ -1,0 +1,53 @@
+# doc.overview-first
+
+[[case]]
+name = "a chunk in the overview is a finding"
+findings = [
+    {check = "overview-first", at = ".. rationale::"},
+]
+
+[[case.replace]]
+old = "The core runs every thread through one pipeline.\n"
+new = '''
+.. rationale::
+
+   The core runs every thread through one pipeline.
+'''
+
+[[case]]
+name = "a chunk before the first section is a finding"
+findings = [
+    {check = "overview-first", at = ".. open:: The title is not settled."},
+]
+
+[[case.replace]]
+old = '''
+Core
+====
+'''
+new = '''
+Core
+====
+
+.. open:: The title is not settled.
+'''
+
+[[case]]
+name = "a third level section does not end the overview"
+findings = [
+    {check = "overview-first", anchor = "core.rotation", at = ".. requirement:: core.rotation"},
+    {check = "overview-first", at = ".. rationale::"},
+    {check = "overview-first", at = ".. open:: The thread count is not settled."},
+    {check = "overview-first", anchor = "core.turn", at = ".. definition:: core.turn"},
+    {check = "overview-first", anchor = "core.core", at = ".. definition:: core.core"},
+]
+
+[[case.replace]]
+old = '''
+Rotation
+========
+'''
+new = '''
+Rotation
+--------
+'''

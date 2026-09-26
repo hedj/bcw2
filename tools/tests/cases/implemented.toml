@@ -1,0 +1,61 @@
+# doc.implemented
+
+[[case]]
+name = "a requirement that nothing implements is a finding"
+findings = [
+    {check = "implemented", anchor = "core.rotation", at = ".. requirement:: core.rotation"},
+]
+
+[[case.replace]]
+old = "   :implements: core.rotation\n"
+new = ""
+
+[[case]]
+name = "impl none is an exit"
+findings = []
+
+[[case.replace]]
+old = '''
+.. requirement:: core.rotation
+   :parent: core.timing
+'''
+new = '''
+.. requirement:: core.rotation
+   :parent: core.timing
+   :impl: none
+'''
+
+[[case.replace]]
+old = "   :implements: core.rotation\n"
+new = ""
+
+[[case]]
+name = "a tool comment implements it"
+tools = {"tool.py" = "# implements: core.rotation\n"}
+findings = []
+
+[[case.replace]]
+old = "   :implements: core.rotation\n"
+new = ""
+
+[[case]]
+name = "an implements list can name several anchors"
+findings = []
+
+[[case.replace]]
+old = "   :implements: core.rotation\n"
+new = "   :implements: core.core, core.rotation\n"
+
+[[case]]
+name = "a citation does not implement"
+findings = [
+    {check = "implemented", anchor = "core.rotation", at = ".. requirement:: core.rotation"},
+]
+
+[[case.replace]]
+old = "   :implements: core.rotation\n"
+new = ""
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n"
+new = "   A thread's instructions are eight cycles apart, as :rule:`core.rotation` says.\n"

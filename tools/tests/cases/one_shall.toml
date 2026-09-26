@@ -1,0 +1,62 @@
+# doc.one-shall
+
+[[case]]
+name = "a requirement without shall is a finding"
+findings = [
+    {check = "one-shall", anchor = "core.rotation", at = ".. requirement:: core.rotation"},
+    {check = "stamps", anchor = "core.rotation", at = ".. twin::"},
+]
+
+[[case.replace]]
+old = "   The core shall give the turn after\n"
+new = "   The core gives the turn after\n"
+
+[[case]]
+name = "shall inside a quotation does not count"
+findings = [
+    {check = "one-shall", anchor = "core.rotation", at = ".. requirement:: core.rotation"},
+    {check = "stamps", anchor = "core.rotation", at = ".. twin::"},
+]
+
+[[case.replace]]
+old = "   The core shall give the turn after\n"
+new = "   The core ``shall`` give the turn after\n"
+
+[[case]]
+name = "a second shall is a finding on its line"
+findings = [
+    {check = "one-shall", anchor = "core.rotation", at = "thread *t* to thread *t* + 1 and shall not stall."},
+    {check = "stamps", anchor = "core.rotation", at = ".. twin::"},
+]
+
+[[case.replace]]
+old = "   thread *t* to thread *t* + 1.\n"
+new = "   thread *t* to thread *t* + 1 and shall not stall.\n"
+
+[[case]]
+name = "a shall in a definition is a finding on its line"
+findings = [
+    {check = "one-shall", anchor = "core.turn", at = "A :dfn:`turn` shall be a thread's cycle in the rotation."},
+]
+
+[[case.replace]]
+old = "   A :dfn:`turn` is a thread's cycle in the rotation.\n"
+new = "   A :dfn:`turn` shall be a thread's cycle in the rotation.\n"
+
+[[case]]
+name = "a shall in a rationale is a finding"
+findings = [
+    {check = "one-shall", at = "A thread's instructions are eight cycles apart, and shall stay so."},
+]
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n"
+new = "   A thread's instructions are eight cycles apart, and shall stay so.\n"
+
+[[case]]
+name = "a shall inside a quotation of another chunk passes"
+findings = []
+
+[[case.replace]]
+old = "   A :dfn:`turn` is a thread's cycle in the rotation.\n"
+new = "   A :dfn:`turn`, not a ``shall``, is a thread's cycle in the rotation.\n"

@@ -1,0 +1,242 @@
+# doc.ears
+
+[[case]]
+name = "every clause in order passes [Where a trace exists, while the core runs, when a thread waits, the core shall wait.]"
+only = "ears"
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   Where a trace exists, while the core runs, when a thread waits, the core shall wait.\n"
+
+[[case]]
+name = "every clause in order passes [While the core runs, the core shall give each turn in order.]"
+only = "ears"
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   While the core runs, the core shall give each turn in order.\n"
+
+[[case]]
+name = "every clause in order passes [If a thread faults, then the core shall not give it a turn.]"
+only = "ears"
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   If a thread faults, then the core shall not give it a turn.\n"
+
+[[case]]
+name = "every clause in order passes [Each core shall give ``a, b`` to thread *t*.]"
+only = "ears"
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   Each core shall give ``a, b`` to thread *t*.\n"
+
+[[case]]
+name = "every clause in order passes [The Core shall give\\n   the turn.]"
+only = "ears"
+findings = []
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   The Core shall give
+   the turn.
+'''
+
+[[case]]
+name = "a sentence outside the pattern is a finding on the line of shall [When a thread waits the core shall wait.]"
+only = "ears"
+findings = [
+    {check = "ears", anchor = "core.rotation", at = "When a thread waits the core shall wait."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   When a thread waits the core shall wait.\n"
+
+[[case]]
+name = "a sentence outside the pattern is a finding on the line of shall [When a thread waits, where a trace exists, the core shall wait.]"
+only = "ears"
+findings = [
+    {check = "ears", anchor = "core.rotation", at = "When a thread waits, where a trace exists, the core shall wait."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   When a thread waits, where a trace exists, the core shall wait.\n"
+
+[[case]]
+name = "a sentence outside the pattern is a finding on the line of shall [If a thread faults, the core shall wait.]"
+only = "ears"
+findings = [
+    {check = "ears", anchor = "core.rotation", at = "If a thread faults, the core shall wait."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   If a thread faults, the core shall wait.\n"
+
+[[case]]
+name = "a sentence outside the pattern is a finding on the line of shall [The core Shall wait.]"
+only = "ears"
+findings = [
+    {check = "ears", anchor = "core.rotation", at = "The core Shall wait."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core Shall wait.\n"
+
+[[case]]
+name = "a sentence outside the pattern is a finding on the line of shall [The core shall give these turns:]"
+only = "ears"
+findings = [
+    {check = "ears", anchor = "core.rotation", at = "The core shall give these turns:"},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The core shall give these turns:\n"
+
+[[case]]
+name = "the finding is on the line of shall"
+only = "ears"
+findings = [
+    {check = "ears", anchor = "core.rotation", at = "waits the core shall wait."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = '''
+   When a thread
+   waits the core shall wait.
+'''
+
+[[case]]
+name = "an actor that no definition defines is a finding [Rotation shall be fixed.]"
+only = "ears"
+findings = [
+    {check = "ears", anchor = "core.rotation", at = "Rotation shall be fixed."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   Rotation shall be fixed.\n"
+
+[[case]]
+name = "an actor that no definition defines is a finding [The cores shall wait.]"
+only = "ears"
+findings = [
+    {check = "ears", anchor = "core.rotation", at = "The cores shall wait."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The cores shall wait.\n"
+
+[[case]]
+name = "an actor that no definition defines is a finding [A core turn shall wait.]"
+only = "ears"
+findings = [
+    {check = "ears", anchor = "core.rotation", at = "A core turn shall wait."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   A core turn shall wait.\n"
+
+[[case]]
+name = "only the first dfn of a definition defines a term"
+only = "ears"
+findings = [
+    {check = "ears", anchor = "core.rotation", at = "The core shall give the turn after"},
+]
+
+[[case.replace]]
+old = "   The :dfn:`core` runs the threads in turn.\n"
+new = "   The core runs the :dfn:`threads` in turn.\n"
+
+[[case]]
+name = "only the first dfn of a definition defines a term (2)"
+only = "ears"
+findings = []
+
+[[case.replace]]
+old = "   The :dfn:`core` runs the threads in turn.\n"
+new = "   The :dfn:`core` runs the :dfn:`threads`.\n"
+
+[[case]]
+name = "a dfn outside a definition defines nothing"
+only = "ears"
+findings = [
+    {check = "ears", anchor = "core.rotation", at = "The zyx shall wait."},
+]
+
+[[case.replace]]
+old = '''
+   The core shall give the turn after
+   thread *t* to thread *t* + 1.
+'''
+new = "   The zyx shall wait.\n"
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n"
+new = "   A :dfn:`zyx` has instructions eight cycles apart.\n"
+
+[[case]]
+name = "a definition without a dfn defines nothing"
+only = "ears"
+findings = [
+    {check = "ears", anchor = "core.rotation", at = "The core shall give the turn after"},
+]
+
+[[case.replace]]
+old = "   The :dfn:`core` runs the threads in turn.\n"
+new = "   The ``core`` runs the threads in turn.\n"

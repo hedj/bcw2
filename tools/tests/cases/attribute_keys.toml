@@ -1,0 +1,52 @@
+# doc.attribute-keys: the options that each label registers pass. ParseErrorTest has the others.
+
+[[case]]
+name = "the options of each label pass"
+findings = []
+
+[[case.replace]]
+old = '''
+.. requirement:: core.rotation
+   :parent: core.timing
+'''
+new = '''
+.. requirement:: core.rotation
+   :parent: core.timing
+   :impl: none
+'''
+
+[[case.replace]]
+old = "   :parent: core.core\n"
+new = '''
+   :parent: core.core
+   :never: slot
+'''
+
+[[case]]
+name = "the options and argument of a code directive pass"
+append = '''
+
+.. check::
+
+   x = 1
+'''
+findings = []
+
+[[case]]
+name = "text under the directive line is not an option [A thread's instructions are eight cycles apart.]"
+findings = []
+
+[[case.replace]]
+old = ".. rationale::\n\n"
+new = ".. rationale::\n"
+
+[[case]]
+name = "text under the directive line is not an option [:rule:`core.rotation` gives the order.]"
+findings = []
+
+[[case.replace]]
+old = '''
+
+   A thread's instructions are eight cycles apart.
+'''
+new = "   :rule:`core.rotation` gives the order.\n"

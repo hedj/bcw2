@@ -1,0 +1,162 @@
+# doc.heading-numbers
+
+[[case]]
+name = "a numbered heading is a finding on its line [Rotation\\n========-2. Rotation\\n===========]"
+only = "heading-numbers"
+findings = [
+    {check = "heading-numbers", at = "2. Rotation"},
+]
+
+[[case.replace]]
+old = '''
+Rotation
+========
+'''
+new = '''
+2. Rotation
+===========
+'''
+
+[[case]]
+name = "a numbered heading is a finding on its line [Rotation\\n========-4.2 Legs\\n========]"
+only = "heading-numbers"
+findings = [
+    {check = "heading-numbers", at = "4.2 Legs"},
+]
+
+[[case.replace]]
+old = "Rotation\n"
+new = "4.2 Legs\n"
+
+[[case]]
+name = "a numbered heading is a finding on its line [====\\nCore\\n====-======\\n1 Core\\n======]"
+only = "heading-numbers"
+findings = [
+    {check = "heading-numbers", at = "1 Core"},
+]
+
+[[case.replace]]
+old = '''
+====
+Core
+====
+'''
+new = '''
+======
+1 Core
+======
+'''
+
+[[case]]
+name = "a numbered heading is a finding on its line [Goals\\n=====-3.\\n=====]"
+only = "heading-numbers"
+findings = [
+    {check = "heading-numbers", at = "3."},
+]
+
+[[case.replace]]
+old = "Goals\n"
+new = "3.\n"
+
+[[case]]
+name = "a numbered heading is a finding on its line [Goals\\n=====-12\\n=====]"
+only = "heading-numbers"
+findings = [
+    {check = "heading-numbers", at = "12"},
+]
+
+[[case.replace]]
+old = "Goals\n"
+new = "12\n"
+
+[[case]]
+name = "a numbered heading is a finding on its line [Rotation\\n========-2.1 rotation\\n============]"
+only = "heading-numbers"
+findings = [
+    {check = "heading-numbers", at = "2.1 rotation"},
+]
+
+[[case.replace]]
+old = '''
+Rotation
+========
+'''
+new = '''
+2.1 rotation
+============
+'''
+
+[[case]]
+name = "a heading that starts with a word a compound or a count passes [Rotation 2\\n==========]"
+only = "heading-numbers"
+findings = []
+
+[[case.replace]]
+old = '''
+Rotation
+========
+'''
+new = '''
+Rotation 2
+==========
+'''
+
+[[case]]
+name = "a heading that starts with a word a compound or a count passes [64-bit counters\\n===============]"
+only = "heading-numbers"
+findings = []
+
+[[case.replace]]
+old = '''
+Rotation
+========
+'''
+new = '''
+64-bit counters
+===============
+'''
+
+[[case]]
+name = "a heading that starts with a word a compound or a count passes [v2 rotation\\n===========]"
+only = "heading-numbers"
+findings = []
+
+[[case.replace]]
+old = '''
+Rotation
+========
+'''
+new = '''
+v2 rotation
+===========
+'''
+
+[[case]]
+name = "a heading that starts with a word a compound or a count passes [8 threads\\n=========]"
+only = "heading-numbers"
+findings = []
+
+[[case.replace]]
+old = '''
+Rotation
+========
+'''
+new = '''
+8 threads
+=========
+'''
+
+[[case]]
+name = "a heading that starts with a word a compound or a count passes [2 cycles apart\\n==============]"
+only = "heading-numbers"
+findings = []
+
+[[case.replace]]
+old = '''
+Rotation
+========
+'''
+new = '''
+2 cycles apart
+==============
+'''

@@ -1,0 +1,44 @@
+# doc.chapter-title
+
+[[case]]
+name = "a chapter without a title is a finding on line 1"
+text = '''
+:kind: reference
+
+Just text.
+'''
+only = "chapter-title"
+findings = [
+    {check = "chapter-title", at = ":kind: reference"},
+    {check = "chapter-title", at = "Just text."},
+]
+
+[[case]]
+name = "a second title is a finding on its line"
+append = '''
+
+====
+More
+====
+
+Text.
+'''
+only = "chapter-title"
+findings = [
+    {check = "chapter-title", at = "More"},
+]
+
+[[case]]
+name = "text before the title is a finding on its line"
+only = "chapter-title"
+findings = [
+    {check = "chapter-title", at = "Intro."},
+]
+
+[[case.replace]]
+old = ":kind: reference\n"
+new = '''
+:kind: reference
+
+Intro.
+'''

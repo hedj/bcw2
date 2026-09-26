@@ -1,0 +1,57 @@
+# doc.citation and doc.param-citations
+
+[[case]]
+name = "a param citation of a parameter passes"
+append = '''
+
+.. parameter:: core.threads
+   :parent: core.core
+   :value: 8
+   :unit: threads
+
+   The number of threads.
+'''
+findings = []
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n"
+new = "   A thread's instructions are eight cycles apart, of :param:`core.threads`.\n"
+
+[[case]]
+name = "a param citation of another chunk is a finding"
+findings = [
+    {check = "param-citations", at = "A thread's instructions are eight cycles apart, as :param:`core.core` says."},
+]
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n"
+new = "   A thread's instructions are eight cycles apart, as :param:`core.core` says.\n"
+
+[[case]]
+name = "a param citation of no anchor is a references finding"
+findings = [
+    {check = "references", at = "A thread's instructions are eight cycles apart, as :param:`core.gone` says."},
+]
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n"
+new = "   A thread's instructions are eight cycles apart, as :param:`core.gone` says.\n"
+
+[[case]]
+name = "the word checks read it as a quotation"
+only = "known-words"
+general_add = ["number", "threads"]
+findings = []
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = '''
+   No thread can change the timing of :param:`core.threads` another thread.
+
+.. parameter:: core.threads
+   :parent: core.core
+   :value: 8
+   :unit: threads
+
+   The number of threads.
+'''

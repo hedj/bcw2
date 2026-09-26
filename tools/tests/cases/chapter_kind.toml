@@ -1,0 +1,55 @@
+# doc.chapter-kind
+
+[[case]]
+name = "each kind passes [tutorial]"
+only = "chapter-kind"
+findings = []
+
+[[case.replace]]
+old = ":kind: reference\n"
+new = ":kind: tutorial\n"
+
+[[case]]
+name = "each kind passes [how-to]"
+only = "chapter-kind"
+findings = []
+
+[[case.replace]]
+old = ":kind: reference\n"
+new = ":kind: how-to\n"
+
+[[case]]
+name = "each kind passes [reference]"
+only = "chapter-kind"
+findings = []
+
+[[case]]
+name = "each kind passes [explanation]"
+only = "chapter-kind"
+findings = []
+
+[[case.replace]]
+old = ":kind: reference\n"
+new = ":kind: explanation\n"
+
+[[case]]
+name = " core.timing\\n\\n   No thread can change the timing of another thread.\\n]"
+only = "chapter-kind"
+findings = [
+    {check = "chapter-kind", at = "===="},
+]
+
+[[case.replace]]
+old = ":kind: reference\n\n"
+new = ""
+
+[[case]]
+name = " core.timing\\n\\n   No thread can change the timing of another thread.\\n] (2)"
+only = "chapter-kind"
+findings = [
+    {check = "chapter-kind", at = ":kind: guide"},
+]
+
+[[case.replace]]
+old = ":kind: reference\n"
+new = ":kind: guide\n"

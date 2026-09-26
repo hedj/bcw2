@@ -1,0 +1,114 @@
+# doc.references
+
+[[case]]
+name = "an unknown parent is a finding on the option line"
+findings = [
+    {check = "references", anchor = "core.turn", at = ":parent: core.nothing"},
+]
+
+[[case.replace]]
+old = "   :parent: core.core\n"
+new = "   :parent: core.nothing\n"
+
+[[case]]
+name = "a parent list can name several anchors"
+findings = []
+
+[[case.replace]]
+old = '''
+.. requirement:: core.rotation
+   :parent: core.timing
+'''
+new = '''
+.. requirement:: core.rotation
+   :parent: core.timing, core.core
+'''
+
+[[case]]
+name = "an empty parent entry is a finding"
+findings = [
+    {check = "references", anchor = "core.core", at = ":parent: core.timing,"},
+]
+
+[[case.replace]]
+old = '''
+.. definition:: core.core
+   :parent: core.timing
+'''
+new = '''
+.. definition:: core.core
+   :parent: core.timing,
+'''
+
+[[case]]
+name = "an implements entry that names no anchor is a finding"
+findings = [
+    {check = "references", at = ".. source:: build/rtl/core/core_rotate.v"},
+]
+
+[[case.replace]]
+old = "   :implements: core.rotation\n"
+new = "   :implements: core.rotation, core.gone\n"
+
+[[case]]
+name = "a citation must name an anchor"
+findings = [
+    {check = "references", at = "A thread's instructions are eight cycles apart, as :rule:`core.rotate` says."},
+]
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n"
+new = "   A thread's instructions are eight cycles apart, as :rule:`core.rotate` says.\n"
+
+[[case]]
+name = "citations in headings and lists count"
+append = '''
+
+- :rule:`core.gone`
+'''
+findings = [
+    {check = "references", at = "Rotation :rule:`core.nothing`"},
+    {check = "references", at = "- :rule:`core.gone`"},
+]
+
+[[case.replace]]
+old = '''
+Rotation
+========
+'''
+new = '''
+Rotation :rule:`core.nothing`
+=============================
+'''
+
+[[case]]
+name = "good citations and other quotations pass"
+findings = []
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n"
+new = '''
+   A thread's instructions are eight cycles apart, as :rule:`core.rotation` and ``check.py`` say.
+'''
+
+[[case]]
+name = "a citation of a retired anchor is a finding"
+retired = ["core.turn"]
+findings = [
+    {check = "references", at = "A thread's instructions are eight cycles apart, unlike :rule:`core.turn`."},
+    {check = "anchors", anchor = "core.turn", at = ".. definition:: core.turn"},
+]
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n"
+new = "   A thread's instructions are eight cycles apart, unlike :rule:`core.turn`.\n"
+
+[[case]]
+name = "a citation inside a code block is not a reference"
+append = '''
+
+.. check::
+
+   :rule:`core.nothing`
+'''
+findings = []

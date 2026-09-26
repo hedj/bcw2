@@ -1,0 +1,102 @@
+# doc.anchors
+
+[[case]]
+name = "an anchor outside the grammar is a finding"
+findings = [
+    {check = "anchors", anchor = "Core_Turn", at = ".. definition:: Core_Turn"},
+]
+
+[[case.replace]]
+old = ".. definition:: core.turn\n"
+new = ".. definition:: Core_Turn\n"
+
+[[case]]
+name = "the anchor form is parts of lower case letters digits and hyphens joined by dots [core.rot-2-True]"
+findings = []
+
+[[case.replace]]
+old = ".. definition:: core.turn\n"
+new = ".. definition:: core.rot-2\n"
+
+[[case]]
+name = "the anchor form is parts of lower case letters digits and hyphens joined by dots [core.2x-True]"
+findings = []
+
+[[case.replace]]
+old = ".. definition:: core.turn\n"
+new = ".. definition:: core.2x\n"
+
+[[case]]
+name = "the anchor form is parts of lower case letters digits and hyphens joined by dots [core.b.c-True]"
+findings = []
+
+[[case.replace]]
+old = ".. definition:: core.turn\n"
+new = ".. definition:: core.b.c\n"
+
+[[case]]
+name = "the anchor form is parts of lower case letters digits and hyphens joined by dots [core-False]"
+findings = [
+    {check = "anchors", anchor = "core", at = ".. definition:: core"},
+]
+
+[[case.replace]]
+old = ".. definition:: core.turn\n"
+new = ".. definition:: core\n"
+
+[[case]]
+name = "the anchor form is parts of lower case letters digits and hyphens joined by dots [1core.x-False]"
+findings = [
+    {check = "anchors", anchor = "1core.x", at = ".. definition:: 1core.x"},
+]
+
+[[case.replace]]
+old = ".. definition:: core.turn\n"
+new = ".. definition:: 1core.x\n"
+
+[[case]]
+name = "the anchor form is parts of lower case letters digits and hyphens joined by dots [core..x-False]"
+findings = [
+    {check = "anchors", anchor = "core..x", at = ".. definition:: core..x"},
+]
+
+[[case.replace]]
+old = ".. definition:: core.turn\n"
+new = ".. definition:: core..x\n"
+
+[[case]]
+name = "the anchor form is parts of lower case letters digits and hyphens joined by dots [core.Rot-False]"
+findings = [
+    {check = "anchors", anchor = "core.Rot", at = ".. definition:: core.Rot"},
+]
+
+[[case.replace]]
+old = ".. definition:: core.turn\n"
+new = ".. definition:: core.Rot\n"
+
+[[case]]
+name = "the anchor form is parts of lower case letters digits and hyphens joined by dots [core_x.y-False]"
+findings = [
+    {check = "anchors", anchor = "core_x.y", at = ".. definition:: core_x.y"},
+]
+
+[[case.replace]]
+old = ".. definition:: core.turn\n"
+new = ".. definition:: core_x.y\n"
+
+[[case]]
+name = "the anchor form is parts of lower case letters digits and hyphens joined by dots [-core.x-False]"
+findings = [
+    {check = "anchors", anchor = "-core.x", at = ".. definition:: -core.x"},
+]
+
+[[case.replace]]
+old = ".. definition:: core.turn\n"
+new = ".. definition:: -core.x\n"
+
+[[case]]
+name = "a retired anchor is a finding"
+retired = ["core.turn"]
+findings = [
+    {check = "anchors", anchor = "core.turn", at = ".. definition:: core.turn"},
+]

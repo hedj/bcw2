@@ -1,0 +1,96 @@
+# doc.reaches-goal
+
+[[case]]
+name = "a rule without a parent is a finding on its directive"
+findings = [
+    {check = "reaches-goal", anchor = "core.rotation", at = ".. requirement:: core.rotation"},
+]
+
+[[case.replace]]
+old = '''
+.. requirement:: core.rotation
+   :parent: core.timing
+'''
+new = ".. requirement:: core.rotation\n"
+
+[[case]]
+name = "a cycle is a finding on the parent line of each chunk in it"
+findings = [
+    {check = "reaches-goal", anchor = "core.turn", at = ":parent: core.core"},
+    {check = "reaches-goal", anchor = "core.core", at = ":parent: core.turn"},
+]
+
+[[case.replace]]
+old = '''
+.. definition:: core.core
+   :parent: core.timing
+'''
+new = '''
+.. definition:: core.core
+   :parent: core.turn
+'''
+
+[[case]]
+name = "a chain that stops short of a goal is a finding"
+findings = [
+    {check = "reaches-goal", anchor = "core.turn", at = ":parent: core.core"},
+    {check = "reaches-goal", anchor = "core.core", at = ":parent: core.orphan"},
+    {check = "reaches-goal", anchor = "core.orphan", at = ".. definition:: core.orphan"},
+]
+
+[[case.replace]]
+old = '''
+.. definition:: core.core
+   :parent: core.timing
+'''
+new = '''
+.. definition:: core.core
+   :parent: core.orphan
+'''
+
+[[case.replace]]
+old = "   The :dfn:`core` runs the threads in turn.\n"
+new = '''
+   The :dfn:`core` runs the threads in turn.
+
+.. definition:: core.orphan
+
+   An :dfn:`orphan` has no parent.
+'''
+
+[[case]]
+name = "a goal can serve another goal"
+append = '''
+
+.. goal:: core.sub
+   :parent: core.timing
+
+   Threads stay apart.
+'''
+findings = []
+
+[[case.replace]]
+old = '''
+.. definition:: core.core
+   :parent: core.timing
+'''
+new = '''
+.. definition:: core.core
+   :parent: core.sub
+'''
+
+[[case]]
+name = "a chain that meets an unknown anchor is left to references"
+findings = [
+    {check = "references", anchor = "core.core", at = ":parent: core.nothing"},
+]
+
+[[case.replace]]
+old = '''
+.. definition:: core.core
+   :parent: core.timing
+'''
+new = '''
+.. definition:: core.core
+   :parent: core.nothing
+'''

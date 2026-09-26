@@ -1,17 +1,16 @@
-"""Tests of tools/bcw.py on one chapter: the reading, the chunk checks and the tangle.
+"""Tests of tools/bcw.py on one chapter that need more than its findings: the reading, stamps and the summary.
 
-Each test builds a book from GOOD, the chapter of tools/tests/book.py, with one
-thing changed, and expects the findings of the rule that the change breaks.
+The cases in tools/tests/cases hold the tests that only compare the findings of
+a chapter. Each test here builds a book from GOOD, the chapter of
+tools/tests/book.py, and reads more of the result.
 """
 
 import contextlib
 import hashlib
 import io
 
-import pytest
-
 import bcw
-from book import ENGLISH, GENERAL, GOOD, STAMP, Book, deprecations, findings, line
+from book import ENGLISH, GENERAL, GOOD, Book, deprecations, findings, line
 
 
 class GoodTest:
@@ -56,53 +55,8 @@ class LabelsTest:
                  "target"])
 
 
-class OneShallTest:
-    """doc.one-shall"""
-
-    def test_a_requirement_without_shall_is_a_finding(self):
-        text = GOOD.replace("The core shall give", "The core gives")
-        assert (line(text, ".. requirement::"), "one-shall", "core.rotation") in findings(text)
-
-    def test_shall_inside_a_quotation_does_not_count(self):
-        text = GOOD.replace("The core shall give", "The core ``shall`` give")
-        assert (line(text, ".. requirement::"), "one-shall", "core.rotation") in findings(text)
-
-    def test_a_second_shall_is_a_finding_on_its_line(self):
-        text = GOOD.replace("*t* + 1.", "*t* + 1 and shall not stall.")
-        assert (line(text, "shall not stall"), "one-shall", "core.rotation") in findings(text)
-
-    def test_a_shall_in_a_definition_is_a_finding_on_its_line(self):
-        text = GOOD.replace("A :dfn:`turn` is", "A :dfn:`turn` shall be")
-        assert findings(text) == [(line(text, "`turn` shall"), "one-shall", "core.turn")]
-
-    def test_a_shall_in_a_rationale_is_a_finding(self):
-        text = GOOD.replace("eight cycles apart.", "eight cycles apart, and shall stay so.")
-        assert findings(text) == [(line(text, "shall stay so"), "one-shall", None)]
-
-    def test_a_shall_inside_a_quotation_of_another_chunk_passes(self):
-        text = GOOD.replace("A :dfn:`turn` is", "A :dfn:`turn`, not a ``shall``, is")
-        assert findings(text) == []
-
-
 class AnchorsTest:
     """doc.anchors"""
-
-    def test_an_anchor_outside_the_grammar_is_a_finding(self):
-        text = GOOD.replace(".. definition:: core.turn", ".. definition:: Core_Turn")
-        assert findings(text) == [(line(text, "Core_Turn"), "anchors", "Core_Turn")]
-
-    @pytest.mark.parametrize("anchor, good", [
-        ("core.rot-2", True), ("core.2x", True), ("core.b.c", True),
-        ("core", False), ("1core.x", False), ("core..x", False),
-        ("core.Rot", False), ("core_x.y", False), ("-core.x", False)])
-    def test_the_anchor_form_is_parts_of_lower_case_letters_digits_and_hyphens_joined_by_dots(self, anchor, good):
-        text = GOOD.replace(".. definition:: core.turn", ".. definition:: " + anchor)
-        expected = [] if good else [(line(text, ".. definition:: " + anchor), "anchors", anchor)]
-        assert findings(text) == expected
-
-    def test_a_retired_anchor_is_a_finding(self):
-        assert (findings(GOOD, retired={"core.turn"}) ==
-                [(line(GOOD, ".. definition:: core.turn"), "anchors", "core.turn")])
 
     def test_a_duplicate_anchor_in_another_chapter_is_a_finding(self):
         other = (":kind: reference\n\n====\nBank\n====\n\nOverview\n========\n\nText.\n\nBanks\n=====\n\n"
@@ -116,15 +70,6 @@ class AnchorsTest:
                 [f for f in book.findings if f.check == "anchors"][0].message)
 
 
-class GoalTest:
-    def test_a_goal_needs_no_shall(self):
-        assert findings(GOOD) == []
-
-    def test_a_twin_inside_a_goal_is_a_finding(self):
-        text = GOOD + "\n   .. twin::\n\n      x\n"
-        assert findings(text) == [(len(text.splitlines()) - 2, "stamps", "core.timing")]
-
-
 class StampsTest:
     """doc.stamps"""
 
@@ -134,23 +79,6 @@ class StampsTest:
         new = hashlib.sha256(("REQUIREMENT " + ENGLISH.replace("+ 1.", "+ 2.")).encode()).hexdigest()[:8]
         assert [(f.line, f.anchor) for f in result] == [(line(text, ".. twin::"), "core.rotation")]
         assert f":stamp: {new}" in result[0].fix
-
-    def test_a_missing_stamp_is_a_finding(self):
-        text = GOOD.replace(f"      :stamp: {STAMP}\n", "")
-        assert findings(text) == [(line(text, ".. twin::"), "stamps", "core.rotation")]
-
-    def test_reflowed_english_and_changed_options_keep_the_stamp(self):
-        text = GOOD.replace("after\n   thread", "after thread").replace(
-            ":parent: core.timing\n\n   The core", ":parent: core.timing, core.core\n\n   The core")
-        assert findings(text) == []
-
-    def test_a_twin_inside_a_chunk_that_is_not_a_rule_is_a_finding(self):
-        text = GOOD.replace("eight cycles apart.\n", "eight cycles apart.\n\n   .. twin::\n\n      x\n")
-        assert findings(text) == [(line(text, "eight cycles apart.") + 2, "stamps", None)]
-
-    def test_a_twin_outside_any_chunk_is_a_finding(self):
-        text = GOOD + "\nSome prose.\n\n.. twin::\n\n   x\n"
-        assert findings(text) == [(len(text.splitlines()) - 2, "stamps", None)]
 
 
 class SummaryTest:

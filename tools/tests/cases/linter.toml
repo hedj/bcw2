@@ -1,0 +1,58 @@
+# doc.linter
+
+[[case]]
+name = "a semicolon in a rule is a finding on its line"
+findings = [
+    {check = "linter", anchor = "core.turn", at = "A :dfn:`turn` is a thread's cycle; it is fixed."},
+]
+
+[[case.replace]]
+old = "   A :dfn:`turn` is a thread's cycle in the rotation.\n"
+new = "   A :dfn:`turn` is a thread's cycle; it is fixed.\n"
+
+[[case]]
+name = "a long sentence in a rule is a finding"
+findings = [
+    {check = "linter", anchor = "core.core", at = '''
+The :dfn:`core` runs the threads in turn and waits and waits and waits and waits and waits and waits and waits and waits and waits and waits.'''},
+]
+
+[[case.replace]]
+old = "   The :dfn:`core` runs the threads in turn.\n"
+new = '''
+   The :dfn:`core` runs the threads in turn and waits and waits and waits and waits and waits and waits and waits and waits and waits and waits.
+'''
+
+[[case]]
+name = "an advisory finding passes"
+findings = []
+
+[[case.replace]]
+old = "   The :dfn:`core` runs the threads in turn.\n"
+new = "   The :dfn:`core` is built from threads.\n"
+
+[[case]]
+name = "a semicolon in a goal is a finding on its line"
+findings = [
+    {check = "linter", anchor = "core.timing", at = "No thread can change the timing of another thread; it is fixed."},
+]
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = "   No thread can change the timing of another thread; it is fixed.\n"
+
+[[case]]
+name = "a chunk that is not a rule or a goal is not linted"
+findings = []
+
+[[case.replace]]
+old = "   A thread's instructions are eight cycles apart.\n"
+new = "   A thread's instructions are eight cycles apart; so it is.\n"
+
+[[case]]
+name = "a semicolon in a quotation passes"
+findings = []
+
+[[case.replace]]
+old = "   A :dfn:`turn` is a thread's cycle in the rotation.\n"
+new = "   A :dfn:`turn` is a thread's cycle in the rotation, ``a; b``.\n"

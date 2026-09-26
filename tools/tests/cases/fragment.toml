@@ -1,0 +1,253 @@
+# doc.source-targets, doc.fragment-uses, doc.fragments-used and doc.fragment-cycles
+
+[[case]]
+name = "a skeleton and its fragment pass"
+append = '''
+
+.. source:: build/rtl/core/pair.v
+
+   module pair (input wire a, output wire b);
+       <<:core.pair-logic>>
+   endmodule
+
+.. source:: :core.pair-logic
+
+   assign b = a;
+'''
+findings = []
+
+[[case]]
+name = "a fragment can come before its use"
+append = '''
+
+.. source:: :core.pair-logic
+
+   assign b = a;
+
+.. source:: build/rtl/core/pair.v
+
+   module pair (input wire a, output wire b);
+       <<:core.pair-logic>>
+   endmodule
+'''
+findings = []
+
+[[case]]
+name = "a use of no fragment is a finding on its line"
+append = '''
+
+.. source:: build/rtl/core/pair.v
+
+   module pair (input wire a, output wire b);
+       <<:core.pair-logic>>
+   endmodule
+'''
+findings = [
+    {check = "fragment-uses", at = "<<:core.pair-logic>>"},
+]
+
+[[case]]
+name = "a fragment that reaches no file is a finding on its directive line"
+append = '''
+
+.. source:: :core.pair-logic
+
+   assign b = a;
+'''
+findings = [
+    {check = "fragments-used", at = ".. source:: :core.pair-logic"},
+]
+
+[[case]]
+name = "a fragment that only a fragment that reaches no file uses reaches no file"
+append = '''
+
+.. source:: :core.outer
+
+   <<:core.pair-logic>>
+
+.. source:: :core.pair-logic
+
+   assign b = a;
+'''
+findings = [
+    {check = "fragments-used", at = ".. source:: :core.outer"},
+    {check = "fragments-used", at = ".. source:: :core.pair-logic"},
+]
+
+[[case]]
+name = "a fragment used through another fragment passes"
+append = '''
+
+.. source:: build/rtl/core/pair.v
+
+   module pair (input wire a, output wire b);
+       <<:core.outer>>
+   endmodule
+
+.. source:: :core.outer
+
+   <<:core.pair-logic>>
+
+.. source:: :core.pair-logic
+
+   assign b = a;
+'''
+findings = []
+
+[[case]]
+name = "a cycle is a finding on each fragment in it"
+append = '''
+
+.. source:: build/rtl/core/pair.v
+
+   module pair (input wire a, output wire b);
+       <<:core.pair-logic>>
+   endmodule
+
+.. source:: :core.pair-logic
+
+   <<:core.other>>
+
+.. source:: :core.other
+
+   <<:core.pair-logic>>
+'''
+findings = [
+    {check = "fragment-cycles", at = ".. source:: :core.pair-logic"},
+    {check = "fragment-cycles", at = ".. source:: :core.other"},
+]
+
+[[case]]
+name = "a target outside build that is no fragment name is a finding [rtl/core/pair.v]"
+append = '''
+
+.. source:: rtl/core/pair.v
+
+   assign b = a;
+'''
+findings = [
+    {check = "source-targets", at = ".. source:: rtl/core/pair.v"},
+]
+
+[[case]]
+name = "a target outside build that is no fragment name is a finding [src/pair.v]"
+append = '''
+
+.. source:: src/pair.v
+
+   assign b = a;
+'''
+findings = [
+    {check = "source-targets", at = ".. source:: src/pair.v"},
+]
+
+[[case]]
+name = "a target outside build that is no fragment name is a finding [Core_Pair]"
+append = '''
+
+.. source:: Core_Pair
+
+   assign b = a;
+'''
+findings = [
+    {check = "source-targets", at = ".. source:: Core_Pair"},
+]
+
+[[case]]
+name = "a target outside build that is no fragment name is a finding [core]"
+append = '''
+
+.. source:: core
+
+   assign b = a;
+'''
+findings = [
+    {check = "source-targets", at = ".. source:: core"},
+]
+
+[[case]]
+name = "a target outside build that is no fragment name is a finding [core.pair-logic]"
+append = '''
+
+.. source:: core.pair-logic
+
+   assign b = a;
+'''
+findings = [
+    {check = "source-targets", at = ".. source:: core.pair-logic"},
+]
+
+[[case]]
+name = "a target outside build that is no fragment name is a finding [pair.v]"
+append = '''
+
+.. source:: pair.v
+
+   assign b = a;
+'''
+findings = [
+    {check = "source-targets", at = ".. source:: pair.v"},
+]
+
+[[case]]
+name = "a target outside build that is no fragment name is a finding [:Core_Pair]"
+append = '''
+
+.. source:: :Core_Pair
+
+   assign b = a;
+'''
+findings = [
+    {check = "source-targets", at = ".. source:: :Core_Pair"},
+]
+
+[[case]]
+name = "a line that holds more than a fragment name is code [assign b = a << 1;]"
+append = '''
+
+.. source:: build/rtl/core/pair.v
+
+   assign b = a << 1;
+'''
+findings = []
+
+[[case]]
+name = "a line that holds more than a fragment name is code [assign b = a<<:core.pair-logic>>1;]"
+append = '''
+
+.. source:: build/rtl/core/pair.v
+
+   assign b = a<<:core.pair-logic>>1;
+'''
+findings = []
+
+[[case]]
+name = "a line that holds more than a fragment name is code [<<:core.pair-logic>> // a comment]"
+append = '''
+
+.. source:: build/rtl/core/pair.v
+
+   <<:core.pair-logic>> // a comment
+'''
+findings = []
+
+[[case]]
+name = "a line that holds more than a fragment name is code [<<Core_Pair>>]"
+append = '''
+
+.. source:: build/rtl/core/pair.v
+
+   <<Core_Pair>>
+'''
+findings = []
+
+[[case]]
+name = "a line that holds more than a fragment name is code [<<core.pair-logic>>]"
+append = '''
+
+.. source:: build/rtl/core/pair.v
+
+   <<core.pair-logic>>
+'''
+findings = []
