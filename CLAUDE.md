@@ -20,11 +20,21 @@ These rules apply to every task in this repository, as the Proportionality secti
 - Examples of irreversible actions: deleting data outside version control, deploying, sending messages, and publishing packages.
 - A push is not irreversible. To undo a push, push a commit that `git revert` creates.
 - A **public interface** is an API, command, file format, or configuration that something outside the repository uses.
+- **Complexity** is the set of concepts that a reader must understand to change code safely.
+- Concepts include functions, classes, parameters, branches, special cases, configuration options, layers of indirection, and copies of the same logic.
+- A **simplification** is an edit that removes concepts. Renames, reformatting, and moves alone are not simplifications.
+- A **generalisation** is a simplification that replaces two or more similar code paths with one code path.
+- An edit is **behaviour-preserving** if it changes no output, error, side effect, or public interface.
+- A performance change smaller than the spread across runs (see section 5) does not count as a change.
+- A simplification has **functionality loss** if it is not behaviour-preserving.
+- A **characterisation test** records what code does now, correct or not.
+- The **task neighbourhood** is the code that the task reads or modifies, plus the code that directly calls it or that it directly calls.
 
 ## Proportionality
 - A task is **read-only** if it modifies no files.
 - State at the start whether the task is read-only.
-- Read-only tasks skip the restatement (section 1) and sections 2, 4, 6, 7, and 11.
+- Read-only tasks skip the restatement (section 1) and sections 2, 4, 6, 7, 11.1, 11.3, and 11.4.
+- Read-only tasks apply sections 11.2 and 11.5. They find and propose simplifications, but do not make them.
 - If a read-only task starts to modify files, apply all rules from that point.
 
 ## Precedence
@@ -49,6 +59,8 @@ These rules apply to every task in this repository, as the Proportionality secti
 - Fix one bug at a time. Do not modify code for another bug until the current bug is fixed.
 - Commit the fix and its test as a work commit before you start another bug.
 - If you find another bug during a fix, record it.
+- If you find complexity to remove during a fix, record it as a candidate (see section 11.2).
+- If the cause of a bug is complexity (for example, two copies of logic that drifted apart), say so in the report.
 
 ## 3. Form and test hypotheses
 - Before you fix a bug, write down one or more hypotheses: candidate explanations for the behavior.
@@ -67,6 +79,8 @@ These rules apply to every task in this repository, as the Proportionality secti
 
 ## 5. Measure
 - Support every performance claim with measurements against a control (see section 6). Do not write "this should be faster."
+- Support every complexity claim with counts before and after the edit. Do not write "this is simpler."
+- Count at least lines of code, functions, parameters, and branches. Use a complexity tool if the repository has one.
 - Check units and dimensional consistency in all calculations.
 - Before you measure, write down the expected value. If the measured value differs by more than 10 times, report the difference.
 - For every performance measurement:
@@ -78,7 +92,7 @@ These rules apply to every task in this repository, as the Proportionality secti
 ## 6. Verify your work
 - Write tests as follows:
   - Bug fix: write a test that fails before the fix and passes after it. Put the test and the fix in the same published commit (see section 7).
-  - Refactor: confirm that the existing tests pass before and after the refactor.
+  - Refactor or simplification: confirm that the existing tests pass before and after the edit. If no test runs the changed code, write characterisation tests first.
   - New feature: write tests that specify the required behavior.
 - For a bug fix or a new feature, test the test. Reverse every edit except the test edits.
 - Then confirm that the test fails.
@@ -97,6 +111,7 @@ Both you and humans commit to this repository.
 - Do not stage, commit, or discard edits that you did not make.
 - Commit your own edits as work commits.
 - Before you publish, squash your work commits into published commits.
+- Put each simplification in its own published commit. Do not squash a simplification into a bug fix or a feature commit.
 - Every published commit must build and pass the full test suite. Existing failures are the only exception (see section 6).
 - Stage files by name. Do not use `git add -A`, `git add .`, or `git commit -a`.
 - Before you commit, review the staged diff. Confirm that it contains only your own edits.
@@ -181,6 +196,7 @@ Every chat reply follows these rules, in every mode. A report that you give in c
 - You rejected every hypothesis for the current bug.
 - An existing failure occurs in a test that you modify or that directly calls code that you modify.
 - Your edits modify a public interface, a data schema, or a dependency.
+- A simplification that you want to make has functionality loss.
 - An action that you plan is irreversible.
 - An action would discard edits or untracked files that you did not make, or rewrite shared history.
 
@@ -188,8 +204,60 @@ If no human can answer (e.g. in a CI or headless run), do not continue the block
 - Do not leave partial edits for the blocked part.
 - End with a report: the blocker, the evidence, the options, and your recommended option.
 
-## 11. Add only necessary code
+## 11. Minimise complexity
+Each concept in the code is a cost that every future reader pays. Remove concepts when the behaviour survives without them. Look for complexity to remove on every task, also when the human did not ask for it.
+
+### 11.1 Add only necessary code
 - For every new source file, class, or function, find a test that runs its code, directly or through other code.
 - Name each such test in the final report.
 - Do not add an interface, base class, or abstract class with only one implementation.
 - Do not add a parameter that every caller passes as the same literal value.
+- Do not generalise for a need that no current caller has.
+- Before you add new code, search for existing code that already does the job. Reuse or extend it.
+
+### 11.2 Find complexity to remove
+- On every task, examine the task neighbourhood for complexity that you can remove.
+- Look for these patterns:
+  - Two or more copies of the same or nearly the same logic.
+  - Dead code: functions, branches, parameters, flags, or configuration options that nothing uses.
+  - Special cases that the general case already handles, or can handle with a small edit.
+  - Wrappers, layers, or abstractions that only pass calls through.
+  - Parameters, flags, or options that every caller sets to the same value.
+  - Hand-written code that the standard library or an existing dependency already provides.
+  - Data that the code stores twice, or converts back and forth.
+  - Deep nesting, flag variables, and long chains of conditions.
+  - Code for removed features, old versions, or completed migrations.
+- For each candidate, design the simplest code that serves the current callers. Compare that design with the current code.
+- Look for a shared cause. If 3 or more candidates come from one cause (for example, a poor data model), propose to fix the cause.
+- Also consider candidates with functionality loss. Name the lost behaviour and every caller, test, or user that you know relies on it.
+- For each candidate, estimate the concepts removed, the functionality lost, the risk, and the effort.
+- Record every candidate, also the candidates that you reject, with the reason.
+- Do not propose a candidate only because code is long or unfamiliar. Name the concepts that it removes.
+
+### 11.3 Make or propose
+- Make a simplification in the current task only if all of these conditions are true:
+  - It is behaviour-preserving.
+  - Tests run the code that it changes, or you add characterisation tests first.
+  - It stays inside the task neighbourhood.
+  - It does not modify a public interface, a data schema, or a dependency.
+  - It changes 200 lines or fewer in total.
+- If any condition is false, propose the simplification. Do not make it.
+- Never make a simplification with functionality loss without human approval (see section 10).
+- A generalisation must reduce total complexity. Count the concepts before and after.
+- If a generalisation adds more concepts (parameters, callbacks, type parameters, configuration) than it removes, reject it.
+- Generalise when 3 or more places share logic. Generalise 2 places only when they must change together to stay correct.
+
+### 11.4 Simplify safely
+- Before a simplification, run the tests that run the changed code. Record the results and the state.
+- If no test runs the changed code, write characterisation tests first. Commit them as a separate work commit.
+- If a simplification makes the task easier, make it first, in its own commit. Then do the task.
+- After a simplification, run the full test suite. Compare the results with the results before the edit.
+- If a test result changes, reverse the simplification or find the cause. Do not edit the test to match (see section 4).
+- Do not delete a test to make a simplification pass. Exception: a test that only runs deleted dead code. Name each such test in the report.
+
+### 11.5 Report complexity
+- In every final report, state each simplification that you made. Give the counts before and after (see section 5) and the tests that run the code.
+- State each proposed simplification with the concepts removed, the functionality lost, the risk, and the effort.
+- Order the proposals by the number of concepts that they remove, largest first.
+- State the rejected candidates and the reason for each.
+- If you found no candidates, say so and name the code that you examined.
