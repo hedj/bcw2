@@ -5,12 +5,19 @@
 #   ./dev make check   run one command in the environment
 #
 # It needs Nix (https://nixos.org/download). The first run downloads the tools
-# into /nix/store. It also points Git at tools/hooks, so that the pre-push hook
-# runs.
+# into /nix/store. It stops first if the store does not exist, which happens with
+# some distribution packages of Nix. It also points Git at tools/hooks, so that
+# the pre-push hook runs.
 set -e
 root=$(cd "$(dirname "$0")" && pwd)
 if ! command -v nix >/dev/null 2>&1; then
     echo "dev: Nix is not installed. Install it from https://nixos.org/download, then run ./dev again." >&2
+    exit 1
+fi
+# Nix reads its store directory from NIX_STORE_DIR, and uses /nix/store without it.
+store=${NIX_STORE_DIR:-/nix/store}
+if [ ! -d "$store" ]; then
+    echo "dev: the Nix store $store does not exist. If Nix came from a distribution package, create the store and start the Nix daemon: see \"The environment\" in readme.build." >&2
     exit 1
 fi
 git -C "$root" config core.hooksPath tools/hooks

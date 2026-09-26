@@ -21,6 +21,30 @@ The first run of ./dev downloads about 2.7 GB of tools into /nix/store.
 Later runs take a few seconds. ./dev also sets the Git configuration
 core.hooksPath to tools/hooks, so that the pre-push hook runs.
 
+A Nix from a distribution package, such as the nix package of Arch Linux or
+CachyOS, runs each build through a daemon (a background service), nix-daemon.
+Such a package can leave out the store, /nix/store. If the store does not
+exist, ./dev stops with the message "the Nix store /nix/store does not exist".
+If you see this message, do these steps:
+
+1. Create the store with the group and mode that the Nix installer gives it:
+
+       sudo install -d -m 0755 /nix
+       sudo install -d -g nixbld -m 1775 /nix/store
+
+2. Start the daemon, and start it at each boot:
+
+       sudo systemctl enable --now nix-daemon.socket
+
+3. Add your user to the group nix-users, which can reach the daemon:
+
+       sudo usermod -aG nix-users "$USER"
+
+4. Log out and log in again, so that the new group applies. Then run ./dev.
+
+The names nixbld and nix-users are those of the Arch Linux package. If your
+distribution uses other names, use its names.
+
 Outside the environment, make stops with the message "run ./dev make
 <target>". If you see this message, run the command that it names.
 
