@@ -381,7 +381,7 @@ CHAPTER = "book/core/core.rst"
 
 
 class FragmentTest:
-    """doc.source-targets, doc.fragment-uses, doc.fragments-used, doc.fragment-cycles and doc.whole-twins"""
+    """doc.source-targets, doc.fragment-uses, doc.fragments-used and doc.fragment-cycles"""
 
     def test_the_first_block_of_a_fragment_in_the_chapter_order_is_the_fragment(self):
         # A tutorial comes before a reference in the chapter order, so zeta comes before alpha.
@@ -398,10 +398,9 @@ class FragmentTest:
         text = GOOD.replace("      def core_rotate(turn):\n", f"      {use}\n      def core_rotate(turn):\n") + FRAGMENT
         assert text != GOOD + FRAGMENT
         book = Book({"core/core.rst": text})
-        # A fragment use is not Python either, so doc.twin-forms also reports its line.
+        # A fragment use is not Python, so it is not in the twin language (doc.twin-forms).
         assert ([f[1:] for f in book.tuples() if f[2] != "fragments-used"] ==
-                [(line(text, use), "twin-forms", "core.rotation"), (line(text, use), "whole-twins", "core.rotation")])
-        assert "a twin stays whole" in next(f for f in book.findings if f.check == "whole-twins").fix
+                [(line(text, use), "twin-forms", "core.rotation")])
 
 
 class OneBlockTest:

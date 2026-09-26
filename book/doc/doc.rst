@@ -528,11 +528,6 @@ Fragments
    Where a code block names a file or a fragment name, the code block shall be the only code block
    that names it.
 
-.. requirement:: doc.whole-twins
-   :parent: doc.one-source
-
-   No twin shall hold a line with the form of a fragment use.
-
 .. rationale::
 
    A fragment lets the code of a rule stand next to the rule, while a skeleton puts a module in

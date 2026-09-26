@@ -136,8 +136,9 @@ fragment in place of that line, with the indentation of the line:
 So the code of a rule can stand next to the rule, and a skeleton elsewhere can
 put a module in order. Each fragment and each file has one code block
 (doc.one-block), so code from another block joins a file only through a
-fragment use. A twin cannot use a fragment, because a twin stays whole. The
-rules of fragments are in the section Fragments of book/doc/doc.rst.
+fragment use. A twin cannot use a fragment, because a fragment use is not in
+the twin language (doc.twin-forms). The rules of fragments are in the section
+Fragments of book/doc/doc.rst.
 
 
 Checks

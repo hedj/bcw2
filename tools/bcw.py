@@ -1301,20 +1301,6 @@ def check_twin_forms(model):
                                   "write the twin in the twin language that doc.twin-language describes")
 
 
-# implements: doc.whole-twins
-def check_whole_twins(documents):
-    for document in documents:
-        for block in document.blocks:
-            if block.kind != "twin":
-                continue
-            for offset, text in enumerate(block.text.splitlines()):
-                if USE.match(text):
-                    yield Finding(document.path, block.first + offset, "whole-twins",
-                                  block.chunk.anchor if block.chunk else None,
-                                  "the twin holds a line with the form of a fragment use",
-                                  "put the code of the fragment in the twin, because a twin stays whole")
-
-
 def crowded(documents):
     """The number of rules with more than two parents."""
     return sum(1 for document in documents for chunk in document.chunks
@@ -1357,7 +1343,6 @@ def check(model, retired=(), tools=(), general=None):
     findings += check_fragment_uses(model)
     findings += check_fragments_used(model)
     findings += check_fragment_cycles(model)
-    findings += check_whole_twins(documents)
     findings += check_twin_forms(model)
     findings += check_scoped_constants(documents)
     findings += check_one_block(model)

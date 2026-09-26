@@ -3,3 +3,4 @@ doc.abbreviation
 doc.no-abbreviations
 doc.attribute-line
 doc.never-on-definition
+doc.whole-twins
