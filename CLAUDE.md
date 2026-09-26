@@ -111,7 +111,7 @@ These rules apply to every task in this repository, as the Proportionality secti
 ## 6. Verify your work
 - Write tests as follows:
   - Bug fix: write a test that fails before the fix and passes after it. Put the test and the fix in the same published commit (see section 7).
-  - Refactor or simplification: confirm that the existing tests pass before and after the edit. If no test runs the changed code, write characterisation tests first.
+  - Refactor or simplification: follow the steps of section 11.4.
   - New feature: write tests that specify the required behavior.
 - For a bug fix or a new feature, test the test. Reverse every edit except the test edits.
 - Then confirm that the test fails.
