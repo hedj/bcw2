@@ -10,8 +10,9 @@ These rules apply to every task in this repository, as the Proportionality secti
 - The **base commit** is the commit on which your task starts.
 - A **result** is the outcome of running code, a test, or a measurement.
 - An **experiment** is a run of code or a test that tests a prediction.
+- An **unexpected result** is a result that differs from the expectation that you wrote down before the run.
 - A **code location** is one file and one continuous line range in that file.
-- A **single-cause hypothesis** blames one code location. A **multi-cause hypothesis** blames more than one.
+- A **single-cause hypothesis** blames one code location, tool, or input. A **multi-cause hypothesis** blames more than one.
 - **Shared history** is published commits, commits made by others, branches, and tags.
 - An **existing failure** is a test failure that also occurs on the base commit.
 - A bug is **fixed** when its test passes and the full test suite has no new failures.
@@ -69,7 +70,7 @@ These rules apply to every task in this repository, as the Proportionality secti
 - In your reports, label inferred and assumed claims. An unlabeled claim is a known claim.
 
 ## 2. Observe and reproduce
-- For bugs: reproduce the failure before you modify anything.
+- For a bug or another unexpected result: reproduce it before you modify anything.
 - Record the exact command, the input, and the output. Record the state (see section 8).
 - If you cannot reproduce the failure, say so. Do not fix a bug that you have not observed.
 - A failing run is an observation. A test that exposes the bug is also an observation.
@@ -81,12 +82,13 @@ These rules apply to every task in this repository, as the Proportionality secti
 - If the cause of a bug is complexity (for example, two copies of logic that drifted apart), say so in the report.
 
 ## 3. Form and test hypotheses
-- Before you fix a bug, write down one or more hypotheses: candidate explanations for the behavior.
-- Each hypothesis must name the code locations that it blames.
+- Before you fix a bug or act on another unexpected result, write down one or more hypotheses.
+- A hypothesis is a candidate explanation for the behaviour.
+- Each hypothesis must name the code locations, tools, or inputs that it blames.
 - Test single-cause hypotheses before multi-cause hypotheses.
 - For each hypothesis, state a prediction: "If X is the cause, then Y will happen when I do Z."
 - Before each experiment, write down the outcome that would reject each hypothesis.
-- Before you fix a bug, run at least one experiment that tests a prediction.
+- Before you fix a bug or act on another unexpected result, run at least one experiment that tests a prediction.
 - Record the prediction, the outcome, and whether they match.
 - Reject every hypothesis whose rejection outcome occurs.
 - Record every difference between two runs that you compare.
@@ -204,7 +206,7 @@ Every chat reply follows these rules, in every mode. A report that you give in c
 ## 10. Stop and ask when
 - No implementation can meet all the requirements.
 - The build fails on the base commit.
-- You rejected every hypothesis for the current bug.
+- You rejected every hypothesis for the current bug or unexpected result.
 - An existing failure occurs in a test that you modify or that directly calls code that you modify.
 - Your edits modify a public interface, a data schema, or a dependency.
 - A simplification that you want to make has functionality loss.
