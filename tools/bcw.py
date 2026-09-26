@@ -24,7 +24,8 @@ each finding as a Sphinx warning, such as
 
 Each check function names the rule of book/doc/doc.rst that it implements in an
 "# implements:" comment. At build-finished, the extension writes each tangled
-file, and build/tangle.json, which names the chapter line of each tangled line.
+file, build/tangle.json, which names the chapter line of each tangled line, and
+build/design.json, the design graph that tools/metrics.py measures.
 
 Configuration values, which tools/conf.py sets:
     bcw_tools            the files whose "# implements:" comments count
@@ -914,28 +915,34 @@ def known(word, words):
     return not bases(word).isdisjoint(words)
 
 
+def term_words(documents):
+    """The words of each defined term, the longest terms first."""
+    return sorted((tuple(term.split()) for term in defined_terms(documents)), key=len, reverse=True)
+
+
+def term_at(words, index, terms):
+    """The defined term of terms at words[index], as the words of the term, or None."""
+    for term in terms:
+        found = words[index:index + len(term)]
+        if len(found) == len(term) and found[:-1] == list(term[:-1]) and known(found[-1], {term[-1]}):
+            return term
+    return None
+
+
 # implements: doc.known-words
 def check_known_words(documents, general):
-    terms = sorted((tuple(term.split()) for term in defined_terms(documents)), key=len, reverse=True)
-
-    def term_at(words, index):
-        """The number of words of the longest defined term at words[index], or 0."""
-        for term in terms:
-            found = [word for word, _ in words[index:index + len(term)]]
-            if (len(found) == len(term) and found[:-1] == list(term[:-1])
-                    and known(found[-1], {term[-1]})):
-                return len(term)
-        return 0
-
+    terms = term_words(documents)
     for document in documents:
         for chunk in document.chunks:
             if chunk.label not in ANCHORED:
                 continue
             words = [(match.group(0).lower(), number)
                      for number, text in chunk.prose for match in WORD.finditer(text)]
+            plain = [word for word, _ in words]
             index = 0
             while index < len(words):
-                size = term_at(words, index)
+                term = term_at(plain, index, terms)
+                size = len(term) if term else 0
                 if size == 0 and not known(words[index][0], general):
                     yield Finding(chunk.path, words[index][1], "known-words", chunk.anchor,
                                   f"{words[index][0]!r} is not a known word",
@@ -1479,6 +1486,43 @@ def tangle(app, exception):
     write(path, '{"files": {\n' + ",\n".join(files) + "\n}}\n")
     write(Path(root) / "build" / "checks.json", f'{{"constants": {json.dumps(parameter_constants(book))}, "checks": [\n'
           + ",\n".join(json.dumps(entry) for entry in manifest) + "\n]}\n")
+    write(Path(root) / "build" / "design.json",
+          json.dumps(design_graph(book, tool_implements(app.config.bcw_tools)), indent=1) + "\n")
+
+
+def design_graph(book, tools):
+    """The design graph that build/design.json holds, for tools/metrics.py.
+
+    Its nodes are the anchored chunks in the reading order: the chapter order, then
+    the order in each chapter. An edge (a, b, kind) says that a reader needs b to
+    understand a: b is a parent of a, a citation in its prose, an anchor in its
+    value, or a defined term in its prose. implemented and verified list the anchors
+    that a source or a tool implements, and that a check verifies.
+    """
+    placed = [(document, chunk) for document in book.ordered for chunk in document.chunks if chunk.anchor]
+    first = {}
+    for document, chunk in placed:
+        first.setdefault(chunk.anchor, (document, chunk))
+    terms = term_words(book.documents)
+    defines = {tuple(chunk.term.split()): anchor for anchor, (_, chunk) in first.items() if chunk.term}
+    edges = set()
+    for anchor, (document, chunk) in first.items():
+        numbers = {number for number, _ in chunk.lines}
+        words = [match.group(0).lower() for _, text in chunk.prose for match in WORD.finditer(text)]
+        needs = [(name, "parent") for name in parents(chunk)]
+        needs += [(match.group(0), "value") for match in ANCHOR.finditer(chunk.options.get("value", ""))]
+        needs += [(name, "citation") for number, name, _ in document.citations if number in numbers]
+        needs += [(defines[term], "term") for index in range(len(words))
+                  if (term := term_at(words, index, terms)) in defines]
+        edges |= {(anchor, name, kind) for name, kind in needs if name in first and name != anchor}
+    blocks = [block for document in book.documents for block in document.blocks]
+    implemented = {name for block in blocks if block.kind == "source" for name in implements(block)}
+    implemented |= {anchor for _, _, anchor in tools}
+    verified = {name for block in blocks if block.kind == "check" for name in verifies(block)}
+    return {"nodes": [{"anchor": anchor, "label": chunk.label, "chapter": document.name, "position": position}
+                      for position, (anchor, (document, chunk)) in enumerate(first.items())],
+            "edges": [list(edge) for edge in sorted(edges)],
+            "implemented": sorted(implemented & set(first)), "verified": sorted(verified & set(first))}
 
 
 # A proof that names no depth looks this many steps from the reset.

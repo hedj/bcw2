@@ -240,7 +240,9 @@ tools/metrics.py    Prints the lines of code, McCabe and Halstead metrics of
                     the code in tools/, without its tests. It also prints the
                     words, the Flesch-Kincaid grade and the ste_lint findings
                     of the prose of the chapters, readme.build and the
-                    Markdown files at the root:
+                    Markdown files at the root. After make check, it
+                    also prints the cognitive burden of the design graph
+                    in build/design.json:
                     ./dev python3 tools/metrics.py
 tools/ste_lint.py   The linter of plain English that doc.linter uses.
 tools/conf.py       The Sphinx configuration of the book.

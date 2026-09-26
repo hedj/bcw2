@@ -507,8 +507,8 @@ class TangleTest:
         assert (files["build/rtl/bcw_params.sv"] ==
                 ("// The PARAMETERs of the book, which tools/bcw.py writes.\npackage bcw_params;\n"
                  "/* verilator lint_off UNUSEDPARAM */\n/* verilator lint_on UNUSEDPARAM */\nendpackage\n"))
-        assert sorted(files) == ["build/checks.json", "build/rtl/bcw_params.sv", "build/rtl/core/core_rotate.v",
-                                 "build/tangle.json"]
+        assert sorted(files) == ["build/checks.json", "build/design.json", "build/rtl/bcw_params.sv",
+                                 "build/rtl/core/core_rotate.v", "build/tangle.json"]
         first = line(GOOD, "module core_rotate")
         assert tangled(files, "build/rtl/core/core_rotate.v") == [
             ("module core_rotate (input wire [2:0] turn, output wire [2:0] next);", CHAPTER, first),
@@ -559,6 +559,40 @@ class TangleTest:
         assert Book({"core/core.rst": GOOD}).files == {}
 
 
+class DesignGraphTest:
+    """build/design.json holds each anchored chunk in the reading order and what each one needs."""
+
+    def design(self, text):
+        return json.loads(Book({"core/core.rst": text}, tangle=True).files["build/design.json"])
+
+    def test_the_nodes_are_the_anchored_chunks_in_the_reading_order(self):
+        assert self.design(GOOD)["nodes"] == [
+            {"anchor": "core.rotation", "label": "REQUIREMENT", "chapter": "core", "position": 0},
+            {"anchor": "core.turn", "label": "DEFINITION", "chapter": "core", "position": 1},
+            {"anchor": "core.core", "label": "DEFINITION", "chapter": "core", "position": 2},
+            {"anchor": "core.timing", "label": "GOAL", "chapter": "core", "position": 3}]
+
+    def test_a_chunk_needs_its_parents_and_the_defined_terms_that_it_uses_but_not_its_own(self):
+        assert self.design(GOOD)["edges"] == [
+            ["core.core", "core.timing", "parent"], ["core.core", "core.turn", "term"],
+            ["core.rotation", "core.core", "term"], ["core.rotation", "core.timing", "parent"],
+            ["core.rotation", "core.turn", "term"], ["core.turn", "core.core", "parent"]]
+
+    def test_a_chunk_needs_what_it_cites_and_what_its_value_names(self):
+        text = GOOD.replace("runs the threads in turn.", "runs the threads in turn, as :rule:`core.rotation` says.")
+        edges = self.design(text + THREADS + WIDTH)["edges"]
+        assert ["core.core", "core.rotation", "citation"] in edges
+        assert ["core.turn", "core.rotation", "citation"] not in edges
+        assert ["core.turn-width", "core.threads", "value"] in edges
+        assert ["core.turn-width", "core.threads", "parent"] in edges
+
+    def test_the_implemented_and_verified_anchors_come_from_sources_checks_and_tools(self):
+        design = json.loads(Book({"core/core.rst": GOOD}, tangle=True,
+                                 tools={"check.py": "# implements: core.turn\n"}).files["build/design.json"])
+        assert design["implemented"] == ["core.rotation", "core.turn"]
+        assert design["verified"] == ["core.rotation"]
+
+
 
 class TangleRecordTest:
     """The tangle keeps a file in build/ that changed after the last tangle, and reports it."""
@@ -572,7 +606,8 @@ class TangleRecordTest:
         files = self.tangle(tmp_path).files
         record = json.loads(files["build/tangle.json"])["files"]
         assert sorted(record) == sorted(name.removeprefix("build/") for name in files
-                                        if name not in ("build/tangle.json", "build/checks.json"))
+                                        if name not in ("build/tangle.json", "build/checks.json",
+                                                        "build/design.json"))
         for name, entry in record.items():
             assert entry["sha256"] == hashlib.sha256((tmp_path / "build" / name).read_bytes()).hexdigest()
 

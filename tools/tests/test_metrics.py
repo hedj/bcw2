@@ -52,7 +52,7 @@ class MetricsTest:
         assert measure(tmp_path, {"tools/a.py": text}) == {"lines": 2, "mccabe": 1, "halstead_volume": total.volume,
                                                            "halstead_effort": total.effort, "words": 0,
                                                            "reading_grade": 0, "ste_violations": 0,
-                                                           "ste_advisory": 0, "documents": {}}
+                                                           "ste_advisory": 0, "documents": {}, "design": None}
 
     def test_lines_of_code_leave_out_blank_lines_comments_and_docstrings(self, tmp_path):
         text = ('"""A module\ndocstring."""\n\nimport os\n\n\n# A comment.\ndef f(x):\n    """One line."""\n'
@@ -142,3 +142,61 @@ class DocumentsTest:
         metrics = measure(tmp_path, files)
         assert set(metrics["documents"]) == {"README.md", "readme.build", "book/x/y.rst"}
         assert metrics["words"] == 6
+
+
+def node(anchor, position, label="REQUIREMENT", chapter="core"):
+    return {"anchor": anchor, "label": label, "chapter": chapter, "position": position}
+
+
+def design(tmp_path, nodes, edges, implemented=(), verified=()):
+    """The design section that tools/metrics.py prints for a design graph in build/design.json."""
+    graph = {"nodes": nodes, "edges": edges, "implemented": list(implemented), "verified": list(verified)}
+    return measure(tmp_path, {"build/design.json": json.dumps(graph)})["design"]
+
+
+class DesignTest:
+    def test_interactivity_counts_the_distinct_elements_that_an_element_needs(self, tmp_path):
+        nodes = [node("a", 0), node("p", 1, "GOAL"), node("t", 2, "DEFINITION"), node("u", 3, "DEFINITION")]
+        edges = [["a", "p", "parent"], ["a", "t", "term"], ["a", "u", "term"], ["a", "u", "citation"]]
+        result = design(tmp_path, nodes, edges)
+        assert (result["elements"], result["interactivity_max"], result["interactivity_mean"]) == (4, 3, 0.75)
+
+    def test_an_element_that_needs_more_than_4_elements_is_an_overload(self, tmp_path):
+        nodes = [node("a", 0)] + [node(f"n{i}", i + 1, "DEFINITION") for i in range(5)]
+        edges = [["a", f"n{i}", "term"] for i in range(5)]
+        result = design(tmp_path, nodes, edges)
+        assert (result["overload"], result["overloaded"]) == (1, ["a"])
+        assert design(tmp_path, nodes, edges[:4])["overload"] == 0
+
+    def test_the_propagation_cost_is_the_mean_share_of_elements_that_depend_on_each_element(self, tmp_path):
+        # c needs b and b needs a: a change to a reaches b and c, a change to b reaches c.
+        nodes = [node("a", 0), node("b", 1), node("c", 2)]
+        result = design(tmp_path, nodes, [["b", "a", "parent"], ["c", "b", "parent"]])
+        assert result["propagation_cost"] == (2 + 1 + 0) / 3 / 3
+
+    def test_the_live_set_holds_what_was_read_and_is_still_needed(self, tmp_path):
+        # t is read first and needed last: it is live at positions 1 and 2.
+        nodes = [node("t", 0, "DEFINITION"), node("x", 1), node("y", 2)]
+        result = design(tmp_path, nodes, [["y", "t", "term"]])
+        assert (result["live_peak"], result["live_mean"]) == (1, 2 / 3)
+
+    def test_a_need_of_a_later_element_is_a_forward_reference(self, tmp_path):
+        nodes = [node("a", 0), node("b", 1), node("c", 2)]
+        result = design(tmp_path, nodes, [["a", "c", "citation"], ["c", "b", "parent"], ["b", "a", "parent"]])
+        assert result["forward_references"] == 1
+
+    def test_the_vocabulary_counts_the_defined_terms_that_each_chapter_uses(self, tmp_path):
+        nodes = [node("t", 0, "DEFINITION", "design"), node("u", 1, "DEFINITION", "design"),
+                 node("a", 2, chapter="core"), node("b", 3, chapter="core"), node("c", 4, chapter="memory")]
+        edges = [["a", "t", "term"], ["b", "t", "term"], ["b", "u", "term"], ["c", "u", "term"], ["c", "a", "parent"]]
+        result = design(tmp_path, nodes, edges)
+        assert result["vocabulary"] == {"core": 2, "memory": 1}
+        assert result["vocabulary_total"] == 2
+
+    def test_requirements_without_an_implementation_or_a_check_are_orphans(self, tmp_path):
+        nodes = [node("a", 0), node("b", 1), node("g", 2, "GOAL")]
+        result = design(tmp_path, nodes, [], implemented=["a"], verified=[])
+        assert (result["unimplemented"], result["unverified"]) == (1, 2)
+
+    def test_without_a_design_graph_there_is_no_design_section(self, tmp_path):
+        assert measure(tmp_path, {"tools/a.py": PLAIN})["design"] is None
