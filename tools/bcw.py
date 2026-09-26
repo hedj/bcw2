@@ -1539,10 +1539,11 @@ def parameter_constants(book):
 
 
 def tangle_parameters(book):
-    """Each PARAMETER that has a value as a constant, in SystemVerilog and in Python.
+    """Each PARAMETER that has a value as a constant of the SystemVerilog package bcw_params.
 
-    It returns (path, [(text, chapter line)]) for each of the two files: the chapter
-    line of a constant is its value line, and None for any other line.
+    It returns [(path, [(text, chapter line)])] for the file of the package: the chapter
+    line of a constant is its value line, and None for any other line. Twins read the
+    constants through tools/twin.py, which takes them from build/checks.json.
     """
     constants = [(chunk, constant_name(chunk.anchor), book.values[chunk.anchor]) for document in book.documents
                  for chunk in document.chunks if chunk.label == "PARAMETER" and chunk.anchor in book.values]
@@ -1550,13 +1551,10 @@ def tangle_parameters(book):
     # A module that reads some of the constants is correct, so the package turns off
     # Verilator's warning on an unused parameter for its own constants only.
     verilog = [(f"// {header}", None), ("package bcw_params;", None), ("/* verilator lint_off UNUSEDPARAM */", None)]
-    python = [(f"# {header}", None)]
     for chunk, name, value in constants:
-        place = [chunk.path, chunk.option_line("value")]
-        verilog.append((f"localparam int {name} = {value};", place))
-        python.append((f"{name} = {value}", place))
+        verilog.append((f"localparam int {name} = {value};", [chunk.path, chunk.option_line("value")]))
     verilog += [("/* verilator lint_on UNUSEDPARAM */", None), ("endpackage", None)]
-    return [("build/rtl/bcw_params.sv", verilog), ("build/model/bcw_params.py", python)]
+    return [("build/rtl/bcw_params.sv", verilog)]
 
 
 def init_environment(app):

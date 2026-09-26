@@ -55,11 +55,11 @@ The make targets
 ----------------
 
 make check    Makes sure that the book obeys the rules of
-              book/doc/doc.rst. Lints each Verilog file with Verilator,
-              reads it with yosys, and loads each twin (the Python model of
-              a rule). Then it runs each check directive with
-              tools/run_checks.py. It passes only when it reports 0
-              findings (breaks of a rule) and no check fails.
+              book/doc/doc.rst, and translates each twin (the model of a
+              rule) with tools/twin.py. Lints each Verilog file with
+              Verilator and reads it with yosys. Then it runs each check
+              directive with tools/run_checks.py. It passes only when it
+              reports 0 findings (breaks of a rule) and no check fails.
 make weave    Builds the reader edition: build/html/index.html and
               build/latex/bcw2.pdf. It ends with an index of code, which
               links each file and each fragment to the block that defines
@@ -69,10 +69,9 @@ make test     Runs the tests of the tools, in tools/tests, with pytest on
               each core of the machine.
 make tangle   Writes the code of the book into build/: the Verilog into
               build/rtl, the twins into build/model, and the value of each
-              PARAMETER into build/rtl/bcw_params.sv and
-              build/model/bcw_params.py. It writes the code of each check
-              into build/checks, and a list of the checks into
-              build/checks.json. It also writes build/tangle.json, with the
+              PARAMETER into build/rtl/bcw_params.sv. It writes the code of
+              each check into build/checks, and a list of the checks and
+              the value of each PARAMETER into build/checks.json. It also writes build/tangle.json, with the
               chapter line of each line that it writes and a hash of each
               file. If a file in build/ changed after the last
               tangle, make tangle keeps the file and reports it, so that

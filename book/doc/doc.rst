@@ -455,9 +455,9 @@ Parameters
 
 .. rationale::
 
-   The tangle writes each PARAMETER as a constant in ``build/rtl/bcw_params.sv`` and
-   ``build/model/bcw_params.py``, so the Verilog and the twins read one value. The weave shows the
-   value where the text cites it.
+   The tangle writes each PARAMETER as a constant in ``build/rtl/bcw_params.sv`` and in
+   ``build/checks.json``, so the Verilog and the twins read one value. The weave shows the value
+   where the text cites it.
 
 Targets
 =======

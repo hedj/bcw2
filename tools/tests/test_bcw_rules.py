@@ -304,9 +304,8 @@ class ParameterTangleTest:
             ("localparam int CORE_TURN_WIDTH = 3;", CHAPTER, width),
             ("/* verilator lint_on UNUSEDPARAM */", None, None),
             ("endpackage", None, None)]
-        assert tangled(files, "build/model/bcw_params.py") == [
-            ("# The PARAMETERs of the book, which tools/bcw.py writes.", None, None),
-            ("CORE_THREADS = 8", CHAPTER, threads), ("CORE_TURN_WIDTH = 3", CHAPTER, width)]
+        # Twins read the constants through tools/twin.py, so no Python file of constants exists.
+        assert "build/model/bcw_params.py" not in files
 
     def test_the_line_mapper_maps_a_constant_to_its_value_line(self, tmp_path):
         text = GOOD + THREADS
@@ -362,13 +361,12 @@ class TargetTest:
         assert "core.aim is a TARGET" in book.findings[0].message
         assert "core.x" not in book.values
 
-    @pytest.mark.parametrize("path", ["build/rtl/bcw_params.sv", "build/model/bcw_params.py"])
-    def test_the_tangle_writes_no_target(self, path):
+    def test_the_tangle_writes_no_target(self):
         text = GOOD + THREADS + target("core.aim", "8") + target("core.threads-aim", "core.threads")
         book = Book({"core/core.rst": text}, tangle=True)
         assert book.tuples() == []
-        assert "CORE_THREADS" in book.files[path]
-        assert "AIM" not in book.files[path]
+        assert "CORE_THREADS" in book.files["build/rtl/bcw_params.sv"]
+        assert "AIM" not in book.files["build/rtl/bcw_params.sv"]
 
 
 def source(target, *code):
@@ -513,13 +511,12 @@ class TangleTest:
 
     def test_each_file_holds_its_code_and_each_line_maps_to_its_chapter_line(self):
         files = Book({"core/core.rst": GOOD}, tangle=True).files
-        # The constant files are always written, and here they hold no constant.
+        # The constant file is always written, and here it holds no constant.
         assert (files["build/rtl/bcw_params.sv"] ==
                 ("// The PARAMETERs of the book, which tools/bcw.py writes.\npackage bcw_params;\n"
                  "/* verilator lint_off UNUSEDPARAM */\n/* verilator lint_on UNUSEDPARAM */\nendpackage\n"))
-        assert files["build/model/bcw_params.py"] == "# The PARAMETERs of the book, which tools/bcw.py writes.\n"
-        assert sorted(files) == ["build/checks.json", "build/model/bcw_params.py", "build/model/core_rotate.py",
-                                 "build/rtl/bcw_params.sv", "build/rtl/core/core_rotate.v", "build/tangle.json"]
+        assert sorted(files) == ["build/checks.json", "build/model/core_rotate.py", "build/rtl/bcw_params.sv",
+                                 "build/rtl/core/core_rotate.v", "build/tangle.json"]
         first = line(GOOD, "def core_rotate")
         assert tangled(files, "build/model/core_rotate.py") == [
             ("def core_rotate(turn):", CHAPTER, first), ("    return {'next': (turn + 1) % 8}", CHAPTER, first + 1)]
