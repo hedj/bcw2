@@ -17,8 +17,8 @@ BOOK = {"core/core.rst": CORE_CHAPTER, "design/design.rst": DESIGN, "guide/guide
 
 
 def weave(chapters, builder, **options):
-    return Book(chapters, builder=builder, index=INDEX, extensions=["bcw", "weave"], latex_documents=LATEX,
-                **options)
+    options.setdefault("index", INDEX)
+    return Book(chapters, builder=builder, extensions=["bcw", "weave"], latex_documents=LATEX, **options)
 
 
 def body(page):
@@ -341,3 +341,56 @@ class PdfTest:
         assert "multiply defined" not in log
         assert "undefined" not in log
 
+
+
+INDEXED = INDEX + "\n.. code-index::\n"
+
+
+@pytest.fixture(scope="module")
+def indexed():
+    """FRAGMENTED_BOOK with an index of code, woven as HTML once."""
+    return weave(FRAGMENTED_BOOK, "html", index=INDEXED)
+
+
+class CodeIndexTest:
+    """The directive code-index lists each file and each fragment, where it is defined and where it is used."""
+
+    def entries(self, book):
+        """(name, [href]) of each entry of the index of code."""
+        index = body(book.output["index.html"])
+        return [(name, re.findall(r'href="([^"]+)"', item))
+                for name, item in re.findall(r'(?s)<li><p><code[^>]*><span class="pre">([^<]+)</span></code>(.*?)</li>',
+                                             index)]
+
+    def test_the_index_follows_a_heading(self, indexed):
+        assert indexed.tuples() == []
+        assert after(body(indexed.output["index.html"]), 'class="rubric">Index of code', "build/model/core_rotate.py")
+
+    def test_each_file_and_then_each_fragment_has_an_entry_with_links(self, indexed):
+        assert self.entries(indexed) == [
+            ("build/model/core_rotate.py", ["core/core.html#file-build/model/core_rotate.py"]),
+            ("build/rtl/core/core_rotate.v", ["core/core.html#file-build/rtl/core/core_rotate.v"]),
+            ("build/rtl/core/pair.v", ["core/core.html#file-build/rtl/core/pair.v"]),
+            (":core.pair-logic", ["core/core.html#fragment-core.pair-logic", "core/core.html#file-build/rtl/core/pair.v"]),
+        ]
+
+    def test_an_entry_names_the_chapter_that_defines_it_and_the_blocks_that_use_it(self, indexed):
+        index = body(indexed.output["index.html"])
+        assert after(index, ":core.pair-logic", "defined in", ">Core<", "used in", "build/rtl/core/pair.v")
+
+    def test_the_block_of_each_file_carries_its_id(self, indexed):
+        page = indexed.output["core/core.html"]
+        assert 'id="file-build/rtl/core/pair.v"' in page and 'id="file-build/model/core_rotate.py"' in page
+
+    def test_without_the_directive_the_index_has_no_index_of_code(self, html):
+        assert "Index of code" not in html.output["index.html"]
+
+    def test_the_latex_links_each_entry(self):
+        tex = weave(FRAGMENTED_BOOK, "latex", index=INDEXED).output["book.tex"]
+        assert r"\hyperref[\detokenize{core/core:file-build/rtl/core/pair.v}]" in tex
+        assert r"\label{\detokenize{core/core:file-build/rtl/core/pair.v}}" in tex
+
+    def test_latexmk_makes_a_pdf_of_the_index_without_undefined_references(self):
+        status, _, log = weave(FRAGMENTED_BOOK, "latex", index=INDEXED, pdf=True).pdf
+        assert status == 0, log
+        assert "undefined" not in log

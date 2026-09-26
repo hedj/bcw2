@@ -23,6 +23,8 @@ and checks nothing itself. It orders and reshapes what bcw.py reads:
   weave.css, so the PDF shows the same colours.
 - Each :param: citation shows the value and unit of its PARAMETER or TARGET,
   and each PARAMETER and TARGET shows its value on its first line.
+- The directive code-index lists each file and each fragment, with a link to
+  the block that defines it and to each block that uses it.
 """
 
 import html
@@ -100,6 +102,33 @@ class ChaptersDirective(SphinxDirective):
         node = nodes.Element()
         self.state.nested_parse(StringList(lines, self.get_source_info()[0]), self.content_offset, node)
         return node.children
+
+
+class CodeIndexDirective(SphinxDirective):
+    """The index of code: each file and each fragment, the chapter that defines it and the blocks that use it.
+
+    Sphinx reads the index after every chapter, so the model holds the whole book.
+    """
+
+    def run(self):
+        book = bcw.model(self.env)
+        docname = self.env.docname
+        chapters = {document.path: document.docname for document in book.documents}
+        entries = nodes.bullet_list()
+        for name, block in [*sorted(book.files.items()), *sorted(book.fragments.items())]:
+            item = nodes.paragraph()
+            item += [nodes.literal(text=name), nodes.Text(": defined in ")]
+            home = chapters[block.path]
+            identity = bcw.fragment_id(name) if bcw.is_fragment(block) else bcw.file_id(name)
+            item += bcw.citation_link("", nodes.Text(self.env.titles[home].astext()), identity, docname)
+            users = dict.fromkeys(user.target for user, _ in book.uses.get(name, []))
+            for number, user in enumerate(users):
+                item += nodes.Text(", used in " if number == 0 else ", ")
+                target = bcw.fragment_id(user) if bcw.is_fragment_name(user) else bcw.file_id(user)
+                item += bcw.citation_link("", nodes.literal(text=user), target, docname)
+            item += nodes.Text(".")
+            entries += nodes.list_item("", item)
+        return [nodes.rubric(text="Index of code"), entries]
 
 
 def link(anchor, docname):
@@ -370,6 +399,7 @@ def setup(app):
     app.connect("config-inited", configure)
     app.add_css_file("weave.css")
     app.add_directive("chapters", ChaptersDirective)
+    app.add_directive("code-index", CodeIndexDirective)
     app.connect("env-before-read-docs", read_index_last)
     # After Sphinx's own numbering, which runs at the default priority of 500.
     app.connect("env-get-updated", number_through, priority=600)

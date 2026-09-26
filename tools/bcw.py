@@ -351,6 +351,8 @@ def read_document(app, doctree):
                 document.blocks.append(block)
                 if is_fragment(block):
                     label(app, docname, child, fragment_id(block.target))
+                elif named(block):
+                    label(app, docname, child, file_id(block.target))
                 if owner is not None:
                     owner.blocks.append(block)
             elif not isinstance(child, nodes.system_message):
@@ -372,9 +374,9 @@ def read_document(app, doctree):
 def label(app, docname, node, name):
     """Make name the id of node, and a label that a citation can link to.
 
-    name is the anchor of a chunk, or fragment-<name> for the first block of the
-    fragment :<name>. Only the first node with a name gets it: doc.anchors reports the
-    other chunks, and the other blocks of a fragment join the first.
+    name is the anchor of a chunk, fragment-<name> for the block of the fragment
+    :<name>, or file-<path> for the block of a file. Only the first node with a name
+    gets it: doc.anchors and doc.one-block report the others.
     """
     std = app.env.domains.standard_domain
     if name is not None and name not in std.anonlabels:
@@ -1094,6 +1096,11 @@ def is_fragment(block):
 def fragment_id(name):
     """The id and label of the block of the fragment name: fragment-<name without its colon>."""
     return "fragment-" + name[1:]
+
+
+def file_id(target):
+    """The id and label of the block of a file: file-<its path>."""
+    return "file-" + target
 
 
 def writes_file(block):
