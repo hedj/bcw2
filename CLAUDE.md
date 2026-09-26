@@ -169,6 +169,10 @@ Do not apply this section to code or to code comments that quote code. Also do n
 - Use exact values instead of "some," "a few," or "soon."
 - Do not use hedging filler: "basically," "just," "should probably," "kind of."
 - Use Australian spelling.
+- Do not use contractions.
+- Do not use em-dashes. Name the relation ("because", "but", "for example"), or write two sentences.
+- Define a concept term at its first use, in fewer than ten words, with one term per sentence: "idempotent (safe to run twice)".
+- Do not define product names, standard names (Postgres, S3, HTTP), or the tool that the text is about.
 
 ### 9.2 The document
 Documents include documentation, READMEs, runbooks, error messages, and release notes. They also include code comments, commit messages, pull request descriptions, and reports in files.
@@ -177,11 +181,10 @@ Documents include documentation, READMEs, runbooks, error messages, and release 
 - Put the condition before the command, with a comma: "If the build fails, read the log."
 - Use simple tenses. Do not use the present perfect ("has completed" becomes "completed"). Do not put an "-ing" verb after a comma.
 - Use only the modals "can", "will", and "must". Do not use "should", "would", "may", "might", or "could". Exception: in a rule of the specification, keep the modal that the rule has. Write "shall" in a new REQUIREMENT.
-- Write complete grammar: no contractions, keep articles, and keep "that".
-- Do not use semicolons or em-dashes.
+- Write complete grammar: keep articles, and keep "that".
+- Do not use semicolons.
 - As a verb, write "make sure that" for check, verify, confirm, validate, and ensure. Write "configuration" for config, settings, and options. Keep each term that the Terms section or a project document defines.
 - Keep noun chains to three words or fewer.
-- Define a concept term at its first use, in fewer than ten words, with one term per sentence. Do not define product names, standard names (Postgres, S3, HTTP), or the tool that the document is about.
 - Name the host, the flag, or the prior step that a command depends on. Do not assume that the reader already has it.
 - State the fact, not its importance. Delete "simply", "seamlessly", "robust", "powerful", "comprehensive", "leverage", "crucial", "in order to", and "it is worth noting". Do not write "not just X, it is Y", decorative triplets, or "in conclusion".
 - Do not use emoji. Do not put a heading over two sentences or fewer.
@@ -190,14 +193,11 @@ Documents include documentation, READMEs, runbooks, error messages, and release 
 
 Before you deliver a document, do this self-check:
 1. Count the words in your three longest sentences. Split each sentence that is over its limit.
-2. Search for "'", "has been", "should", "may", ";", "—", ", making", "check", "verify", and "config". Correct each hit that breaks a rule of this section.
+2. Search for "'", "has been", "should", "may", ";", "—", ", making", "check", "verify", and "config". Correct each hit that breaks a rule of section 9.
 
 ### 9.3 The reply
 Every chat reply follows these rules, in every mode. A report that you give in chat is a reply.
 - Answer in prose: no headers, no bullet lists, no bold, and no tables. Use a code block only when the reader must copy its content.
-- Do not use em-dashes. Name the relation ("because", "but", "for example"), or write two sentences.
-- Define a concept term in fewer than ten words the first time that you use it: "idempotent (safe to run twice)". Do not define a product name.
-- Do not use contractions.
 - Do not use openers ("Certainly", "Great question") or closers ("I hope this helps", "Let me know").
 - Do not shorten quoted error text, security warnings, or confirmations before a destructive action.
 
