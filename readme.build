@@ -57,8 +57,9 @@ The make targets
 make check    Makes sure that the book obeys the rules of
               book/doc/doc.rst. Lints each Verilog file with Verilator,
               reads it with yosys, and loads each twin (the Python model of
-              a rule). It passes only when it reports 0 findings (breaks of
-              a rule).
+              a rule). Then it runs each check directive with
+              tools/run_checks.py. It passes only when it reports 0
+              findings (breaks of a rule) and no check fails.
 make weave    Builds the reader edition: build/html/index.html and
               build/latex/bcw2.pdf. It ends with an index of code, which
               links each file and each fragment to the block that defines
@@ -162,7 +163,25 @@ Each REQUIREMENT must appear in the :verifies: list of a check or in an
 build/checks/<name>.sv. The name is the first anchor of :verifies: and the
 kind, such as core.rotation.test, with -2, -3 and so on for a later check of
 the same name. build/checks.json lists each check with its kind, its options,
-its file and its chapter line. No tool runs the checks yet.
+its file and its chapter line.
+
+make check runs each check with tools/run_checks.py, in the chapter order.
+The first module in the code of a check is its top module. Each check reads
+build/rtl/bcw_params.sv and each Verilog file of build/rtl. A test passes
+when Verilator builds the testbench and the testbench exits 0, so $fatal
+fails it. A prove passes when SymbiYosys proves each assertion with the
+smtbmc engine and Yices. The runner cannot run an equiv check yet: it prints
+a NOTE for it. The work of each check is in build/run/<name>.
+
+The runner prints each result at the chapter line of its check directive.
+After a failure come the lines of the tool that tell why, with each location
+mapped to its chapter line:
+
+    book/core/core.rst:91: FAIL: [check] core.rotation.test: the testbench stopped with exit 1
+        %Error: book/core/core.rst:101: Verilog $stop
+
+The source lines that Verilator quotes under an error keep the line numbers
+of the file in build/checks.
 
 
 The tools
@@ -172,6 +191,7 @@ tools/bcw.py        The Sphinx extension. It reads the chapters, applies
                     the rules to them and tangles the code.
 tools/weave.py      The Sphinx extension that builds the reader edition.
 tools/linemap.py    Maps a location in build/ to its chapter line.
+tools/run_checks.py Runs each check directive of the book.
 tools/ste_lint.py   The linter of plain English that doc.linter uses.
 tools/conf.py       The Sphinx configuration of the book.
 tools/hooks/        The Git pre-push hook.
@@ -185,8 +205,8 @@ pytest runs the tests, and pytest.ini holds its configuration. Each test
 builds a small book in a temporary folder. It then compares the findings,
 the tangled files or the woven pages with the expected result. The helpers
 that build a book, such as Book and the chapter GOOD, are in
-tools/tests/book.py. Some tests run Verilator, Icarus Verilog or latexmk, so
-run the tests inside the environment:
+tools/tests/book.py. Some tests run Verilator, Icarus Verilog, SymbiYosys or
+latexmk, so run the tests inside the environment:
 
     ./dev make test
 

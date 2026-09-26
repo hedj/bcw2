@@ -7,8 +7,9 @@ chapter and line that hold that code:
     verilator --lint-only -Wall build/rtl/bcw_params.sv build/rtl/core/core_rotate.v 2>&1 | \
         python3 tools/linemap.py
 
-It keeps the rest of each line. If it cannot map a location, it leaves the
-location unchanged and adds a note.
+It keeps the rest of each line. A range such as build/checks/x.sv:4.17-6.3,
+which yosys and SymbiYosys print, maps both of its lines. If it cannot map a
+location, it leaves the location unchanged and adds a note.
 
 The tangle of tools/bcw.py writes build/tangle.json, which holds the chapter
 line of each line of each tangled file, by the path of the file in build/. A
@@ -23,9 +24,11 @@ import re
 import sys
 from pathlib import Path
 
+# A range of line.column-line.column. The patterns of LOCATIONS leave a range alone.
+RANGE = re.compile(r"(?P<path>[^\s:\"'()]*build/[^\s:\"'()]+):(?P<line>\d+)(?P<column>\.\d+-)(?P<end>\d+)(?=\.\d)")
 LOCATIONS = [
     re.compile(r'(?P<before>File ")(?P<path>[^"]*build/[^"]+)(?P<middle>", line )(?P<line>\d+)'),
-    re.compile(r"(?P<before>)(?P<path>[^\s:\"'()]*build/[^\s:\"'()]+)(?P<middle>:)(?P<line>\d+)"),
+    re.compile(r"(?P<before>)(?P<path>[^\s:\"'()]*build/[^\s:\"'()]+)(?P<middle>:)(?P<line>\d+)(?!\d|\.\d+-\d)"),
 ]
 NOTE = "  (linemap: no source for this location)"
 
@@ -55,18 +58,28 @@ def rewrite(text):
     """Rewrite every tangled-file location in one line of tool output."""
     unmapped = False
 
+    def relative(path):
+        return os.path.relpath(path) if os.path.isabs(path) else path
+
     def replace(match):
         nonlocal unmapped
-        path = match.group("path")
-        if os.path.isabs(path):
-            path = os.path.relpath(path)
-        result = lookup(path, int(match.group("line")))
+        result = lookup(relative(match.group("path")), int(match.group("line")))
         if result is None:
             unmapped = True
             return match.group(0)
         source, line = result
         return f"{match.group('before')}{source}{match.group('middle')}{line}"
 
+    def replace_range(match):
+        nonlocal unmapped
+        path = relative(match.group("path"))
+        first, last = lookup(path, int(match.group("line"))), lookup(path, int(match.group("end")))
+        if first is None or last is None or first[0] != last[0]:
+            unmapped = True
+            return match.group(0)
+        return f"{first[0]}:{first[1]}{match.group('column')}{last[1]}"
+
+    text = RANGE.sub(replace_range, text)
     for pattern in LOCATIONS:
         text = pattern.sub(replace, text)
     return text + NOTE if unmapped else text

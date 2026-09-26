@@ -2,7 +2,8 @@
 # ./dev make check, or make check in the shell that ./dev opens.
 #
 #   make tangle   tangle the book into build/
-#   make check    the checks of the book, Verilator lint, a read by yosys and a load of each twin
+#   make check    the checks of the book, Verilator lint, a read by yosys, a load of each twin,
+#                 and a run of each check directive
 #   make weave    the reader edition, as build/html/index.html and build/latex/bcw2.pdf
 #   make test     the tests of the tools, with pytest on each core
 #   make clean    remove build/
@@ -11,9 +12,10 @@
 # at its chapter line, and tangles the code into build/. Each Verilog file is
 # linted with build/rtl/bcw_params.sv, the package of PARAMETERs, and read by
 # yosys, which the formal checks use. Each twin finds build/model/bcw_params.py
-# through PYTHONPATH. Every location that
-# make check prints is a line in the book: the output of Verilator and of each
-# twin goes through tools/linemap.py, which reads build/tangle.json.
+# through PYTHONPATH. tools/run_checks.py then runs each check directive that
+# build/checks.json lists. Every location that make check prints is a line in
+# the book: the output of Verilator, of each twin and of each check goes through
+# tools/linemap.py, which reads build/tangle.json.
 
 # make finds bash on the PATH of the environment. NixOS has no /bin/bash.
 SHELL := bash
@@ -43,6 +45,7 @@ check:
 	@for f in $$(find build/model -name '*.py' | sort); do \
 	    PYTHONPATH=build/model $(PY) -c 'import runpy, sys; runpy.run_path(sys.argv[1])' "$$f" 2>&1 | $(MAP) || exit 1; \
 	done
+	$(PY) tools/run_checks.py
 
 # The weave reports findings but does not stop on them: make check is the gate.
 weave:

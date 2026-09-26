@@ -110,8 +110,26 @@ class LinemapTest:
         for text in [f"{VERILOG}:99: out of range", "build/rtl/none.v:3: no such file"]:
             assert linemap.rewrite(text) == text + linemap.NOTE
 
+    def test_a_range_maps_both_of_its_lines(self):
+        # yosys and SymbiYosys give a place as line.column-line.column.
+        first, last = line(CHAPTER, "module core_pair"), line(CHAPTER, "endmodule")
+        assert linemap.rewrite(f"Assert failed in m: {VERILOG}:1.5-3.9 (x)") == \
+            f"Assert failed in m: {SOURCE}:{first}.5-{last}.9 (x)"
+
+    def test_a_range_with_an_unmappable_end_is_kept_with_a_note(self):
+        assert linemap.rewrite(f"{VERILOG}:1.5-99.9") == f"{VERILOG}:1.5-99.9" + linemap.NOTE
+
     def test_a_line_without_a_location_is_unchanged(self):
         assert self.filter("%Error: Cannot continue\n") == "%Error: Cannot continue\n"
+
+
+def test_a_range_across_two_chapters_is_kept_with_a_note(tmp_path, monkeypatch):
+    # A fragment from another chapter can put the two ends of a range in two chapters.
+    (tmp_path / "build").mkdir()
+    (tmp_path / "build" / "tangle.json").write_text(
+        '{"files": {"checks/x.sv": {"sha256": "", "lines": [["book/a/a.rst", 5], ["book/b/b.rst", 9]]}}}')
+    monkeypatch.chdir(tmp_path)
+    assert linemap.rewrite("build/checks/x.sv:1.1-2.3") == "build/checks/x.sv:1.1-2.3" + linemap.NOTE
 
 
 FRAGMENTS = """\
