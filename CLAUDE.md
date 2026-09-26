@@ -69,6 +69,22 @@ When creating any artefact (code, APIs, schemas, documentation, infrastructure) 
 
 ---
 
+## Complexity Measures
+
+Measure complexity with numbers, not adjectives. Run `./dev python3 tools/metrics.py` before and after every edit of code or documents, and report both results.
+
+* **Code** (each `.py` file under `tools/`, without `tools/tests/`):
+  * **SLOC:** lines of code, without blank lines, comments, and docstrings.
+  * **McCabe complexity:** independent paths through each function, summed.
+  * **Halstead volume and effort:** summed over the files.
+* **Documents** (the prose of `book/**/*.rst`, `readme.build`, and each `*.md` file at the root, without code blocks and inline code):
+  * **Word count.**
+  * **Reading level:** Flesch-Kincaid grade of all the prose together. Lower is easier.
+  * **STE violations:** the hard findings of `tools/ste_lint.py`. Report its advisory findings (passive voice, compound tenses) separately.
+* **No worse:** An edit that claims to simplify must not increase any of these measures for the whole system. If one measure gets worse, report the edit as a trade-off, with every measure before and after.
+
+---
+
 ## Output Structuring Rules
 
 To ensure rapid visual scanning and minimal cognitive friction, structure all technical outputs using this layout:
