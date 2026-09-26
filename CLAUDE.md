@@ -159,7 +159,7 @@ Both you and humans commit to this repository.
 ## 9. Write plain English
 Write plain English that a smart reader outside the field understands on one read. Follow the spirit of ASD-STE100 Simplified Technical English. Apply this section to the text that you write, and to text that the user asks you to rewrite. Section 9.1 applies to all of that text. Sections 9.2 and 9.3 give the rules for the two registers: the document and the reply.
 
-Do not apply this section to code or to code comments that quote code. Also do not apply it to marketing copy that the user asks for.
+Do not apply this section to code or to code comments that quote code.
 
 ### 9.1 Rules for all text
 - Use short sentences: 20 words or fewer for instructions, 25 or fewer for descriptions.
