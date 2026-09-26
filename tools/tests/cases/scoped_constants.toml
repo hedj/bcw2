@@ -1,0 +1,29 @@
+# doc.scoped-constants
+
+[[case]]
+name = "an import of bcw_params in a Verilog block is a finding on its line"
+append = '''
+
+.. source:: build/rtl/core/count.v
+
+   module count
+       import bcw_params::*;
+       (output wire [7:0] n);
+       assign n = 8'(CORE_THREADS);
+   endmodule
+'''
+findings = [
+    {check = "scoped-constants", at = "import bcw_params::*;"},
+]
+
+[[case]]
+name = "a scoped name passes"
+append = '''
+
+.. source:: build/rtl/core/count.v
+
+   module count (output wire [7:0] n);
+       assign n = 8'(bcw_params::CORE_THREADS);
+   endmodule
+'''
+findings = []

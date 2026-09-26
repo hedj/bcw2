@@ -409,6 +409,12 @@ Parameters
 
    No constant name shall belong to more than one PARAMETER.
 
+.. requirement:: doc.scoped-constants
+   :parent: doc.one-source
+
+   Where a code block holds Verilog, the code block shall put ``bcw_params::`` before each
+   constant name.
+
 .. requirement:: doc.param-citations
    :parent: doc.traceable
 

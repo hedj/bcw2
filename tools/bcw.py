@@ -1197,6 +1197,24 @@ def check_one_block(model):
                 first[name] = block
 
 
+# An import of the package of the constants in Verilog, which yosys 0.62 cannot read in a module header.
+PACKAGE_IMPORT = re.compile(r"^\s*import\s+bcw_params\s*::")
+
+
+# implements: doc.scoped-constants
+def check_scoped_constants(documents):
+    for document in documents:
+        for block in document.blocks:
+            if block.kind != "source":
+                continue
+            for offset, text in enumerate(block.text.splitlines()):
+                if PACKAGE_IMPORT.match(text):
+                    yield Finding(document.path, block.first + offset, "scoped-constants",
+                                  block.chunk.anchor if block.chunk else None,
+                                  "the Verilog imports bcw_params, which yosys cannot read in a module header",
+                                  "name each constant by its scope, such as bcw_params::CORE_THREADS")
+
+
 # implements: doc.whole-twins
 def check_whole_twins(documents):
     for document in documents:
@@ -1252,6 +1270,7 @@ def check(model, retired=(), tools=(), general=None):
     findings += check_fragments_used(model)
     findings += check_fragment_cycles(model)
     findings += check_whole_twins(documents)
+    findings += check_scoped_constants(documents)
     findings += check_one_block(model)
     if general is not None:
         findings += check_known_words(documents, general)

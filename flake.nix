@@ -19,6 +19,15 @@
             (pkgs.python3.withPackages (ps: [ ps.sphinx ps.z3-solver ps.pytest ps.pytest-xdist ]))
             pkgs.verilator
             pkgs.iverilog
+            # The formal tools: yosys writes a module as SMT for z3, and SymbiYosys
+            # proves properties with the solver Yices.
+            pkgs.yosys
+            pkgs.sby
+            pkgs.yices
+            # The FPGA tools for the ECP5: nextpnr places and routes, and ecppack of
+            # trellis writes the bitstream.
+            pkgs.nextpnr
+            pkgs.trellis
             # For make weave: latexmk, the LaTeX packages that the LaTeX of Sphinx
             # loads, and the fonts that tools/weave.py sets (Times, Helvetica and
             # Courier).

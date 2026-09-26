@@ -11,15 +11,17 @@ The environment
 Nix pins every tool that the book uses. flake.nix names the tools, and
 flake.lock records the release of nixpkgs that they come from. So every
 machine uses the same versions: Python 3.13, Sphinx 9.1, Verilator 5.048,
-Icarus Verilog 13.0 and TeX Live 2025.
+Icarus Verilog 13.0, yosys 0.62, SymbiYosys 0.61, Yices 2.7.0, z3 4.16,
+nextpnr 0.10 with ecppack of trellis for the ECP5, and TeX Live 2025.
 
 1. Install Nix. The instructions are at https://nixos.org/download.
 2. Run ./dev to open a shell in the environment.
 3. Or run ./dev followed by one command, for example: ./dev make check
 
-The first run of ./dev downloads about 2.7 GB of tools into /nix/store.
-Later runs take a few seconds. ./dev also sets the Git configuration
-core.hooksPath to tools/hooks, so that the pre-push hook runs.
+The first run of ./dev puts about 2.1 GiB of tools into /nix/store (the size
+that nix path-info -S gives for the environment). Later runs take a few
+seconds. ./dev also sets the Git configuration core.hooksPath to tools/hooks,
+so that the pre-push hook runs.
 
 A Nix from a distribution package, such as the nix package of Arch Linux or
 CachyOS, runs each build through a daemon (a background service), nix-daemon.
@@ -53,9 +55,10 @@ The make targets
 ----------------
 
 make check    Makes sure that the book obeys the rules of
-              book/doc/doc.rst. Lints each Verilog file with Verilator, and
-              loads each twin (the Python model of a rule). It passes only
-              when it reports 0 findings (breaks of a rule).
+              book/doc/doc.rst. Lints each Verilog file with Verilator,
+              reads it with yosys, and loads each twin (the Python model of
+              a rule). It passes only when it reports 0 findings (breaks of
+              a rule).
 make weave    Builds the reader edition: build/html/index.html and
               build/latex/bcw2.pdf. It ends with an index of code, which
               links each file and each fragment to the block that defines

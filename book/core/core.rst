@@ -74,10 +74,9 @@ Rotation
 .. source:: build/rtl/core/core_rotate.v
    :implements: core.rotation
 
-   module core_rotate
-       import bcw_params::*;
-       (input wire [CORE_TURN_WIDTH-1:0] turn, output wire [CORE_TURN_WIDTH-1:0] next);
-       assign next = (turn == CORE_TURN_WIDTH'(CORE_THREADS - 1)) ? '0 : turn + 1'b1;
+   module core_rotate (input wire [bcw_params::CORE_TURN_WIDTH-1:0] turn,
+                       output wire [bcw_params::CORE_TURN_WIDTH-1:0] next);
+       assign next = (turn == bcw_params::CORE_TURN_WIDTH'(bcw_params::CORE_THREADS - 1)) ? '0 : turn + 1'b1;
    endmodule
 
 .. rationale::
