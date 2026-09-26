@@ -4,8 +4,11 @@ Each test changes one thing in GOOD from tools/tests/book.py, and expects exactl
 findings of the rule that the change breaks.
 """
 
+import hashlib
+import json
 import signal
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -1143,6 +1146,74 @@ class TangleTest:
     def test_without_a_root_nothing_is_tangled(self):
         assert Book({"core/core.rst": GOOD}).files == {}
 
+
+
+class TangleRecordTest:
+    """The tangle keeps a file in build/ that changed after the last tangle, and reports it."""
+
+    PATH = "build/rtl/core/core_rotate.v"
+
+    def tangle(self, root, text=GOOD):
+        return Book({"core/core.rst": text}, tangle=True, root=root)
+
+    def test_the_record_holds_the_sha256_of_each_file(self, tmp_path):
+        files = self.tangle(tmp_path).files
+        record = json.loads(files["build/tangle.json"])["files"]
+        assert sorted(record) == sorted(name.removeprefix("build/") for name in files if name != "build/tangle.json")
+        for name, entry in record.items():
+            assert entry["sha256"] == hashlib.sha256((tmp_path / "build" / name).read_bytes()).hexdigest()
+
+    def test_a_file_edited_by_hand_is_kept_and_reported(self, tmp_path):
+        first = self.tangle(tmp_path)
+        (tmp_path / self.PATH).write_text("// my edit\n")
+        second = self.tangle(tmp_path)
+        assert (tmp_path / self.PATH).read_text() == "// my edit\n"
+        assert (f"WARNING: [tangle] {self.PATH}: the file changed after the last tangle, so the tangle kept it"
+                in second.warnings)
+        assert "fix: delete the file to tangle it again" in second.warnings
+        # The record keeps the hash of the last tangle, so the next tangle reports the file again.
+        assert (json.loads(second.files["build/tangle.json"])["files"]["rtl/core/core_rotate.v"] ==
+                json.loads(first.files["build/tangle.json"])["files"]["rtl/core/core_rotate.v"])
+        assert "[tangle]" in self.tangle(tmp_path).warnings
+
+    def test_a_file_that_nobody_edited_is_tangled_again(self, tmp_path):
+        self.tangle(tmp_path)
+        second = self.tangle(tmp_path, GOOD.replace("turn + 3'd1;", "turn + 3'd2;"))
+        assert "3'd2" in (tmp_path / self.PATH).read_text()
+        assert "[tangle]" not in second.warnings
+
+    def test_a_deleted_file_is_tangled_again(self, tmp_path):
+        self.tangle(tmp_path)
+        (tmp_path / self.PATH).unlink()
+        second = self.tangle(tmp_path)
+        assert (tmp_path / self.PATH).exists()
+        assert "[tangle]" not in second.warnings
+
+    def test_a_file_that_the_record_does_not_know_is_kept_and_reported(self, tmp_path):
+        (tmp_path / self.PATH).parent.mkdir(parents=True)
+        (tmp_path / self.PATH).write_text("// not the tangle's\n")
+        book = self.tangle(tmp_path)
+        assert (tmp_path / self.PATH).read_text() == "// not the tangle's\n"
+        assert f"WARNING: [tangle] {self.PATH}: " in book.warnings
+        assert "rtl/core/core_rotate.v" not in json.loads(book.files["build/tangle.json"])["files"]
+
+    def test_a_kept_file_fails_a_build_with_w_and_keep_going(self, tmp_path):
+        self.tangle(tmp_path)
+        tools = Path(bcw.__file__).parent
+        (tmp_path / "conf.py").write_text(f"import sys\nsys.path.insert(0, {str(tools)!r})\nextensions = ['bcw']\n"
+                                          f"bcw_tangle_root = {str(tmp_path)!r}\n")
+        command = [sys.executable, "-m", "sphinx", "-E", "-q", "-W", "--keep-going", "-b", "dummy", "-c",
+                   str(tmp_path), str(tmp_path / "book"), str(tmp_path / "check")]
+        assert subprocess.run(command, capture_output=True).returncode == 0
+        (tmp_path / self.PATH).write_text("// my edit\n")
+        result = subprocess.run(command, capture_output=True, text=True)
+        assert result.returncode == 1, result.stderr
+        assert "[tangle] build/rtl/core/core_rotate.v" in result.stderr
+
+    def test_a_file_that_already_holds_the_tangle_is_not_reported(self, tmp_path):
+        self.tangle(tmp_path)
+        (tmp_path / "build" / "tangle.json").unlink()
+        assert "[tangle]" not in self.tangle(tmp_path).warnings
 
 
 class FragmentTangleTest:

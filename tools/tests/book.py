@@ -118,13 +118,15 @@ class Book:
     temporary folder. builder names the Sphinx builder, and output keeps the text
     of each HTML, CSS and LaTeX file that it writes. index replaces the index, which
     lists the chapters by default. With pdf, latexmk makes a PDF of the LaTeX,
-    and pdf keeps its exit status and the size of the PDF.
+    and pdf keeps its exit status and the size of the PDF. With root, the book is
+    built in that folder, which stays after the build, so that a test can build
+    twice in one folder.
     """
 
     def __init__(self, chapters, general=None, retired=None, tools=None, tangle=False, builder="dummy",
-                 index=None, pdf=False, **overrides):
-        directory = tempfile.TemporaryDirectory()
-        self.root = Path(directory.name)
+                 index=None, pdf=False, root=None, **overrides):
+        directory = tempfile.TemporaryDirectory() if root is None else None
+        self.root = Path(directory.name if root is None else root)
         try:
             source = self.root / "book"
             index = index or "Book\n====\n\n.. toctree::\n\n" + "".join(
@@ -171,7 +173,8 @@ class Book:
                 made = sorted((self.root / "out").glob("*.pdf"))
                 self.pdf = (result.returncode, made[0].stat().st_size if made else 0, result.stdout[-2000:])
         finally:
-            directory.cleanup()
+            if directory is not None:
+                directory.cleanup()
 
     def others(self):
         """(path, line, first line of text) of each warning that is not a finding of the extension."""

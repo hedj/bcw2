@@ -1321,36 +1321,58 @@ def expand(blocks, defined, indent="", active=()):
 def write(path, text):
     """Write text to path, unless the file already holds it."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    if not path.exists() or path.read_text() != text:
-        path.write_text(text)
+    if not path.exists() or path.read_text(encoding="utf-8") != text:
+        path.write_text(text, encoding="utf-8")
+
+
+def sha256(text):
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def tangle(app, exception):
     """Write each tangled file with its fragments in place, the constants, and build/tangle.json.
 
-    build/tangle.json holds the chapter line of each line of each tangled file, by
-    the path of the file in build/. tools/linemap.py reads it.
+    build/tangle.json holds, by the path of each tangled file in build/, the SHA-256
+    of the file as the tangle wrote it and the chapter line of each of its lines.
+    tools/linemap.py reads the lines. Before the tangle writes a file, it compares
+    the file with its SHA-256. A file that changed after the last tangle, or that
+    the tangle did not write, holds work that a new tangle would lose: the tangle
+    keeps it and reports it, and its entry keeps the SHA-256 of the last tangle.
     """
     root = app.config.bcw_tangle_root
     if exception is not None or root is None or app.env.bcw_stopped:
         return
     book = model(app.env)
-    record = tangle_parameters(book, root)
+    outputs = tangle_parameters(book)
     for target, block in book.files.items():
-        lines = expand([block], book.fragments)
-        write(Path(root) / target, "".join(text + "\n" for text, _, _ in lines))
-        record[target.removeprefix("build/")] = [[path, number] for _, path, number in lines]
+        outputs.append((target, [(text, [path, number]) for text, path, number in expand([block], book.fragments)]))
+    path = Path(root) / "build" / "tangle.json"
+    last = json.loads(path.read_text(encoding="utf-8"))["files"] if path.exists() else {}
+    record = {}
+    for target, lines in outputs:
+        name, text = target.removeprefix("build/"), "".join(code + "\n" for code, _ in lines)
+        tangled = Path(root) / target
+        if tangled.exists() and sha256(tangled.read_text(encoding="utf-8")) not in (
+                last.get(name, {}).get("sha256"), sha256(text)):
+            logger.warning(f"[tangle] {target}: the file changed after the last tangle, so the tangle kept it\n"
+                           "    fix: delete the file to tangle it again", type="bcw", subtype="tangle")
+            if name in last:
+                record[name] = last[name]
+            continue
+        write(tangled, text)
+        record[name] = {"sha256": sha256(text), "lines": [place for _, place in lines]}
     # One line for each tangled line, so that a reader can follow the file.
-    files = [f' {json.dumps(name)}: {{"lines": [\n' + ",\n".join(f"  {json.dumps(place)}" for place in lines) + "\n ]}"
-             for name, lines in sorted(record.items())]
-    write(Path(root) / "build" / "tangle.json", '{"files": {\n' + ",\n".join(files) + "\n}}\n")
+    files = [f' {json.dumps(name)}: {{"sha256": {json.dumps(entry["sha256"])}, "lines": [\n'
+             + ",\n".join(f"  {json.dumps(place)}" for place in entry["lines"]) + "\n ]}"
+             for name, entry in sorted(record.items())]
+    write(path, '{"files": {\n' + ",\n".join(files) + "\n}}\n")
 
 
-def tangle_parameters(book, root):
-    """Write each PARAMETER that has a value as a constant, in SystemVerilog and in Python.
+def tangle_parameters(book):
+    """Each PARAMETER that has a value as a constant, in SystemVerilog and in Python.
 
-    It returns the chapter line of each line of the two files, by their paths in
-    build/: the value line of a constant, and None for any other line.
+    It returns (path, [(text, chapter line)]) for each of the two files: the chapter
+    line of a constant is its value line, and None for any other line.
     """
     constants = [(chunk, constant_name(chunk.anchor), book.values[chunk.anchor]) for document in book.documents
                  for chunk in document.chunks if chunk.label == "PARAMETER" and chunk.anchor in book.values]
@@ -1364,11 +1386,7 @@ def tangle_parameters(book, root):
         verilog.append((f"localparam int {name} = {value};", place))
         python.append((f"{name} = {value}", place))
     verilog += [("/* verilator lint_on UNUSEDPARAM */", None), ("endpackage", None)]
-    record = {}
-    for target, lines in [("build/rtl/bcw_params.sv", verilog), ("build/model/bcw_params.py", python)]:
-        write(Path(root) / target, "".join(text + "\n" for text, _ in lines))
-        record[target.removeprefix("build/")] = [place for _, place in lines]
-    return record
+    return [("build/rtl/bcw_params.sv", verilog), ("build/model/bcw_params.py", python)]
 
 
 def init_environment(app):
