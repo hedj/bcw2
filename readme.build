@@ -121,10 +121,10 @@ fragment in place of that line, with the indentation of the line:
        assign b = a;
 
 So the code of a rule can stand next to the rule, and a skeleton elsewhere can
-put a module in order. The blocks of one fragment, or of one file, join in the
-chapter order (doc.chapter-order), which is the order of the reader edition. A
-twin cannot use a fragment, because a twin stays whole. The rules of fragments
-are in the section Fragments of book/doc/doc.rst.
+put a module in order. Each fragment and each file has one code block
+(doc.one-block), so code from another block joins a file only through a
+fragment use. A twin cannot use a fragment, because a twin stays whole. The
+rules of fragments are in the section Fragments of book/doc/doc.rst.
 
 
 The tools

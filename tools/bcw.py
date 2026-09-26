@@ -1047,20 +1047,25 @@ def fragment_uses(block):
 
 
 def fragments(documents):
-    """The blocks of each fragment, by name, in the chapter order."""
+    """The block of each fragment, by name: the first block with that name in the chapter order."""
     result = {}
     for document in book_order(documents):
         for block in document.blocks:
             if is_fragment(block):
-                result.setdefault(block.target, []).append(block)
+                result.setdefault(block.target, block)
     return result
+
+
+def named(block):
+    """The file or the fragment name that the block defines, or None."""
+    return block.target if block.kind == "source" or (block.kind == "twin" and block.target) else None
 
 
 def fragment_graph(documents):
     """The fragments that the blocks of each fragment use, and the fragments that a file uses."""
     graph, roots = {}, set()
-    for name, blocks in fragments(documents).items():
-        graph[name] = {used for block in blocks for _, used, _ in fragment_uses(block)}
+    for name, block in fragments(documents).items():
+        graph[name] = {used for _, used, _ in fragment_uses(block)}
     for document in documents:
         for block in document.blocks:
             if writes_file(block):
@@ -1105,9 +1110,9 @@ def check_fragment_uses(documents):
 def check_fragments_used(documents):
     graph, roots = fragment_graph(documents)
     used = reached(graph, roots)
-    for name, blocks in fragments(documents).items():
+    for name, block in fragments(documents).items():
         if name not in used:
-            yield Finding(blocks[0].path, blocks[0].line, "fragments-used", None,
+            yield Finding(block.path, block.line, "fragments-used", None,
                           f"the fragment {name} reaches no file",
                           f"use it with a line <<{name}>> in a source directive that writes a file")
 
@@ -1115,11 +1120,27 @@ def check_fragments_used(documents):
 # implements: doc.fragment-cycles
 def check_fragment_cycles(documents):
     graph = fragment_graph(documents)[0]
-    for name, blocks in fragments(documents).items():
+    for name, block in fragments(documents).items():
         if name in reached(graph, graph[name]):
-            yield Finding(blocks[0].path, blocks[0].line, "fragment-cycles", None,
+            yield Finding(block.path, block.line, "fragment-cycles", None,
                           f"the fragment {name} reaches itself through its uses",
                           "remove a use from the cycle")
+
+
+# implements: doc.one-block
+def check_one_block(documents):
+    first = {}
+    for document in book_order(documents):
+        for block in document.blocks:
+            name = named(block)
+            if name is None:
+                continue
+            if name in first:
+                yield Finding(document.path, block.line, "one-block", block.chunk.anchor if block.chunk else None,
+                              f"{name} already has a code block, at {first[name].path}:{first[name].line}",
+                              "move this code into that block, or into a fragment that that block uses")
+            else:
+                first[name] = block
 
 
 # implements: doc.whole-twins
@@ -1176,6 +1197,7 @@ def check(documents, retired=(), tools=(), general=None):
     findings += check_fragments_used(documents)
     findings += check_fragment_cycles(documents)
     findings += check_whole_twins(documents)
+    findings += check_one_block(documents)
     if general is not None:
         findings += check_known_words(documents, general)
         findings += check_general_words(documents, general)
@@ -1234,7 +1256,8 @@ def expand(blocks, defined, indent="", active=()):
         for offset, text in enumerate(block.text.splitlines()):
             match = USE.match(text) if block.kind == "source" else None
             if match and match["name"] in defined and match["name"] not in active:
-                lines += expand(defined[match["name"]], defined, indent + match["indent"], active + (match["name"],))
+                lines += expand([defined[match["name"]]], defined, indent + match["indent"],
+                                active + (match["name"],))
             else:
                 lines.append((indent + text if text else text, block.path, block.first + offset))
     return lines
@@ -1262,10 +1285,10 @@ def tangle(app, exception):
     for document in book_order(documents):
         for block in document.blocks:
             if (block.kind == "twin" and block.target) or writes_file(block):
-                files.setdefault(block.target, []).append(block)
+                files.setdefault(block.target, block)
     defined = fragments(documents)
-    for target, blocks in files.items():
-        lines = expand(blocks, defined)
+    for target, block in files.items():
+        lines = expand([block], defined)
         write(Path(root) / target, "".join(text + "\n" for text, _, _ in lines))
         record[target.removeprefix("build/")] = [[path, number] for _, path, number in lines]
     # One line for each tangled line, so that a reader can follow the file.

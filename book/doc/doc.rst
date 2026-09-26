@@ -453,9 +453,7 @@ Fragments
 .. definition:: doc.fragment
    :parent: doc.one-source
 
-   A :dfn:`fragment` is the code of the ``source`` directives with one fragment name, joined in
-   the chapter order. Within a chapter, the directives join in the order of their lines. The
-   code blocks of one file join in the same order.
+   A :dfn:`fragment` is the code of the ``source`` directive with a fragment name.
 
 .. definition:: doc.fragment-use
    :parent: doc.one-source
@@ -484,6 +482,12 @@ Fragments
    :parent: doc.one-source
 
    No fragment shall reach itself through fragment uses.
+
+.. requirement:: doc.one-block
+   :parent: doc.one-source
+
+   Where a code block names a file or a fragment name, the code block shall be the only code block
+   that names it.
 
 .. requirement:: doc.whole-twins
    :parent: doc.one-source

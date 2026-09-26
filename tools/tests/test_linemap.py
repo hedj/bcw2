@@ -29,10 +29,11 @@ Pair
    module core_pair (input wire a, output wire b);
        assign b = a;
    endmodule
+   <<:core.other>>
 
-A second block joins the same file.
+A fragment adds a second module to the same file.
 
-.. source:: build/rtl/core/core_pair.v
+.. source:: :core.other
 
    module core_other (input wire c, output wire d);
        assign d = c
@@ -69,7 +70,7 @@ class LinemapTest:
         assert result.returncode == 0, result.stderr
         return result.stdout
 
-    def test_verilator_error_in_the_second_block_maps_to_its_chapter_line(self):
+    def test_verilator_error_in_the_fragment_maps_to_its_chapter_line(self):
         result = subprocess.run(["verilator", "--lint-only", VERILOG], capture_output=True, text=True)
         assert f"%Error: {VERILOG}:6:1: syntax error" in result.stderr
         assert f"%Error: {SOURCE}:{line(CHAPTER, 'module core_other') + 2}:1: syntax error" in \
