@@ -303,3 +303,21 @@ findings = [
 [[case.replace]]
 old = "          return {'next': (turn + 1) % 8}\n"
 new = "          return {'next': turn if turn == 1 else turn == 2}\n"
+
+[[case]]
+name = "a power that is too wide only for wide inputs passes"
+findings = []
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': turn ** 66}\n"
+
+[[case]]
+name = "a constant too wide for any input is a finding on the line of its function"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "def core_rotate(turn):"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': 2 ** 300}\n"

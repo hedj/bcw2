@@ -32,6 +32,9 @@ import z3
 
 # The widest bit-vector that a translation can use.
 LIMIT = 256
+# The width of each input when errors translates a twin. No real port is narrower, so the
+# check gives no false finding of the limit.
+CHECK_WIDTH = 1
 COMPARISONS = {ast.Eq: operator.eq, ast.NotEq: operator.ne, ast.Lt: operator.lt, ast.LtE: operator.le,
                ast.Gt: operator.gt, ast.GtE: operator.ge}
 ARITHMETIC = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul}
@@ -116,9 +119,12 @@ def translate(text, function, inputs, constants):
 def errors(text, constants):
     """The (line, message) of each form outside the language in a twin, in the order found.
 
-    Each function is translated on its own, with an input of 1 bit for each argument.
-    The width of the inputs changes no error but the limit of LIMIT bits, which
-    tools/run_checks.py applies with the real widths.
+    Each function is translated on its own, with an input of CHECK_WIDTH bits for each
+    argument. The width of the inputs changes one error only: the limit of LIMIT bits. An
+    interval can only grow when the interval of an input grows, and no real port is
+    narrower than 1 bit. So a limit error at 1 bit holds for every real port, and the check
+    gives no false finding. A twin that exceeds the limit only at its real widths passes
+    here, and tools/run_checks.py reports it with those widths.
     """
     try:
         defined = functions(text)
@@ -127,8 +133,8 @@ def errors(text, constants):
     found = {}
     for name, function in defined.items():
         try:
-            translate(text, name, {argument.arg: z3.BitVec(argument.arg, 1) for argument in function.args.args},
-                      constants)
+            translate(text, name, {argument.arg: z3.BitVec(argument.arg, CHECK_WIDTH)
+                                   for argument in function.args.args}, constants)
         except TwinError as error:
             found.setdefault((error.line, str(error)))
     return list(found)
