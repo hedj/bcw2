@@ -1338,6 +1338,8 @@ def tangle(app, exception):
     the file with its SHA-256. A file that changed after the last tangle, or that
     the tangle did not write, holds work that a new tangle would lose: the tangle
     keeps it and reports it, and its entry keeps the SHA-256 of the last tangle.
+    A file of the last tangle that the book no longer tangles is deleted, unless
+    it changed after the last tangle: then the tangle keeps it and reports it.
     """
     root = app.config.bcw_tangle_root
     if exception is not None or root is None or app.env.bcw_stopped:
@@ -1361,6 +1363,18 @@ def tangle(app, exception):
             continue
         write(tangled, text)
         record[name] = {"sha256": sha256(text), "lines": [place for _, place in lines]}
+    # An orphan is a file of the last tangle that the book no longer tangles. The tangle
+    # deletes it, unless it changed after the last tangle: then it holds work, and stays.
+    for name in sorted(set(last) - {target.removeprefix("build/") for target, _ in outputs}):
+        orphan = Path(root) / "build" / name
+        if not orphan.exists():
+            continue
+        if sha256(orphan.read_text(encoding="utf-8")) == last[name].get("sha256"):
+            orphan.unlink()
+            continue
+        logger.warning(f"[tangle] build/{name}: the book no longer tangles the file, but it changed after the last "
+                       "tangle, so the tangle kept it\n    fix: delete the file", type="bcw", subtype="tangle")
+        record[name] = last[name]
     # One line for each tangled line, so that a reader can follow the file.
     files = [f' {json.dumps(name)}: {{"sha256": {json.dumps(entry["sha256"])}, "lines": [\n'
              + ",\n".join(f"  {json.dumps(place)}" for place in entry["lines"]) + "\n ]}"

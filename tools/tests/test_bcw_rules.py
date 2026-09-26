@@ -1210,6 +1210,46 @@ class TangleRecordTest:
         assert result.returncode == 1, result.stderr
         assert "[tangle] build/rtl/core/core_rotate.v" in result.stderr
 
+    EXTRA = "build/rtl/core/extra.v"
+
+    def with_extra(self, root):
+        """Tangle GOOD with one more file, EXTRA, so that a later tangle of GOOD leaves EXTRA an orphan."""
+        return self.tangle(root, GOOD + source(self.EXTRA, "// extra"))
+
+    def recorded(self, book):
+        return json.loads(book.files["build/tangle.json"])["files"]
+
+    def test_an_orphan_that_nobody_edited_is_deleted(self, tmp_path):
+        assert "rtl/core/extra.v" in self.recorded(self.with_extra(tmp_path))
+        book = self.tangle(tmp_path)
+        assert not (tmp_path / self.EXTRA).exists()
+        assert "rtl/core/extra.v" not in self.recorded(book)
+        assert "[tangle]" not in book.warnings
+
+    def test_an_orphan_edited_by_hand_is_kept_and_reported(self, tmp_path):
+        first = self.with_extra(tmp_path)
+        (tmp_path / self.EXTRA).write_text("// my edit\n")
+        book = self.tangle(tmp_path)
+        assert (tmp_path / self.EXTRA).read_text() == "// my edit\n"
+        assert (f"WARNING: [tangle] {self.EXTRA}: the book no longer tangles the file, but it changed after the "
+                "last tangle, so the tangle kept it") in book.warnings
+        assert self.recorded(book)["rtl/core/extra.v"] == self.recorded(first)["rtl/core/extra.v"]
+        assert f"[tangle] {self.EXTRA}" in self.tangle(tmp_path).warnings
+
+    def test_an_orphan_that_someone_deleted_leaves_the_record(self, tmp_path):
+        self.with_extra(tmp_path)
+        (tmp_path / self.EXTRA).unlink()
+        book = self.tangle(tmp_path)
+        assert "rtl/core/extra.v" not in self.recorded(book)
+        assert "[tangle]" not in book.warnings
+
+    def test_a_file_that_the_tangle_never_wrote_stays(self, tmp_path):
+        self.tangle(tmp_path)
+        (tmp_path / "build/rtl/notes.txt").write_text("my notes\n")
+        book = self.tangle(tmp_path)
+        assert (tmp_path / "build/rtl/notes.txt").read_text() == "my notes\n"
+        assert "[tangle]" not in book.warnings
+
     def test_a_file_that_already_holds_the_tangle_is_not_reported(self, tmp_path):
         self.tangle(tmp_path)
         (tmp_path / "build" / "tangle.json").unlink()

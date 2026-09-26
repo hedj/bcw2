@@ -70,7 +70,10 @@ make tangle   Writes the code of the book into build/: the Verilog into
               with the chapter line of each line that it writes and a hash
               of each file. If a file in build/ changed after the last
               tangle, make tangle keeps the file and reports it, so that
-              no edit is lost. Delete the file to tangle it again.
+              no edit is lost. Delete the file to tangle it again. A file
+              of the last tangle that the book no longer tangles is
+              deleted, unless it changed after the last tangle: then make
+              tangle keeps it and reports it too.
 make clean    Removes build/.
 
 Run make check after each edit to the book. Run make test after each edit
