@@ -88,6 +88,7 @@ class Finding:
     anchor: str
     message: str
     fix: str
+    missing: str = None  # the anchor, term, word or fragment that the finding could not find
 
     def __str__(self):
         return f"[{self.check}] {self.anchor or '-'}: {self.message}\n    fix: {self.fix}"
@@ -141,6 +142,15 @@ class Document:
     sections: list = field(default_factory=list)  # (title line, level, title)
     strays: list = field(default_factory=list)  # lines of text outside the title's section
     titles: list = field(default_factory=list)  # the line of each top-level title
+    failed: list = field(default_factory=list)  # a Failed for each directive that docutils dropped
+
+
+@dataclass
+class Failed:
+    """A directive that docutils dropped, and the names that it would have given the book."""
+    path: str
+    line: int
+    names: set
 
 
 # The directives and the role
@@ -332,6 +342,39 @@ def normalise(text):
     return " ".join(re.sub(r"[*_]", "", text).lower().split())
 
 
+# A directive line, with the first word of its argument, and a term that :dfn: defines.
+DIRECTIVE = re.compile(r"^[ \t]*\.\. [\w-]+::[ \t]*(?P<argument>\S*)", re.MULTILINE)
+DFN = re.compile(r":dfn:`(?P<term>[^`]+)`")
+
+
+def lost_names(text):
+    """The names that the text of a dropped directive would give the book.
+
+    These are the argument of the directive and of each directive inside it, each
+    term that :dfn: defines and each word of that term, each :implements: entry and
+    each fragment that a line of it uses.
+    """
+    names = {match["argument"] for match in DIRECTIVE.finditer(text)} - {""}
+    for match in DFN.finditer(text):
+        names.add(normalise(match["term"]))
+        names.update(normalise(match["term"]).split())
+    for match in re.finditer(r"^[ \t]*:implements:(?P<entries>.*)$", text, re.MULTILINE):
+        names.update(entry.strip() for entry in match["entries"].split(","))
+    names.update(match["name"] for line in text.splitlines() if (match := USE.match(line)))
+    return names
+
+
+def point_back(documents, findings):
+    """Give each finding of a name that a dropped directive would give a fix that names that directive."""
+    failed = {name: item for document in documents for item in document.failed for name in item.names}
+    for finding in findings:
+        if finding.missing in failed:
+            item = failed[finding.missing]
+            finding.fix = (f"correct the directive at {item.path}:{item.line} first, because it failed, "
+                           f"and it would give {finding.missing}")
+    return findings
+
+
 def read_document(app, doctree):
     """Turn a chapter into a Document, and keep it in the environment."""
     docname = app.env.docname
@@ -379,6 +422,10 @@ def read_document(app, doctree):
                     walk(child, level, top, section, owner)
 
     walk(doctree, 0, 0, None, None)
+    for message in doctree.findall(nodes.system_message):
+        text = next((child.astext() for child in message.children if isinstance(child, nodes.literal_block)), "")
+        if message["level"] >= 3 and DIRECTIVE.match(text):
+            document.failed.append(Failed(path, message["line"], lost_names(text)))
     for child in doctree.children:
         if not isinstance(child, (nodes.section, nodes.comment, nodes.target)) and child.line is not None:
             document.strays.append(child.line)
@@ -671,7 +718,7 @@ def check_implemented(documents, tools):
                 yield Finding(chunk.path, chunk.line, "implemented", chunk.anchor,
                               "no source directive and no check implements the REQUIREMENT",
                               "name it in an :implements: list or an implements: comment, "
-                              "or set :impl: none")
+                              "or set :impl: none", chunk.anchor)
 
 
 # implements: doc.references
@@ -679,24 +726,24 @@ def check_references(documents, anchors, tools):
     fix = "name an existing anchor, and separate the entries of a list with commas"
     for path, number, anchor in tools:
         if anchor not in anchors:
-            yield Finding(path, number, "references", None, f"{anchor} is not an anchor in the book", fix)
+            yield Finding(path, number, "references", None, f"{anchor} is not an anchor in the book", fix, anchor)
     for document in documents:
         for chunk in document.chunks:
             if "parent" in chunk.options:
                 for entry in chunk.options["parent"].split(","):
                     if entry.strip() not in anchors:
                         yield Finding(chunk.path, chunk.option_line("parent"), "references", chunk.anchor,
-                                      f"the parent {entry.strip()!r} is not an anchor in the book", fix)
+                                      f"the parent {entry.strip()!r} is not an anchor in the book", fix, entry.strip())
         for block in document.blocks:
             if block.kind == "source" and "implements" in block.options:
                 for entry in implements(block):
                     if entry not in anchors:
                         yield Finding(document.path, block.line, "references", None,
-                                      f"the :implements: entry {entry!r} is not an anchor in the book", fix)
+                                      f"the :implements: entry {entry!r} is not an anchor in the book", fix, entry)
         for number, anchor, _ in document.citations:
             if anchor not in anchors:
                 yield Finding(document.path, number, "references", None,
-                              f"the citation {anchor} names no anchor in the book", fix)
+                              f"the citation {anchor} names no anchor in the book", fix, anchor)
 
 
 # implements: doc.reaches-goal
@@ -759,7 +806,7 @@ def check_ears(documents):
                 actor = normalise(DETERMINER.sub("", match.group("actor")))
                 if actor not in terms:
                     yield Finding(chunk.path, number, "ears", chunk.anchor,
-                                  f"the actor {actor!r} is not a defined term", fix)
+                                  f"the actor {actor!r} is not a defined term", fix, actor)
 
 
 # implements: doc.vocabulary
@@ -826,7 +873,7 @@ def check_known_words(documents, general):
                     yield Finding(chunk.path, words[index][1], "known-words", chunk.anchor,
                                   f"{words[index][0]!r} is not a known word",
                                   "define it in a DEFINITION, list it in book/general-words.txt, "
-                                  "or put it in a quotation")
+                                  "or put it in a quotation", words[index][0])
                 index += max(size, 1)
 
 
@@ -904,7 +951,11 @@ FUNCTIONS = {"clog2": lambda number: max(0, number - 1).bit_length(), "min": min
 
 
 class NoValue(Exception):
-    """A value that does not evaluate, with the reason as its message."""
+    """A value that does not evaluate, with the reason as its message, and the anchor that it misses."""
+
+    def __init__(self, reason, missing=None):
+        super().__init__(reason)
+        self.missing = missing
 
 
 def constant_name(anchor):
@@ -933,7 +984,9 @@ def compute(node, names):
 
 
 def parameter_values(documents):
-    """The value of each PARAMETER and TARGET that evaluates, and the reason for each that does not.
+    """The value of each PARAMETER and TARGET that evaluates, and (chunk, reason, missing) for each that does not.
+
+    missing is the anchor that a value names and the book does not have, or None.
 
     A value names a PARAMETER by its anchor, and never a TARGET. The anchors become Python
     names before the parse, because Python would read a hyphen as a minus sign.
@@ -943,7 +996,7 @@ def parameter_values(documents):
         for chunk in document.chunks:
             if chunk.label in VALUED and chunk.anchor is not None:
                 chunks.setdefault(chunk.anchor, chunk)
-    values, failures = {}, {}
+    values, failures, missing = {}, {}, {}
 
     def evaluate(anchor, path):
         if anchor in values or anchor in failures:
@@ -962,7 +1015,7 @@ def parameter_values(documents):
             tree = ast.parse(source, mode="eval")
             for other in names.values():
                 if other not in chunks:
-                    raise NoValue(f"{other} is not a PARAMETER in the book")
+                    raise NoValue(f"{other} is not a PARAMETER in the book", other)
                 if chunks[other].label == "TARGET":
                     raise NoValue(f"{other} is a TARGET, and a value names only PARAMETERs")
                 if other in path + [anchor]:
@@ -981,22 +1034,23 @@ def parameter_values(documents):
             failures.setdefault(anchor, "the value is not an expression")
         except NoValue as error:
             failures.setdefault(anchor, str(error))
+            missing.setdefault(anchor, error.missing)
         except (ArithmeticError, TypeError, ValueError) as error:
             failures.setdefault(anchor, f"the value does not evaluate: {error}")
 
     for anchor in chunks:
         evaluate(anchor, [])
-    return values, {anchor: (chunks[anchor], reason) for anchor, reason in failures.items()}
+    return values, {anchor: (chunks[anchor], reason, missing.get(anchor)) for anchor, reason in failures.items()}
 
 
 # implements: doc.parameter-values
 # implements: doc.target-values
 def check_parameter_values(documents):
-    for anchor, (chunk, reason) in parameter_values(documents)[1].items():
+    for anchor, (chunk, reason, missing) in parameter_values(documents)[1].items():
         name = "target-values" if chunk.label == "TARGET" else "parameter-values"
         yield Finding(chunk.path, chunk.option_line("value"), name, anchor, reason,
                       "write the value as an integer, or an expression of integers, PARAMETER anchors, "
-                      "+ - * // % ** and clog2, min and max, with a space on each side of a minus sign")
+                      "+ - * // % ** and clog2, min and max, with a space on each side of a minus sign", missing)
 
 
 # implements: doc.constant-names
@@ -1120,7 +1174,7 @@ def check_fragment_uses(documents):
                 if name not in defined:
                     yield Finding(document.path, number, "fragment-uses", None,
                                   f"no source directive defines the fragment {name}",
-                                  f"define it with .. source:: {name}, or name a fragment that exists")
+                                  f"define it with .. source:: {name}, or name a fragment that exists", name)
 
 
 # implements: doc.fragments-used
@@ -1131,7 +1185,7 @@ def check_fragments_used(documents):
         if name not in used:
             yield Finding(blocks[0].path, blocks[0].line, "fragments-used", None,
                           f"the fragment {name} reaches no file",
-                          f"use it with a line <<{name}>> in a source directive that writes a file")
+                          f"use it with a line <<{name}>> in a source directive that writes a file", name)
 
 
 # implements: doc.fragment-cycles
@@ -1219,7 +1273,7 @@ def check(documents, retired=(), tools=(), general=None):
     if general is not None:
         findings += check_known_words(documents, general)
         findings += check_general_words(documents, general)
-    return sorted(findings, key=lambda f: (f.path, f.line, f.check))
+    return sorted(point_back(documents, findings), key=lambda f: (f.path, f.line, f.check))
 
 
 def listed(path):

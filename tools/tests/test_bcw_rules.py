@@ -539,6 +539,92 @@ class DirectiveErrorTest:
         assert "colour" not in block.options
 
 
+class CascadeTest:
+    """Each finding that follows from a directive that failed names the line of that directive in its fix."""
+
+    CORE = ".. definition:: core.core\n   :parent: core.timing\n"
+    # (old text, new text, the line of the directive that fails) of each case.
+    CASES = {
+        "an extra word in an anchor": (".. goal:: core.timing\n", ".. goal:: core.timing extra\n",
+                                       ".. goal:: core.timing extra"),
+        "a repeated option": (ROTATION, ROTATION + "   :parent: core.core\n", ".. requirement:: core.rotation"),
+        "text right under the options": (CORE + "\n   The :dfn:`core`", CORE + "   The :dfn:`core`",
+                                         ".. definition:: core.core"),
+        "a misspelt label": (".. definition:: core.core\n", ".. defnition:: core.core\n", ".. defnition:: core.core"),
+        "an extra word on a source": (".. source:: build/rtl/core/core_rotate.v\n",
+                                      ".. source:: build/rtl/core/core_rotate.v extra\n", ".. source::"),
+    }
+
+    def book(self, old, new, extra=""):
+        text = GOOD.replace(old, new) + extra
+        assert text != GOOD + extra
+        return text, Book({"core/core.rst": text}, GENERAL)
+
+    @pytest.mark.parametrize("case", CASES)
+    def test_each_finding_that_follows_names_the_failed_directive(self, case):
+        old, new, failed = self.CASES[case]
+        text, book = self.book(old, new)
+        number = line(text, failed)
+        assert ("book/core/core.rst", number, "sphinx", None) in book.tuples()
+        assert book.findings
+        for finding in book.findings:
+            assert f"correct the directive at book/core/core.rst:{number} first" in finding.fix, str(finding)
+
+    @pytest.mark.parametrize("case, checks", [("an extra word in an anchor", {"references"}),
+                                              ("text right under the options", {"ears", "known-words", "references"}),
+                                              ("an extra word on a source", {"implemented"})])
+    def test_the_findings_that_follow_are_those_of_the_lost_names(self, case, checks):
+        old, new, _ = self.CASES[case]
+        assert {finding.check for finding in self.book(old, new)[1].findings} == checks
+
+    # (text after GOOD, the line of the directive that fails, the check of the finding that follows).
+    # The fixtures come from further down the file, so each case builds its text when it runs.
+    MORE = {
+        "a fragment": (lambda: SKELETON + source(":core.pair-logic extra", "assign b = a;"),
+                       ".. source:: :core.pair-logic", "fragment-uses"),
+        "the file that uses a fragment": (lambda: SKELETON.replace("pair.v", "pair.v extra") + FRAGMENT,
+                                          ".. source:: build/rtl/core/pair.v", "fragments-used"),
+        "a parameter": (lambda: THREADS.replace("   :unit: threads", "   :unit: threads\n   :unit: threads")
+                        + WIDTH, ".. parameter:: core.threads", "parameter-values"),
+        "a cited goal": (lambda: "\n.. goal:: core.aim extra\n\n   No aim.\n\n.. rationale::\n\n"
+                         "   It serves :rule:`core.aim`.\n", ".. goal:: core.aim", "references"),
+        "a fragment inside a failed goal": (lambda: SKELETON + "\n.. goal:: core.aim extra\n\n   No aim.\n\n"
+                                            "   .. source:: :core.pair-logic\n\n      assign b = a;\n",
+                                            ".. goal:: core.aim", "fragment-uses"),
+    }
+
+    def test_each_word_of_a_lost_term_names_the_failed_directive(self):
+        text = (GOOD + "\n.. definition:: core.slot extra\n   :parent: core.core\n\n"
+                "   A :dfn:`time slot` is a turn of the core.\n\n.. goal:: core.aim\n\n   No time slot can change.\n")
+        book = Book({"core/core.rst": text}, GENERAL)
+        number = line(text, ".. definition:: core.slot")
+        found = [finding for finding in book.findings if finding.check == "known-words"]
+        assert [finding.missing for finding in found] == ["time", "slot"]
+        for finding in found:
+            assert f"correct the directive at book/core/core.rst:{number} first" in finding.fix, str(finding)
+
+    @pytest.mark.parametrize("case", MORE)
+    def test_each_path_of_a_cascade_names_the_failed_directive(self, case):
+        extra, failed, check = self.MORE[case]
+        text = GOOD + extra()
+        book = Book({"core/core.rst": text})
+        number = line(text, failed)
+        assert ("book/core/core.rst", number, "sphinx", None) in book.tuples()
+        [finding] = [finding for finding in book.findings if finding.check == check]
+        assert f"correct the directive at book/core/core.rst:{number} first" in finding.fix, str(finding)
+
+    def test_a_finding_of_a_name_that_no_failed_directive_gives_keeps_its_own_fix(self):
+        old, new, _ = self.CASES["an extra word in an anchor"]
+        text, book = self.book(old, new, parameter("core.x", "1", parent="core.nowhere", text="The core."))
+        [finding] = [f for f in book.findings if "core.nowhere" in f.message]
+        assert finding.fix == "name an existing anchor, and separate the entries of a list with commas"
+
+    def test_a_directive_without_its_anchor_gives_no_pointer(self):
+        text, book = self.book(".. goal:: core.timing\n", ".. goal::\n")
+        assert {finding.check for finding in book.findings} == {"references"}
+        assert not any("correct the directive" in finding.fix for finding in book.findings)
+
+
 class KnownWordsTest:
     """doc.general-word, doc.known-word and doc.known-words"""
 

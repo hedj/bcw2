@@ -84,6 +84,15 @@ of book/doc/doc.rst that the text breaks. The anchor after it names the
 chunk (the labelled block of text) that breaks the rule. The second line
 tells you how to fix the finding.
 
+If docutils cannot read a directive, it reports an ERROR on the directive
+line and leaves the directive out. The anchors, terms and fragments of that
+directive are then missing, so other findings can follow from the one error.
+The fix of each such finding names the line of the directive that failed:
+
+    fix: correct the directive at book/core/core.rst:46 first, because it failed, and it would give core.core
+
+Correct that directive first, then run make check again.
+
 Verilator and the twins report locations in the files of build/.
 tools/linemap.py changes each of these locations to the line of the chapter
 that holds the code. So each location that make check prints is a line in
