@@ -14,7 +14,7 @@ from docutils import nodes
 
 import bcw
 import linemap
-from book import (CORE_CHAPTER, DESIGN, GENERAL, GOOD, THREADS, WIDTH, Book, chapter, findings, line,
+from book import (CORE_CHAPTER, DESIGN, GENERAL, GOOD, STAMP, THREADS, WIDTH, Book, chapter, findings, line,
                   only, parameter, target)
 
 ROTATION = ".. requirement:: core.rotation\n   :parent: core.timing\n"
@@ -302,9 +302,7 @@ class VocabularyTest:
     def test_never_on_a_chunk_that_is_not_a_definition_is_an_error(self, old, new):
         text = GOOD.replace(old, new)
         book = Book({"core/core.rst": text})
-        # The chunk is lost, so the references to its anchor fail too.
-        assert ([f for f in book.tuples() if f[2] == "sphinx"] ==
-                [("book/core/core.rst", line(text, new.splitlines()[0]), "sphinx", None)])
+        assert book.tuples() == [("book/core/core.rst", line(text, new.splitlines()[0]), "sphinx", None)]
         assert 'unknown option: "never"' in book.warnings
 
 
@@ -484,6 +482,61 @@ class AttributeKeysTest:
                             f".. rationale::\n   {first}")
         assert text != GOOD
         assert findings(text) == []
+
+
+class DirectiveErrorTest:
+    """An error in the options or the argument of a directive is one finding: the chunk or the code block stays."""
+
+    # (old text, new text, the directive line of the error) of each case.
+    CASES = {
+        "an unknown option on a goal": (".. goal:: core.timing\n", ".. goal:: core.timing\n   :never: cpu\n",
+                                        ".. goal:: core.timing"),
+        "an unknown option on a definition": (".. definition:: core.core\n   :parent: core.timing\n",
+                                              ".. definition:: core.core\n   :parent: core.timing\n   :colour: red\n",
+                                              ".. definition:: core.core"),
+        "an unknown option on a requirement": (ROTATION, ROTATION + "   :never: cpu\n", ".. requirement:: core.rotation"),
+        "an option on a rationale": (".. rationale::", ".. rationale::\n   :parent: core.core", ".. rationale::"),
+        "an argument on a rationale": (".. rationale::", ".. rationale:: core.why", ".. rationale::"),
+        "an unknown option on a twin": (f"      :stamp: {STAMP}\n", f"      :stamp: {STAMP}\n      :colour: red\n",
+                                        ".. twin::"),
+        "an argument on a twin": ("   .. twin::\n", "   .. twin:: extra\n", ".. twin::"),
+        "an unknown option on a source": ("   :implements: core.rotation\n",
+                                          "   :implements: core.rotation\n   :colour: red\n", ".. source::"),
+    }
+
+    def book(self, case):
+        old, new, directive = self.CASES[case]
+        text = GOOD.replace(old, new)
+        assert text != GOOD
+        return text, directive, Book({"core/core.rst": text}, GENERAL)
+
+    @pytest.mark.parametrize("case", CASES)
+    def test_the_error_is_the_only_finding(self, case):
+        text, directive, book = self.book(case)
+        assert book.tuples() == [("book/core/core.rst", line(text, directive), "sphinx", None)]
+
+    @pytest.mark.parametrize("case, anchor", [("an unknown option on a goal", "core.timing"),
+                                              ("an unknown option on a requirement", "core.rotation")])
+    def test_the_chunk_keeps_its_known_options_only(self, case, anchor):
+        _, _, book = self.book(case)
+        [chunk] = [chunk for chunk in book.documents[0].chunks if chunk.anchor == anchor]
+        assert "never" not in chunk.options and "never" not in chunk.option_lines
+
+    @pytest.mark.parametrize("case", ["an option on a rationale", "an argument on a rationale"])
+    def test_the_rationale_keeps_its_text_without_the_option_or_the_argument(self, case):
+        _, _, book = self.book(case)
+        rationale = next(chunk for chunk in book.documents[0].chunks if chunk.label == "RATIONALE")
+        assert rationale.english == "A thread's instructions are eight cycles apart."
+
+    @pytest.mark.parametrize("case", ["an unknown option on a twin", "an argument on a twin",
+                                      "an unknown option on a source"])
+    def test_the_code_block_keeps_its_code_and_known_options(self, case):
+        _, _, book = self.book(case)
+        kind = "source" if "source" in case else "twin"
+        block = next(block for block in book.documents[0].blocks if block.kind == kind)
+        assert block.text.splitlines()[0] in ("def core_rotate(turn):", "module core_rotate (input wire [2:0] turn, "
+                                              "output wire [2:0] next);")
+        assert "colour" not in block.options
 
 
 class KnownWordsTest:

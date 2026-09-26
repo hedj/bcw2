@@ -150,28 +150,52 @@ class chunk(nodes.General, nodes.Element):
     """A labelled chunk. Its attributes are label, anchor, options and option_lines."""
 
 
-def option_lines(directive):
-    """The line of each option under the directive, by name.
+class AnyOption(dict):
+    """The options of a directive, as an option spec that accepts every name.
 
-    Docutils rejects an unknown option only for a directive that allows some
-    options, and an argument only for a directive that takes some. For any other
-    directive, it reads them as text. This raises the error for both.
+    Docutils drops a directive with an unknown option, so every chunk that names
+    its anchor would fail too. With this spec, docutils keeps the directive, and
+    checked() reports each name that is not a key.
     """
-    lines = {}
+
+    def __missing__(self, name):
+        return directives.unchanged
+
+    def __bool__(self):
+        return True
+
+
+def checked(directive):
+    """The known options of the directive, the line of each, its content and content offset, and its errors.
+
+    Each unknown option and each argument of a directive that takes none is an
+    error on the directive line. The directive keeps its node without them, so
+    that one fault gives one finding. Docutils reads an argument of a directive
+    that takes none as the first lines of the content, up to a blank line.
+    """
+    lines, errors = {}, []
     for offset, text in enumerate(directive.block_text.splitlines()[1:], 1):
         match = re.match(r"\s+:([\w-]+):(\s|$)", text)
         if not match:
             break
-        lines[match.group(1)] = directive.lineno + offset
-    # implements: doc.attribute-keys
-    for name in lines:
-        if name not in (directive.option_spec or {}):
-            raise directive.error(f'unknown option: "{name}".')
+        # implements: doc.attribute-keys
+        if match.group(1) in directive.option_spec:
+            lines[match.group(1)] = directive.lineno + offset
+        else:
+            errors.append(f'Error in "{directive.name}" directive: unknown option: "{match.group(1)}".')
+    options = {name: value for name, value in directive.options.items() if name in directive.option_spec}
+    content, content_offset = directive.content, directive.content_offset
     # implements: doc.labels
     argument = directive.block_text.split("\n")[0].split("::", 1)[1].strip()
     if argument and not (directive.required_arguments or directive.optional_arguments):
-        raise directive.error(f"the {directive.name} directive takes no argument.")
-    return lines
+        errors.append(f"the {directive.name} directive takes no argument.")
+        skip = next((index for index, text in enumerate(content) if not text.strip()), len(content))
+        while skip < len(content) and not content[skip].strip():
+            skip += 1
+        content, content_offset = content[skip:], content_offset + skip
+    reporter = directive.state_machine.reporter
+    return (options, lines, content, content_offset,
+            [reporter.error(message, line=directive.lineno) for message in errors])
 
 
 class ChunkDirective(SphinxDirective):
@@ -179,13 +203,13 @@ class ChunkDirective(SphinxDirective):
     label = None
 
     def run(self):
+        options, lines, content, content_offset, errors = checked(self)
         node = chunk(label=self.label, anchor=self.arguments[0] if self.required_arguments else None,
-                     options=dict(self.options),
-                     title=self.arguments[0] if self.optional_arguments and self.arguments else None)
+                     options=options, title=self.arguments[0] if self.optional_arguments and self.arguments else None)
         node.source, node.line = self.get_source_info()
-        node["option_lines"] = option_lines(self)
-        self.state.nested_parse(self.content, self.content_offset, node)
-        return [node]
+        node["option_lines"] = lines
+        self.state.nested_parse(content, content_offset, node)
+        return [node, *errors]
 
 
 def chunk_directive(label, anchored, options, titled=False):
@@ -195,12 +219,12 @@ def chunk_directive(label, anchored, options, titled=False):
         "required_arguments": 1 if anchored else 0,
         "optional_arguments": 1 if titled else 0,
         "final_argument_whitespace": titled,
-        "option_spec": {name: directives.unchanged for name in options},
+        "option_spec": AnyOption({name: directives.unchanged for name in options}),
     })
 
 
 # The registry is the list of labels and the options of each: docutils rejects
-# any other directive and any other option.
+# any other directive, and checked() any other option.
 # implements: doc.labels
 # implements: doc.attribute-keys
 CHUNK_DIRECTIVES = {
@@ -220,16 +244,16 @@ class CodeDirective(SphinxDirective):
     kind = None
 
     def run(self):
-        option_lines(self)
-        text = "\n".join(self.content)
+        options, _, content, content_offset, errors = checked(self)
+        text = "\n".join(content)
         node = nodes.literal_block(text, text)
         node.source, node.line = self.get_source_info()
         node["bcw"] = self.kind
-        node["options"] = dict(self.options)
-        node["target"] = self.arguments[0] if self.required_arguments else self.options.get("file")
-        node["first"] = self.content_offset + 1
+        node["options"] = options
+        node["target"] = self.arguments[0] if self.required_arguments else options.get("file")
+        node["first"] = content_offset + 1
         node["language"] = language(node["target"], self.kind)
-        return [node]
+        return [node, *errors]
 
 
 def language(target, kind):
@@ -243,17 +267,18 @@ def language(target, kind):
 
 class TwinDirective(CodeDirective):
     kind = "twin"
-    option_spec = {"file": directives.unchanged, "stamp": directives.unchanged}
+    option_spec = AnyOption(file=directives.unchanged, stamp=directives.unchanged)
 
 
 class SourceDirective(CodeDirective):
     kind = "source"
     required_arguments = 1
-    option_spec = {"implements": directives.unchanged}
+    option_spec = AnyOption(implements=directives.unchanged)
 
 
 class CheckDirective(CodeDirective):
     kind = "check"
+    option_spec = AnyOption()
 
 
 class CitationRole(SphinxRole):
