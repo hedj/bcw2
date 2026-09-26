@@ -9,6 +9,7 @@ with each chapter at its path under book/.
 
 import hashlib
 import io
+import json
 import re
 import subprocess
 import tempfile
@@ -236,3 +237,15 @@ def target(anchor, value, parent="core.core", unit=None, text="The number of thr
     lines += [f"   :value: {value}"] if value is not None else []
     lines += [f"   :unit: {unit}"] if unit else []
     return "\n".join(lines) + f"\n\n   {text}\n"
+
+
+def tangled(files, path):
+    """(text, chapter path, chapter line) of each line of the tangled file at path.
+
+    The text comes from the file, and the chapter line from build/tangle.json, whose
+    keys are relative to build/. A line that no chapter line holds gives None twice.
+    """
+    entries = json.loads(files["build/tangle.json"])["files"][path.removeprefix("build/")]["lines"]
+    texts = files[path].splitlines()
+    assert len(entries) == len(texts), (path, len(entries), len(texts))
+    return [(text, *(entry or (None, None))) for text, entry in zip(texts, entries)]

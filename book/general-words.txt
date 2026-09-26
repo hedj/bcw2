@@ -19,7 +19,6 @@ argument
 as
 at
 author
-backslash
 be
 before
 belong
@@ -42,7 +41,6 @@ code
 come
 comment
 completely
-continue
 count
 counter
 cycle

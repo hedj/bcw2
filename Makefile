@@ -12,7 +12,7 @@
 # linted with build/rtl/bcw_params.sv, the package of PARAMETERs, and each twin
 # finds build/model/bcw_params.py through PYTHONPATH. Every location that
 # make check prints is a line in the book: the output of Verilator and of each
-# twin goes through tools/linemap.py.
+# twin goes through tools/linemap.py, which reads build/tangle.json.
 
 # make finds bash on the PATH of the environment. NixOS has no /bin/bash.
 SHELL := bash

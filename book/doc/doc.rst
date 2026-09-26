@@ -490,13 +490,8 @@ Fragments
 
    No twin shall hold a line with the form of a fragment use.
 
-.. requirement:: doc.continuations
-   :parent: doc.traceable
-
-   Where a line of a code block ends in a backslash, the code block shall continue the line with
-   a line of code that is not a fragment use.
-
 .. rationale::
 
    A fragment lets the code of a rule stand next to the rule, while a skeleton puts a module in
-   order. A marker before each fragment traces each tangled line to its chapter line.
+   order. ``make tangle`` writes ``build/tangle.json``, which traces each tangled line to its
+   chapter line.

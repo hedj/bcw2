@@ -15,7 +15,7 @@ from docutils import nodes
 import bcw
 import linemap
 from book import (CORE_CHAPTER, DESIGN, GENERAL, GOOD, STAMP, THREADS, WIDTH, Book, chapter, findings, line,
-                  only, parameter, target)
+                  only, parameter, tangled, target)
 
 ROTATION = ".. requirement:: core.rotation\n   :parent: core.timing\n"
 IMPLEMENTS = "   :implements: core.rotation\n"
@@ -1033,29 +1033,28 @@ class ParamCitationTest:
 class ParameterTangleTest:
     """The tangle writes each PARAMETER as a constant in a SystemVerilog package and a Python module."""
 
-    def test_each_constant_follows_a_marker_that_names_its_value_line(self):
+    def test_each_constant_maps_to_its_value_line(self):
         text = GOOD + THREADS + WIDTH
         files = Book({"core/core.rst": text}, tangle=True).files
         threads, width = line(text, ":value: 8"), line(text, ":value: clog2")
-        assert (files["build/rtl/bcw_params.sv"] ==
-                ("// The PARAMETERs of the book, which tools/bcw.py writes.\n"
-                 "package bcw_params;\n"
-                 "/* verilator lint_off UNUSEDPARAM */\n"
-                 f"// bcw: book/core/core.rst:{threads}\nlocalparam int CORE_THREADS = 8;\n"
-                 f"// bcw: book/core/core.rst:{width}\nlocalparam int CORE_TURN_WIDTH = 3;\n"
-                 "/* verilator lint_on UNUSEDPARAM */\n"
-                 "endpackage\n"))
-        assert (files["build/model/bcw_params.py"] ==
-                ("# The PARAMETERs of the book, which tools/bcw.py writes.\n"
-                 f"# bcw: book/core/core.rst:{threads}\nCORE_THREADS = 8\n"
-                 f"# bcw: book/core/core.rst:{width}\nCORE_TURN_WIDTH = 3\n"))
+        assert tangled(files, "build/rtl/bcw_params.sv") == [
+            ("// The PARAMETERs of the book, which tools/bcw.py writes.", None, None),
+            ("package bcw_params;", None, None),
+            ("/* verilator lint_off UNUSEDPARAM */", None, None),
+            ("localparam int CORE_THREADS = 8;", CHAPTER, threads),
+            ("localparam int CORE_TURN_WIDTH = 3;", CHAPTER, width),
+            ("/* verilator lint_on UNUSEDPARAM */", None, None),
+            ("endpackage", None, None)]
+        assert tangled(files, "build/model/bcw_params.py") == [
+            ("# The PARAMETERs of the book, which tools/bcw.py writes.", None, None),
+            ("CORE_THREADS = 8", CHAPTER, threads), ("CORE_TURN_WIDTH = 3", CHAPTER, width)]
 
     def test_the_line_mapper_maps_a_constant_to_its_value_line(self, tmp_path):
         text = GOOD + THREADS
-        files = Book({"core/core.rst": text}, tangle=True).files
-        path = tmp_path / "bcw_params.sv"
-        path.write_text(files["build/rtl/bcw_params.sv"])
-        assert linemap.lookup(str(path), 5) == ("book/core/core.rst", line(text, ":value: 8"))
+        for name, content in Book({"core/core.rst": text}, tangle=True).files.items():
+            (tmp_path / name).parent.mkdir(parents=True, exist_ok=True)
+            (tmp_path / name).write_text(content)
+        assert linemap.lookup(str(tmp_path / "build/rtl/bcw_params.sv"), 4) == (CHAPTER, line(text, ":value: 8"))
 
     def lint(self, module):
         """The exit status and messages of Verilator -Wall on the package of GOOD + THREADS + WIDTH and module."""
@@ -1154,6 +1153,7 @@ def source(target, *code):
 SKELETON = source("build/rtl/core/pair.v", "module pair (input wire a, output wire b);", "    <<:core.pair-logic>>",
                   "endmodule")
 FRAGMENT = source(":core.pair-logic", "assign b = a;")
+CHAPTER = "book/core/core.rst"
 
 
 class FragmentTest:
@@ -1217,58 +1217,30 @@ class FragmentTest:
         assert "a twin stays whole" in next(f for f in book.findings if f.check == "whole-twins").fix
 
 
-class ContinuationTest:
-    """doc.continuations"""
-
-    CASES = {
-        "the last line of a fragment": (SKELETON + source(":core.pair-logic", "assign b = a + \\"), "a + \\"),
-        "a line before a fragment use": (
-            source("build/rtl/core/pair.v", "module pair (input wire a, output wire b);", "    assign b = a + \\",
-                   "    <<:core.pair-logic>>", "endmodule") + FRAGMENT, "a + \\"),
-        "the last line of a block of a file": (source("build/model/b.py", "RESULT = 1 + \\")
-                                               + source("build/model/b.py", "    1"), "1 + \\"),
-    }
-
-    @pytest.mark.parametrize("case", CASES)
-    def test_a_line_that_ends_in_a_backslash_at_an_edge_is_a_finding_on_its_line(self, case):
-        extra, needle = self.CASES[case]
-        text = GOOD + extra
-        assert findings(text) == [(line(text, needle), "continuations", None)]
-
-    def test_the_last_line_of_a_twin_is_a_finding_with_the_anchor_of_its_rule(self):
-        text = GOOD.replace("return {'next': turn + 1}", "return {'next': turn + 1} \\")
-        assert text != GOOD
-        assert findings(text) == [(line(text, "turn + 1} \\"), "continuations", "core.rotation")]
-
-    def test_a_line_that_ends_in_a_backslash_inside_a_block_passes(self):
-        text = GOOD + source("build/model/b.py", "RESULT = 1 + \\", "    1") + SKELETON + source(
-            ":core.pair-logic", "assign b = a + \\", "    1'b0;")
-        assert findings(text) == []
-
-
 class TangleTest:
-    """The tangle writes each file of a twin or a source, with a marker before each block."""
+    """The tangle writes each file of a twin or a source, and the chapter line of each of its lines."""
 
-    def test_each_file_holds_its_blocks_after_a_marker_that_names_the_first_line(self):
+    def test_each_file_holds_its_code_and_each_line_maps_to_its_chapter_line(self):
         files = Book({"core/core.rst": GOOD}, tangle=True).files
         # The constant files are always written, and here they hold no constant.
-        assert (files.pop("build/rtl/bcw_params.sv") ==
+        assert (files["build/rtl/bcw_params.sv"] ==
                 ("// The PARAMETERs of the book, which tools/bcw.py writes.\npackage bcw_params;\n"
                  "/* verilator lint_off UNUSEDPARAM */\n/* verilator lint_on UNUSEDPARAM */\nendpackage\n"))
-        assert (files.pop("build/model/bcw_params.py") ==
-                "# The PARAMETERs of the book, which tools/bcw.py writes.\n")
-        assert files == {
-    "build/model/core_rotate.py": f"# bcw: book/core/core.rst:{line(GOOD, 'def core_rotate')}\n"
-                                  "def core_rotate(turn):\n    return {'next': turn + 1}\n",
-    "build/rtl/core/core_rotate.v": f"// bcw: book/core/core.rst:{line(GOOD, 'module core_rotate')}\n"
-                                    "module core_rotate (input wire [2:0] turn, output wire [2:0] next);\n"
-                                    "    assign next = turn + 3'd1;\nendmodule\n"}
+        assert files["build/model/bcw_params.py"] == "# The PARAMETERs of the book, which tools/bcw.py writes.\n"
+        assert sorted(files) == ["build/model/bcw_params.py", "build/model/core_rotate.py", "build/rtl/bcw_params.sv",
+                                 "build/rtl/core/core_rotate.v", "build/tangle.json"]
+        first = line(GOOD, "def core_rotate")
+        assert tangled(files, "build/model/core_rotate.py") == [
+            ("def core_rotate(turn):", CHAPTER, first), ("    return {'next': turn + 1}", CHAPTER, first + 1)]
+        first = line(GOOD, "module core_rotate")
+        assert tangled(files, "build/rtl/core/core_rotate.v") == [
+            ("module core_rotate (input wire [2:0] turn, output wire [2:0] next);", CHAPTER, first),
+            ("    assign next = turn + 3'd1;", CHAPTER, first + 1), ("endmodule", CHAPTER, first + 2)]
 
     def test_blocks_of_one_file_join_in_order(self):
         text = GOOD + "\n.. source:: build/rtl/core/core_rotate.v\n\n   // more\n"
-        files = Book({"core/core.rst": text}, tangle=True).files
-        assert files["build/rtl/core/core_rotate.v"].endswith(
-   f"endmodule\n// bcw: book/core/core.rst:{line(text, '// more')}\n// more\n")
+        lines = tangled(Book({"core/core.rst": text}, tangle=True).files, "build/rtl/core/core_rotate.v")
+        assert lines[-2:] == [("endmodule", CHAPTER, line(text, "endmodule")), ("// more", CHAPTER, line(text, "// more"))]
 
     def test_without_a_root_nothing_is_tangled(self):
         assert Book({"core/core.rst": GOOD}).files == {}
@@ -1279,9 +1251,9 @@ class TangleTest:
         alpha = chapter("Alpha", body=source("build/rtl/core/pair.v", "// alpha"))
         book = Book({"alpha/alpha.rst": alpha, "zeta/zeta.rst": zeta}, tangle=True)
         assert book.tuples() == []
-        assert book.files["build/rtl/core/pair.v"] == (f"// bcw: book/zeta/zeta.rst:{line(zeta, '// zeta')}\n// zeta\n"
-                                                       f"// bcw: book/alpha/alpha.rst:{line(alpha, '// alpha')}\n"
-                                                       "// alpha\n")
+        assert tangled(book.files, "build/rtl/core/pair.v") == [
+            ("// zeta", "book/zeta/zeta.rst", line(zeta, "// zeta")),
+            ("// alpha", "book/alpha/alpha.rst", line(alpha, "// alpha"))]
 
 
 class FragmentTangleTest:
@@ -1292,71 +1264,67 @@ class FragmentTangleTest:
                              "    <<:core.pair-logic>>", "    <<:zeta.more>>", "endmodule") + FRAGMENT
         zeta = chapter("Zeta", body="\nMore\n====\n" + source(":zeta.more", "// one", "// two"))
         files = Book({"core/core.rst": core, "zeta/zeta.rst": zeta}, tangle=True).files
-        assert files["build/rtl/core/pair.v"] == (
-            f"// bcw: book/core/core.rst:{line(core, 'module pair')}\n"
-            "module pair (input wire a, output wire b);\n"
-            f"    // bcw: book/core/core.rst:{line(core, 'assign b = a;')}\n"
-            "    assign b = a;\n"
-            f"    // bcw: book/zeta/zeta.rst:{line(zeta, '// one')}\n"
-            "    // one\n"
-            "    // two\n"
-            f"// bcw: book/core/core.rst:{line(core, 'endmodule', after='<<:zeta.more>>')}\n"
-            "endmodule\n")
-        assert "core.pair-logic" not in files and "zeta.more" not in files
+        assert tangled(files, "build/rtl/core/pair.v") == [
+            ("module pair (input wire a, output wire b);", CHAPTER, line(core, "module pair")),
+            ("    assign b = a;", CHAPTER, line(core, "assign b = a;")),
+            ("    // one", "book/zeta/zeta.rst", line(zeta, "// one")),
+            ("    // two", "book/zeta/zeta.rst", line(zeta, "// two")),
+            ("endmodule", CHAPTER, line(core, "endmodule", after="<<:zeta.more>>"))]
+        assert not any("pair-logic" in name or "zeta.more" in name for name in files)
 
     def test_the_blocks_of_a_fragment_join_in_order(self):
         text = GOOD + SKELETON + FRAGMENT + source(":core.pair-logic", "assign c = a;")
-        tangled = Book({"core/core.rst": text}, tangle=True).files["build/rtl/core/pair.v"]
-        assert (f"    // bcw: book/core/core.rst:{line(text, 'assign b = a;')}\n    assign b = a;\n"
-                f"    // bcw: book/core/core.rst:{line(text, 'assign c = a;')}\n    assign c = a;\n") in tangled
+        lines = tangled(Book({"core/core.rst": text}, tangle=True).files, "build/rtl/core/pair.v")
+        assert lines[1:3] == [("    assign b = a;", CHAPTER, line(text, "assign b = a;")),
+                              ("    assign c = a;", CHAPTER, line(text, "assign c = a;"))]
 
     def test_a_fragment_inside_a_fragment_adds_its_indentation(self):
         text = (GOOD + SKELETON.replace("<<:core.pair-logic>>", "<<:core.outer>>")
                 + source(":core.outer", "begin", "    <<:core.pair-logic>>", "end") + FRAGMENT)
-        tangled = Book({"core/core.rst": text}, tangle=True).files["build/rtl/core/pair.v"]
-        end = line(text, "end", after="<<:core.pair-logic>>")
-        assert (f"    begin\n        // bcw: book/core/core.rst:{line(text, 'assign b = a;')}\n"
-                f"        assign b = a;\n    // bcw: book/core/core.rst:{end}\n    end\n") in tangled
+        lines = tangled(Book({"core/core.rst": text}, tangle=True).files, "build/rtl/core/pair.v")
+        assert lines[1:4] == [("    begin", CHAPTER, line(text, "begin")),
+                              ("        assign b = a;", CHAPTER, line(text, "assign b = a;")),
+                              ("    end", CHAPTER, line(text, "end", after="<<:core.pair-logic>>"))]
 
     def test_the_indentation_makes_working_python(self):
         text = GOOD + source("build/model/body.py", "def f(x):", "    <<:core.body>>", "", "RESULT = f(1)") + source(
             ":core.body", "y = x + 1", "return y")
-        tangled = Book({"core/core.rst": text}, tangle=True).files["build/model/body.py"]
+        files = Book({"core/core.rst": text}, tangle=True).files
         names = {}
-        exec(tangled, names)
+        exec(files["build/model/body.py"], names)
         assert names["RESULT"] == 2
-        assert f"    # bcw: book/core/core.rst:{line(text, 'y = x + 1')}\n    y = x + 1\n    return y\n" in tangled
+        assert tangled(files, "build/model/body.py")[1:3] == [("    y = x + 1", CHAPTER, line(text, "y = x + 1")),
+                                                              ("    return y", CHAPTER, line(text, "return y"))]
 
-    # A line that ends in a backslash goes on in the next line, in Python and in a
-    # Verilog macro, so no marker can stand between the two. doc.continuations makes
-    # each case a finding, but the tangle still writes working code.
+    # A line that ends in a backslash goes on in the next line, in Python and in a Verilog
+    # macro. The map names the chapter line of each line, so the next line maps to its own
+    # chapter line, also where it comes from another block or a fragment.
     BACKSLASH = {
         "a fragment ends in a backslash": (
             source("build/model/b.py", "def f(x):", "    <<:core.sum>>", "        1", "    return total", "",
-                   "RESULT = f(1)") + source(":core.sum", "total = x + \\"), "return total"),
+                   "RESULT = f(1)") + source(":core.sum", "total = x + \\")),
         "an outer line ends in a backslash": (
             source("build/model/b.py", "def f(x):", "    total = x + \\", "    <<:core.one>>", "    return total", "",
-                   "RESULT = f(1)") + source(":core.one", "1"), "return total"),
+                   "RESULT = f(1)") + source(":core.one", "1")),
         "a block ends in a backslash": (
-            source("build/model/b.py", "RESULT = 1 + \\") + source("build/model/b.py", "    1", "", "SECOND = 2"),
-            "SECOND = 2"),
+            source("build/model/b.py", "RESULT = 1 + \\") + source("build/model/b.py", "    1", "", "SECOND = 2")),
     }
 
     @pytest.mark.parametrize("case", BACKSLASH)
-    def test_no_marker_follows_a_line_that_ends_in_a_backslash(self, case, tmp_path):
-        extra, later = self.BACKSLASH[case]
-        text = GOOD + extra
-        tangled = Book({"core/core.rst": text}, tangle=True).files["build/model/b.py"]
+    def test_the_line_after_a_backslash_maps_to_its_own_chapter_line(self, case, tmp_path):
+        text = GOOD + self.BACKSLASH[case]
+        files = Book({"core/core.rst": text}, tangle=True).files
         names = {}
-        exec(tangled, names)
+        exec(files["build/model/b.py"], names)
         assert names["RESULT"] == 2
-        lines = tangled.splitlines()
-        assert not any(first.endswith("\\") and "bcw:" in second for first, second in zip(lines, lines[1:])), tangled
-        # The first line after the continuation maps to its chapter line again.
-        path = tmp_path / "b.py"
-        path.write_text(tangled)
-        number = next(n for n, content in enumerate(lines, 1) if later in content)
-        assert linemap.lookup(str(path), number) == ("book/core/core.rst", line(text, later))
+        lines = tangled(files, "build/model/b.py")
+        # Each line of code maps to the chapter line that holds it.
+        assert all(text.splitlines()[number - 1].strip() == code.strip() for code, _, number in lines), lines
+        for name, content in files.items():
+            (tmp_path / name).parent.mkdir(parents=True, exist_ok=True)
+            (tmp_path / name).write_text(content)
+        after = next(number for number in range(2, len(lines) + 1) if lines[number - 2][0].endswith("\\"))
+        assert linemap.lookup(str(tmp_path / "build/model/b.py"), after) == lines[after - 1][1:]
 
     def test_the_blocks_of_a_fragment_in_two_chapters_join_in_the_chapter_order(self):
         # A tutorial comes before a reference in the chapter order, so zeta comes before alpha.
@@ -1364,9 +1332,9 @@ class FragmentTangleTest:
         alpha = chapter("Alpha", body=source(":core.pair-logic", "// alpha"))
         book = Book({"alpha/alpha.rst": alpha, "core/core.rst": GOOD + SKELETON, "zeta/zeta.rst": zeta}, tangle=True)
         assert book.tuples() == []
-        assert (f"    // bcw: book/zeta/zeta.rst:{line(zeta, '// zeta')}\n    // zeta\n"
-                f"    // bcw: book/alpha/alpha.rst:{line(alpha, '// alpha')}\n    // alpha\n"
-                in book.files["build/rtl/core/pair.v"])
+        assert tangled(book.files, "build/rtl/core/pair.v")[1:3] == [
+            ("    // zeta", "book/zeta/zeta.rst", line(zeta, "// zeta")),
+            ("    // alpha", "book/alpha/alpha.rst", line(alpha, "// alpha"))]
 
     def test_a_use_of_no_fragment_stays_as_it_is(self):
         tangled = Book({"core/core.rst": GOOD + SKELETON}, tangle=True).files["build/rtl/core/pair.v"]

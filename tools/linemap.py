@@ -10,18 +10,19 @@ chapter and line that hold that code:
 It keeps the rest of each line. If it cannot map a location, it leaves the
 location unchanged and adds a note.
 
-The tangle of tools/bcw.py writes a marker comment before each block, such as
-// bcw: book/core/core.rst:20, which names the chapter line of the block's
-first line of code. A tangled line k lines after a marker maps to the chapter
-line k - 1 lines after the named line. A marker line maps to nothing.
+The tangle of tools/bcw.py writes build/tangle.json, which holds the chapter
+line of each line of each tangled file, by the path of the file in build/. A
+line that no chapter line holds, such as the header of a file of constants,
+maps to nothing.
 """
 
+import functools
+import json
 import os
 import re
 import sys
 from pathlib import Path
 
-MARKER = re.compile(r"^\s*(?://|#) bcw: (?P<source>\S+):(?P<line>\d+)\s*$")
 LOCATIONS = [
     re.compile(r'(?P<before>File ")(?P<path>[^"]*build/[^"]+)(?P<middle>", line )(?P<line>\d+)'),
     re.compile(r"(?P<before>)(?P<path>[^\s:\"'()]*build/[^\s:\"'()]+)(?P<middle>:)(?P<line>\d+)"),
@@ -29,20 +30,24 @@ LOCATIONS = [
 NOTE = "  (linemap: no source for this location)"
 
 
+@functools.cache
+def load(record):
+    """The chapter lines of each tangled file in the record, by path in the folder of the record."""
+    return json.loads(Path(record).read_text())["files"]
+
+
 def lookup(path, line):
-    """Return (chapter path, line) for a line of a tangled file, or None."""
-    try:
-        tangled = Path(path).read_text().splitlines()
-    except OSError:
-        return None
-    if not 1 <= line <= len(tangled):
-        return None
-    for number in range(line, 0, -1):
-        match = MARKER.match(tangled[number - 1])
-        if match:
-            if number == line:
-                return None
-            return match["source"], int(match["line"]) + line - number - 1
+    """Return (chapter path, line) for a line of a tangled file, or None.
+
+    The record is the nearest tangle.json in a folder that holds the file.
+    """
+    path = Path(path).absolute()
+    for folder in path.parents:
+        record = folder / "tangle.json"
+        if record.exists():
+            lines = load(str(record)).get(path.relative_to(folder).as_posix(), {}).get("lines", [])
+            place = lines[line - 1] if 1 <= line <= len(lines) else None
+            return tuple(place) if place else None
     return None
 
 

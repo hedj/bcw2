@@ -71,32 +71,39 @@ class LinemapTest:
 
     def test_verilator_error_in_the_second_block_maps_to_its_chapter_line(self):
         result = subprocess.run(["verilator", "--lint-only", VERILOG], capture_output=True, text=True)
-        assert f"%Error: {VERILOG}:8:1: syntax error" in result.stderr
+        assert f"%Error: {VERILOG}:6:1: syntax error" in result.stderr
         assert f"%Error: {SOURCE}:{line(CHAPTER, 'module core_other') + 2}:1: syntax error" in \
             self.filter(result.stderr)
 
     def test_iverilog_error_maps_to_its_chapter_line(self):
         result = subprocess.run(["iverilog", "-o", os.devnull, VERILOG], capture_output=True, text=True)
-        assert f"{VERILOG}:8: syntax error" in result.stderr
+        assert f"{VERILOG}:6: syntax error" in result.stderr
         assert f"{SOURCE}:{line(CHAPTER, 'module core_other') + 2}: syntax error" in self.filter(result.stderr)
 
     def test_python_traceback_maps_to_its_chapter_line(self):
         code = "import runpy; runpy.run_path('build/model/twin.py')['twin'](1)"
         result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
-        assert 'File "build/model/twin.py", line 3, in twin' in result.stderr
+        assert 'File "build/model/twin.py", line 2, in twin' in result.stderr
         assert f'File "{SOURCE}", line {line(CHAPTER, "undefined_name")}, in twin' in self.filter(result.stderr)
 
     def test_an_absolute_path_maps_like_a_relative_one(self):
-        text = f'File "{self.root / "build/model/twin.py"}", line 3, in twin'
+        text = f'File "{self.root / "build/model/twin.py"}", line 2, in twin'
         assert linemap.rewrite(text) == f'File "{SOURCE}", line {line(CHAPTER, "undefined_name")}, in twin'
 
-    def test_each_line_after_a_marker_maps_to_its_chapter_line(self):
-        assert linemap.lookup(VERILOG, 2) == (SOURCE, line(CHAPTER, "module core_pair"))
-        assert linemap.lookup(VERILOG, 4) == (SOURCE, line(CHAPTER, "endmodule"))
-        assert linemap.lookup(VERILOG, 6) == (SOURCE, line(CHAPTER, "module core_other"))
+    def test_each_line_maps_to_its_chapter_line(self):
+        assert linemap.lookup(VERILOG, 1) == (SOURCE, line(CHAPTER, "module core_pair"))
+        assert linemap.lookup(VERILOG, 3) == (SOURCE, line(CHAPTER, "endmodule"))
+        assert linemap.lookup(VERILOG, 4) == (SOURCE, line(CHAPTER, "module core_other"))
 
-    def test_a_marker_line_maps_to_nothing(self):
-        assert [linemap.lookup(VERILOG, number) for number in (1, 5)] == [None, None]
+    def test_the_tangled_file_holds_no_marker(self):
+        assert "bcw:" not in (self.root / VERILOG).read_text()
+
+    def test_a_line_that_no_chapter_line_holds_maps_to_nothing(self):
+        assert linemap.lookup("build/rtl/bcw_params.sv", 1) is None
+
+    def test_a_file_without_a_map_maps_to_nothing(self, tmp_path):
+        (tmp_path / "loose.v").write_text("module loose;\nendmodule\n")
+        assert linemap.lookup(str(tmp_path / "loose.v"), 1) is None
 
     def test_an_unmappable_location_is_kept_with_a_note(self):
         for text in [f"{VERILOG}:99: out of range", "build/rtl/none.v:3: no such file"]:

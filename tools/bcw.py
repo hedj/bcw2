@@ -22,7 +22,7 @@ and logs each finding as a Sphinx warning, such as
 
 Each check function names the rule of book/doc/doc.rst that it implements in an
 "# implements:" comment. At build-finished, the extension writes each tangled
-file, with a marker comment before each block that names its chapter line.
+file, and build/tangle.json, which names the chapter line of each tangled line.
 
 Configuration values, which tools/conf.py sets:
     bcw_tools            the files whose "# implements:" comments count
@@ -37,6 +37,7 @@ Configuration values, which tools/conf.py sets:
 import ast
 import hashlib
 import heapq
+import json
 import operator
 import re
 from dataclasses import dataclass, field
@@ -1212,23 +1213,6 @@ def check_whole_twins(documents):
                                   "put the code of the fragment in the twin, because a twin stays whole")
 
 
-# implements: doc.continuations
-def check_continuations(documents):
-    for document in documents:
-        for block in document.blocks:
-            if block.kind not in ("twin", "source"):
-                continue
-            lines = block.text.splitlines()
-            for offset, text in enumerate(lines):
-                last = offset + 1 == len(lines)
-                if text.endswith("\\") and (last or (block.kind == "source" and USE.match(lines[offset + 1]))):
-                    yield Finding(document.path, block.first + offset, "continuations",
-                                  block.chunk.anchor if block.chunk else None,
-                                  "the line ends in a backslash, but the next line of the tangled file comes "
-                                  "from another place, so no marker can name its chapter line",
-                                  "join the line with the next line, or move both into one code block")
-
-
 def crowded(documents):
     """The number of rules with more than two parents."""
     return sum(1 for document in documents for chunk in document.chunks
@@ -1269,7 +1253,6 @@ def check(documents, retired=(), tools=(), general=None):
     findings += check_fragments_used(documents)
     findings += check_fragment_cycles(documents)
     findings += check_whole_twins(documents)
-    findings += check_continuations(documents)
     if general is not None:
         findings += check_known_words(documents, general)
         findings += check_general_words(documents, general)
@@ -1305,7 +1288,7 @@ def check_book(app, env):
 
 
 def expand(blocks, defined, indent="", active=()):
-    """(text, chapter path, chapter line, indent) of each tangled line of blocks, each after indent.
+    """(text, chapter path, chapter line) of each tangled line of blocks, each after indent.
 
     Each fragment use is replaced by the lines of its fragment, with the indentation
     of the use added. A use of a fragment that no source defines, or that is already
@@ -1318,35 +1301,27 @@ def expand(blocks, defined, indent="", active=()):
             if match and match["name"] in defined and match["name"] not in active:
                 lines += expand(defined[match["name"]], defined, indent + match["indent"], active + (match["name"],))
             else:
-                lines.append((indent + text if text else text, block.path, block.first + offset, indent))
+                lines.append((indent + text if text else text, block.path, block.first + offset))
     return lines
 
 
-def with_markers(lines, comment):
-    """The text of the tangled lines, with a marker comment wherever tools/linemap.py needs one.
-
-    A marker names the chapter line of the line after it, at the indentation of its
-    block. It stands before each line whose place the lines above would not give,
-    such as the first line of a block or of a fragment, or the line after a
-    fragment. A line that ends in a backslash goes on in the next line, in Python and
-    in a Verilog macro, so no marker follows it: the marker waits for the next line.
-    """
-    result, place, after = [], None, ""
-    for text, path, number, indent in lines:
-        if (path, number) != place and not after.endswith("\\"):
-            result.append(f"{indent}{comment} bcw: {path}:{number}")
-            place = (path, number)
-        result.append(text)
-        place, after = (place[0], place[1] + 1), text
-    return result
+def write(path, text):
+    """Write text to path, unless the file already holds it."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists() or path.read_text() != text:
+        path.write_text(text)
 
 
 def tangle(app, exception):
-    """Write each tangled file, with its fragments in place and a marker before each block, and the constants."""
+    """Write each tangled file with its fragments in place, the constants, and build/tangle.json.
+
+    build/tangle.json holds the chapter line of each line of each tangled file, by
+    the path of the file in build/. tools/linemap.py reads it.
+    """
     root = app.config.bcw_tangle_root
     if exception is not None or root is None:
         return
-    tangle_parameters(app, root)
+    record = tangle_parameters(app, root)
     documents = [app.env.bcw_documents[name] for name in sorted(app.env.bcw_documents)]
     files = {}
     for document in book_order(documents):
@@ -1355,17 +1330,21 @@ def tangle(app, exception):
                 files.setdefault(block.target, []).append(block)
     defined = fragments(documents)
     for target, blocks in files.items():
-        comment = "#" if target.endswith(".py") else "//"
-        lines = with_markers(expand(blocks, defined), comment)
-        path = Path(root) / target
-        path.parent.mkdir(parents=True, exist_ok=True)
-        text = "\n".join(lines) + "\n"
-        if not path.exists() or path.read_text() != text:
-            path.write_text(text)
+        lines = expand(blocks, defined)
+        write(Path(root) / target, "".join(text + "\n" for text, _, _ in lines))
+        record[target.removeprefix("build/")] = [[path, number] for _, path, number in lines]
+    # One line for each tangled line, so that a reader can follow the file.
+    files = [f' {json.dumps(name)}: {{"lines": [\n' + ",\n".join(f"  {json.dumps(place)}" for place in lines) + "\n ]}"
+             for name, lines in sorted(record.items())]
+    write(Path(root) / "build" / "tangle.json", '{"files": {\n' + ",\n".join(files) + "\n}}\n")
 
 
 def tangle_parameters(app, root):
-    """Write each PARAMETER that has a value as a constant, in SystemVerilog and in Python."""
+    """Write each PARAMETER that has a value as a constant, in SystemVerilog and in Python.
+
+    It returns the chapter line of each line of the two files, by their paths in
+    build/: the value line of a constant, and None for any other line.
+    """
     constants = []
     for name in sorted(app.env.bcw_documents):
         for chunk in app.env.bcw_documents[name].chunks:
@@ -1374,19 +1353,18 @@ def tangle_parameters(app, root):
     header = "The PARAMETERs of the book, which tools/bcw.py writes."
     # A module that reads some of the constants is correct, so the package turns off
     # Verilator's warning on an unused parameter for its own constants only.
-    verilog = [f"// {header}", "package bcw_params;", "/* verilator lint_off UNUSEDPARAM */"]
-    python = [f"# {header}"]
+    verilog = [(f"// {header}", None), ("package bcw_params;", None), ("/* verilator lint_off UNUSEDPARAM */", None)]
+    python = [(f"# {header}", None)]
     for chunk, name, value in constants:
-        marker = f"bcw: {chunk.path}:{chunk.option_line('value')}"
-        verilog += [f"// {marker}", f"localparam int {name} = {value};"]
-        python += [f"# {marker}", f"{name} = {value}"]
-    verilog += ["/* verilator lint_on UNUSEDPARAM */", "endpackage"]
+        place = [chunk.path, chunk.option_line("value")]
+        verilog.append((f"localparam int {name} = {value};", place))
+        python.append((f"{name} = {value}", place))
+    verilog += [("/* verilator lint_on UNUSEDPARAM */", None), ("endpackage", None)]
+    record = {}
     for target, lines in [("build/rtl/bcw_params.sv", verilog), ("build/model/bcw_params.py", python)]:
-        path = Path(root) / target
-        path.parent.mkdir(parents=True, exist_ok=True)
-        text = "\n".join(lines) + "\n"
-        if not path.exists() or path.read_text() != text:
-            path.write_text(text)
+        write(Path(root) / target, "".join(text + "\n" for text, _ in lines))
+        record[target.removeprefix("build/")] = [place for _, place in lines]
+    return record
 
 
 def init_environment(app):

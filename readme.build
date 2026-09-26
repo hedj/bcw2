@@ -64,7 +64,8 @@ make test     Runs the tests of the tools, in tools/tests, with pytest on
 make tangle   Writes the code of the book into build/: the Verilog into
               build/rtl, the twins into build/model, and the value of each
               PARAMETER into build/rtl/bcw_params.sv and
-              build/model/bcw_params.py.
+              build/model/bcw_params.py. It also writes build/tangle.json,
+              with the chapter line of each line that it writes.
 make clean    Removes build/.
 
 Run make check after each edit to the book. Run make test after each edit
@@ -95,8 +96,9 @@ Correct that directive first, then run make check again.
 
 Verilator and the twins report locations in the files of build/.
 tools/linemap.py changes each of these locations to the line of the chapter
-that holds the code. So each location that make check prints is a line in
-book/.
+that holds the code. It reads build/tangle.json, which make tangle writes with
+the chapter line of each line of each tangled file. So each location that make
+check prints is a line in book/.
 
 
 Fragments
@@ -121,11 +123,6 @@ fragment in place of that line, with the indentation of the line:
 So the code of a rule can stand next to the rule, and a skeleton elsewhere can
 put a module in order. The blocks of one fragment, or of one file, join in the
 chapter order (doc.chapter-order), which is the order of the reader edition. A
-marker before each fragment keeps each line of the tangled file traceable to
-its chapter line. No marker follows a line that ends in a backslash, because
-that line goes on in the next one. So a line that ends in a backslash must go
-on in a line of its own code block, and that line must not be a fragment use
-(doc.continuations). Otherwise the next line maps to the wrong chapter line. A
 twin cannot use a fragment, because a twin stays whole. The rules of fragments
 are in the section Fragments of book/doc/doc.rst.
 
