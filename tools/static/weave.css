@@ -19,7 +19,8 @@
 
 .chunk > p.chunk-serves,
 p.chunk-why,
-p.fragment-uses {
+p.fragment-uses,
+p.check-verifies {
     font-size: 0.9em;
     color: #555555;
 }

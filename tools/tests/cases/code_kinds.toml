@@ -63,7 +63,8 @@ old = "**Thread.** An unlabelled bold paragraph is prose.\n\n"
 new = '''
 **Thread.** An unlabelled bold paragraph is prose.
 
-.. check::
+.. check:: test
+   :verifies: core.rotation
 
    x = 1
 

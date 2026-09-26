@@ -23,7 +23,9 @@ thread <em>t</em> to thread <em>t</em> + 1.</p>
 <span class="k">endmodule</span>
 </pre></div>
 </div>
-</details><p class="chunk-why">Why: <a class="reference internal" href="#why-1">see the explanation</a></p>
+</details><p class="check-proof"><em>Check (equiv)</em>: the module <code class="docutils literal notranslate"><span class="pre">core_rotate</span></code> equals the twin <code class="docutils literal notranslate"><span class="pre">core_rotate</span></code>.</p>
+<p class="check-verifies">Verifies: <a class="reference internal" href="#core.rotation"><code class="docutils literal notranslate"><span class="pre">core.rotation</span></code></a></p>
+<p class="chunk-why">Why: <a class="reference internal" href="#why-1">see the explanation</a></p>
 <div class="chunk open docutils container">
 <p class="chunk-label"><strong>OPEN</strong> The thread count is not settled.</p>
 </div>
@@ -74,7 +76,15 @@ thread <em>t</em> to thread <em>t</em> + 1.</p>
 <details><summary>Fragment: :core.pair-logic</summary><div class="highlight-none notranslate" id="fragment-core.pair-logic"><div class="highlight"><pre><span></span>assign b = a;
 </pre></div>
 </div>
-</details></section>
+</details><details><summary>Check (test)</summary><div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="k">module</span><span class="w"> </span><span class="n">tb</span><span class="p">;</span>
+<span class="w">    </span><span class="k">initial</span><span class="w"> </span><span class="nb">$finish</span><span class="p">;</span>
+<span class="k">endmodule</span>
+</pre></div>
+</div>
+</details><p class="check-verifies">Verifies: <a class="reference internal" href="#core.rotation"><code class="docutils literal notranslate"><span class="pre">core.rotation</span></code></a></p>
+<p class="check-proof"><em>Check (equiv)</em>: the module <code class="docutils literal notranslate"><span class="pre">core_rotate</span></code> equals the twin <code class="docutils literal notranslate"><span class="pre">core_next</span></code>.</p>
+<p class="check-verifies">Verifies: <a class="reference internal" href="#core.rotation"><code class="docutils literal notranslate"><span class="pre">core.rotation</span></code></a></p>
+</section>
 <section id="explanation-1">
 <h2><span class="section-number">3.4. </span>Explanation<a class="headerlink" href="#explanation-1" title="Link to this heading">¶</a></h2>
 <div class="explanation docutils container" id="why-1">

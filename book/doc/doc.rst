@@ -169,8 +169,28 @@ Trace
 .. definition:: doc.reference
    :parent: doc.traceable
 
-   A :dfn:`reference` is an entry in a ``parent`` or ``implements`` option, an
+   A :dfn:`reference` is an entry in a ``parent``, ``implements`` or ``verifies`` option, an
    ``implements:`` comment in ``tools/``, or a citation.
+
+.. definition:: doc.check
+   :parent: doc.traceable
+
+   A :dfn:`check directive` is a ``check`` directive. Its argument is its kind, and its
+   ``verifies`` option names the REQUIREMENTs that it checks. A ``test`` holds a testbench, and
+   a ``prove`` holds properties. An ``equiv`` holds no code, and its ``module`` option names a
+   module that the check compares with a function of the twin.
+
+.. requirement:: doc.check-kinds
+   :parent: doc.traceable
+
+   Each check directive shall have the kind ``test``, ``prove`` or ``equiv``, the code and the
+   options of its kind, and a ``verifies`` option that names only REQUIREMENTs.
+
+.. requirement:: doc.verified
+   :parent: doc.traceable
+
+   Where a rule is a REQUIREMENT, the rule shall appear in the ``verifies`` option of a check
+   directive or in an ``implements:`` comment, or carry ``verify`` with the value ``none``.
 
 .. definition:: doc.citation
    :parent: doc.traceable

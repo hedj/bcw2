@@ -196,7 +196,9 @@ class CodeIndexTest:
 # a change to the weave, run pytest --update-golden, then read the difference of the files
 # in git before the commit.
 GOLDEN = Path(__file__).resolve().parent / "golden"
-GOLDEN_BOOK = {**BOOK, "core/core.rst": TARGETED + FRAGMENTED[len(CORE_CHAPTER):]}
+TESTED = ("\n.. check:: test\n   :verifies: core.rotation\n\n   module tb;\n       initial $finish;\n   endmodule\n"
+          "\n.. check:: equiv\n   :verifies: core.rotation\n   :module: core_rotate\n   :twin: core_next\n")
+GOLDEN_BOOK = {**BOOK, "core/core.rst": TARGETED + FRAGMENTED[len(CORE_CHAPTER):] + TESTED}
 PAGES = ["index.html", "guide/guide.html", "design/design.html", "core/core.html"]
 
 
@@ -236,3 +238,8 @@ class ReferenceTest:
     def test_the_latex_is_its_reference(self, request):
         tex = weave(GOLDEN_BOOK, "latex", index=INDEXED).output["book.tex"]
         compare(request, "latex/book.tex", without_date(tex))
+
+    def test_latexmk_makes_a_pdf_of_the_book_without_undefined_references(self):
+        status, _, log = weave(GOLDEN_BOOK, "latex", index=INDEXED, pdf=True).pdf
+        assert status == 0, log
+        assert "undefined" not in log

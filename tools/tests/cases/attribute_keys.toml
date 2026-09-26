@@ -26,7 +26,8 @@ new = '''
 name = "the options and argument of a code directive pass"
 append = '''
 
-.. check::
+.. check:: test
+   :verifies: core.rotation
 
    x = 1
 '''

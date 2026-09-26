@@ -433,7 +433,7 @@ class ParseErrorTest:
     finding can follow from a directive that docutils left out.
     """
 
-    CHECK = "\n.. check::\n\n   x = 1\n"
+    CHECK = "\n.. check:: test\n   :verifies: core.rotation\n\n   x = 1\n"
     # (old text, new text, the line of the error, a part of its message). Without old text,
     # the new text goes after GOOD.
     CASES = {
@@ -465,10 +465,10 @@ class ParseErrorTest:
                                        "the rationale directive takes no argument."),
         "an argument on a discussion": (".. rationale::", ".. discussion:: core.why", ".. discussion::",
                                         "the discussion directive takes no argument."),
-        "an option on a check": (None, CHECK.replace(".. check::\n", ".. check::\n   :kind: static\n"), ".. check::",
-                                 'unknown option: "kind"'),
-        "an argument on a check": (None, CHECK.replace(".. check::", ".. check:: extra"), ".. check::",
-                                   "the check directive takes no argument."),
+        "an option on a check": (None, CHECK.replace("   :verifies:", "   :kind: static\n   :verifies:"),
+                                 ".. check:: test", 'unknown option: "kind"'),
+        "a check without its kind": (".. check:: equiv\n", ".. check::\n", ".. check::",
+                                     "1 argument(s) required, 0 supplied"),
         "an argument on a twin": ("   .. twin::\n", "   .. twin:: extra\n", ".. twin::",
                                   "the twin directive takes no argument."),
         "an unknown option on a twin": (f"      :stamp: {STAMP}\n", f"      :stamp: {STAMP}\n      :colour: red\n",
@@ -517,8 +517,8 @@ class TangleTest:
                 ("// The PARAMETERs of the book, which tools/bcw.py writes.\npackage bcw_params;\n"
                  "/* verilator lint_off UNUSEDPARAM */\n/* verilator lint_on UNUSEDPARAM */\nendpackage\n"))
         assert files["build/model/bcw_params.py"] == "# The PARAMETERs of the book, which tools/bcw.py writes.\n"
-        assert sorted(files) == ["build/model/bcw_params.py", "build/model/core_rotate.py", "build/rtl/bcw_params.sv",
-                                 "build/rtl/core/core_rotate.v", "build/tangle.json"]
+        assert sorted(files) == ["build/checks.json", "build/model/bcw_params.py", "build/model/core_rotate.py",
+                                 "build/rtl/bcw_params.sv", "build/rtl/core/core_rotate.v", "build/tangle.json"]
         first = line(GOOD, "def core_rotate")
         assert tangled(files, "build/model/core_rotate.py") == [
             ("def core_rotate(turn):", CHAPTER, first), ("    return {'next': turn + 1}", CHAPTER, first + 1)]
@@ -526,6 +526,41 @@ class TangleTest:
         assert tangled(files, "build/rtl/core/core_rotate.v") == [
             ("module core_rotate (input wire [2:0] turn, output wire [2:0] next);", CHAPTER, first),
             ("    assign next = turn + 3'd1;", CHAPTER, first + 1), ("endmodule", CHAPTER, first + 2)]
+
+    CHECKS = ("\n.. check:: test\n   :verifies: core.rotation\n\n   module tb;\n   endmodule\n"
+              "\n.. check:: prove\n   :verifies: core.rotation\n   :depth: 10\n\n   module props;\n   endmodule\n"
+              "\n.. check:: test\n   :verifies: core.rotation\n\n   module tb2;\n   endmodule\n")
+
+    def test_each_check_with_code_is_a_file_whose_lines_map_to_the_chapter(self):
+        text = GOOD + self.CHECKS
+        files = Book({"core/core.rst": text}, tangle=True).files
+        assert sorted(name for name in files if name.startswith("build/checks/")) == [
+            "build/checks/core.rotation.prove.sv", "build/checks/core.rotation.test-2.sv",
+            "build/checks/core.rotation.test.sv"]
+        assert tangled(files, "build/checks/core.rotation.test.sv") == [
+            ("module tb;", CHAPTER, line(text, "module tb;")), ("endmodule", CHAPTER, line(text, "module tb;") + 1)]
+
+    def test_the_manifest_lists_each_check_in_the_chapter_order(self):
+        text = GOOD + self.CHECKS
+        checks = json.loads(Book({"core/core.rst": text}, tangle=True).files["build/checks.json"])
+        assert checks == [
+            {"name": "core.rotation.equiv", "kind": "equiv", "verifies": ["core.rotation"], "path": CHAPTER,
+             "line": line(text, ".. check:: equiv"), "file": None, "module": "core_rotate", "twin": "core_rotate",
+             "twin_file": "build/model/core_rotate.py", "depth": None},
+            {"name": "core.rotation.test", "kind": "test", "verifies": ["core.rotation"], "path": CHAPTER,
+             "line": line(text, ".. check:: test"), "file": "build/checks/core.rotation.test.sv", "module": None,
+             "twin": None, "twin_file": None, "depth": None},
+            {"name": "core.rotation.prove", "kind": "prove", "verifies": ["core.rotation"], "path": CHAPTER,
+             "line": line(text, ".. check:: prove"), "file": "build/checks/core.rotation.prove.sv", "module": None,
+             "twin": None, "twin_file": None, "depth": 10},
+            {"name": "core.rotation.test-2", "kind": "test", "verifies": ["core.rotation"], "path": CHAPTER,
+             "line": line(text, "module tb2;") - 3, "file": "build/checks/core.rotation.test-2.sv", "module": None,
+             "twin": None, "twin_file": None, "depth": None}]
+
+    def test_a_proof_without_a_depth_has_the_depth_20(self):
+        text = GOOD + "\n.. check:: prove\n   :verifies: core.rotation\n\n   module props;\n   endmodule\n"
+        checks = json.loads(Book({"core/core.rst": text}, tangle=True).files["build/checks.json"])
+        assert [check["depth"] for check in checks] == [None, 20]
 
     def test_without_a_root_nothing_is_tangled(self):
         assert Book({"core/core.rst": GOOD}).files == {}
@@ -543,7 +578,8 @@ class TangleRecordTest:
     def test_the_record_holds_the_sha256_of_each_file(self, tmp_path):
         files = self.tangle(tmp_path).files
         record = json.loads(files["build/tangle.json"])["files"]
-        assert sorted(record) == sorted(name.removeprefix("build/") for name in files if name != "build/tangle.json")
+        assert sorted(record) == sorted(name.removeprefix("build/") for name in files
+                                        if name not in ("build/tangle.json", "build/checks.json"))
         for name, entry in record.items():
             assert entry["sha256"] == hashlib.sha256((tmp_path / "build" / name).read_bytes()).hexdigest()
 
@@ -758,6 +794,12 @@ class ModelTest:
         assert [(block.target, number) for block, number in uses[":core.pair-logic"]] == [
             (":core.outer", line(text, "<<:core.pair-logic>>"))]
         assert [block.target for block, _ in uses[":core.outer"]] == ["build/rtl/core/pair.v"]
+
+    def test_the_model_holds_the_checks_in_the_chapter_order(self):
+        zeta = chapter("Zeta", kind="tutorial", body="\n.. check:: test\n   :verifies: core.rotation\n\n   x\n")
+        model = Book({"core/core.rst": GOOD, "zeta/zeta.rst": zeta}).model
+        assert [(block.path, block.check) for block in model.checks] == [("book/zeta/zeta.rst", "test"),
+                                                                          (CHAPTER, "equiv")]
 
     def test_the_model_holds_the_values_the_units_and_the_failures(self):
         text = GOOD + THREADS + WIDTH + parameter("core.bad", "core.none", unit="bits")

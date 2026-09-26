@@ -1,0 +1,111 @@
+# doc.check and doc.check-kinds
+
+[[case]]
+name = "a test, a proof and a proof of equivalence pass"
+append = '''
+
+.. check:: test
+   :verifies: core.rotation
+
+   module tb; initial $finish; endmodule
+
+.. check:: prove
+   :verifies: core.rotation
+   :depth: 10
+
+   module props; endmodule
+
+.. check:: equiv
+   :verifies: core.rotation
+   :module: core_rotate
+   :twin: core_rotate
+'''
+findings = []
+
+[[case]]
+name = "an unknown kind is a finding on the directive line"
+append = '''
+
+.. check:: simulate
+   :verifies: core.rotation
+
+   x = 1
+'''
+findings = [
+    {check = "check-kinds", at = ".. check:: simulate"},
+]
+
+[[case]]
+name = "a check without a verifies option is a finding"
+append = '''
+
+.. check:: test
+
+   module tb; endmodule
+'''
+findings = [
+    {check = "check-kinds", at = ".. check:: test", occurrence = 1},
+]
+
+[[case]]
+name = "a check that verifies a chunk that is not a REQUIREMENT is a finding"
+append = '''
+
+.. check:: test
+   :verifies: core.rotation, core.core
+
+   module tb; endmodule
+'''
+findings = [
+    {check = "check-kinds", at = ".. check:: test"},
+]
+
+[[case]]
+name = "a test or a proof without code is a finding"
+append = '''
+
+.. check:: prove
+   :verifies: core.rotation
+'''
+findings = [
+    {check = "check-kinds", at = ".. check:: prove"},
+]
+
+[[case]]
+name = "an equiv check with code is a finding"
+append = '''
+
+.. check:: equiv
+   :verifies: core.rotation
+   :module: core_rotate
+
+   x = 1
+'''
+findings = [
+    {check = "check-kinds", at = ".. check:: equiv", occurrence = 2},
+]
+
+[[case]]
+name = "an equiv check without a module is a finding"
+append = '''
+
+.. check:: equiv
+   :verifies: core.rotation
+'''
+findings = [
+    {check = "check-kinds", at = ".. check:: equiv", occurrence = 2},
+]
+
+[[case]]
+name = "a depth that is not a number is a finding"
+append = '''
+
+.. check:: prove
+   :verifies: core.rotation
+   :depth: deep
+
+   module props; endmodule
+'''
+findings = [
+    {check = "check-kinds", at = ".. check:: prove"},
+]

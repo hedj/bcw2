@@ -40,6 +40,7 @@ closure
 code
 come
 comment
+compare
 completely
 count
 counter
@@ -125,6 +126,7 @@ meaning
 measure
 measured
 minus
+module
 modulo
 more
 most
@@ -203,6 +205,7 @@ such
 take
 target
 tell
+testbench
 text
 than
 that

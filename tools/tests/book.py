@@ -64,6 +64,10 @@ Rotation
        assign next = turn + 3'd1;
    endmodule
 
+.. check:: equiv
+   :verifies: core.rotation
+   :module: core_rotate
+
 .. rationale::
 
    A thread's instructions are eight cycles apart.

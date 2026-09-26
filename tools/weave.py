@@ -18,6 +18,10 @@ and checks nothing itself. It orders and reshapes what bcw.py reads:
 - The HTML numbers the chapters through the whole book, as LaTeX does.
 - A source block that uses fragments gets a line Uses: with a link to each
   fragment, and the first block of each fragment is its target.
+- A check gets a line Verifies: with a link to each REQUIREMENT that it
+  verifies. The HTML shows its code in a closed <details>, and the LaTeX prints
+  it in small text. An equiv check has no code, so a paragraph names its module
+  and its twin in place of the empty block.
 - The HTML links static/weave.css, which sets each chunk apart. The LaTeX
   gives each chunk a box with the bar colour and background of its label in
   weave.css, so the PDF shows the same colours.
@@ -209,6 +213,28 @@ def link_uses(doctree, document):
         block.parent.insert(block.parent.index(block) + 1, uses)
 
 
+def link_checks(doctree, document):
+    """Put a line Verifies: after each check, and name the module and the twin of an equiv check."""
+    for block in list(doctree.findall(nodes.literal_block)):
+        if block.get("bcw") != "check":
+            continue
+        check = next(check for check in document.blocks if check.line == block.line)
+        verifies = nodes.paragraph(classes=["check-verifies"])
+        verifies += nodes.Text("Verifies: ")
+        for number, anchor in enumerate(bcw.verifies(check)):
+            if number:
+                verifies += nodes.Text(", ")
+            verifies += link(anchor, document.docname)
+        block.parent.insert(block.parent.index(block) + 1, verifies)
+        if not check.text.strip():
+            module = check.options.get("module", "")
+            proof = nodes.paragraph(classes=["check-proof"])
+            proof += [nodes.emphasis(text=summary(block)), nodes.Text(": the module "), nodes.literal(text=module),
+                      nodes.Text(" equals the twin "), nodes.literal(text=check.options.get("twin", module)),
+                      nodes.Text(".")]
+            swap(block, proof)
+
+
 def reshape(app, doctree):
     """Make each chunk a container, link the uses of fragments, and move each argument to the Explanation section."""
     docname = app.env.docname
@@ -216,6 +242,7 @@ def reshape(app, doctree):
         return
     document = app.env.bcw_documents[docname]
     link_uses(doctree, document)
+    link_checks(doctree, document)
     chunks = {chunk.line: chunk for chunk in document.chunks}
     moved = []
     for node in list(doctree.findall(bcw.chunk)):
@@ -242,6 +269,8 @@ def reshape(app, doctree):
 def summary(block):
     if block["bcw"] == "twin":
         return "Formal twin"
+    if block["bcw"] == "check":
+        return f"Check ({block['check']})"
     if bcw.is_fragment_name(block["target"]):
         return f"Fragment: {block['target']}"
     kind = "Verilog" if block["language"] == "verilog" else "Source"
@@ -259,7 +288,7 @@ def wrap(block, before, after):
 
 
 def weave_html(doctree):
-    for block in code_blocks(doctree, "twin") + code_blocks(doctree, "source"):
+    for block in code_blocks(doctree, "twin") + code_blocks(doctree, "source") + code_blocks(doctree, "check"):
         wrap(block, nodes.raw("", f"<details><summary>{html.escape(summary(block))}</summary>", format="html"),
              nodes.raw("", "</details>", format="html"))
 
@@ -270,7 +299,7 @@ def weave_latex_chapter(root):
         if box["ids"]:
             box.insert(0, nodes.target(ids=box["ids"]))
             box["ids"] = []
-    for block in code_blocks(root, "twin"):
+    for block in code_blocks(root, "twin") + code_blocks(root, "check"):
         label = nodes.paragraph("", "", nodes.emphasis(text=summary(block)))
         block.parent.insert(block.parent.index(block), label)
         wrap(block, nodes.raw("", r"\begingroup\fvset{fontsize=\small}", format="latex"),

@@ -79,6 +79,10 @@ Rotation
        assign next = (turn == bcw_params::CORE_TURN_WIDTH'(bcw_params::CORE_THREADS - 1)) ? '0 : turn + 1'b1;
    endmodule
 
+.. check:: equiv
+   :verifies: core.rotation
+   :module: core_rotate
+
 .. rationale::
 
    The order of the turns depends on nothing that a thread does. No thread can therefore

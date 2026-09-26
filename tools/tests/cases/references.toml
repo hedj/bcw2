@@ -107,8 +107,22 @@ new = "   A thread's instructions are eight cycles apart, unlike :rule:`core.tur
 name = "a citation inside a code block is not a reference"
 append = '''
 
-.. check::
+.. check:: test
+   :verifies: core.rotation
 
    :rule:`core.nothing`
 '''
 findings = []
+
+[[case]]
+name = "a verifies entry that names no anchor is a finding on the directive line"
+append = '''
+
+.. check:: test
+   :verifies: core.nothing
+
+   module tb; endmodule
+'''
+findings = [
+    {check = "references", at = ".. check:: test"},
+]

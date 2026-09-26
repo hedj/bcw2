@@ -191,6 +191,12 @@ Serves: {\hyperref[\detokenize{design/design:design.timing}]{\sphinxcrossref{\sp
 Verilog: {\hyperref[\detokenize{core/core:source-1}]{\sphinxcrossref{build/rtl/core/core\_rotate.v}}}
 
 \sphinxAtStartPar
+\sphinxstyleemphasis{Check (equiv)}: the module \sphinxcode{\sphinxupquote{core\_rotate}} equals the twin \sphinxcode{\sphinxupquote{core\_rotate}}.
+
+\sphinxAtStartPar
+Verifies: {\hyperref[\detokenize{core/core:core.rotation}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{core.rotation}}}}}
+
+\sphinxAtStartPar
 Why: {\hyperref[\detokenize{core/core:why-1}]{\sphinxcrossref{see the explanation}}}
 
 \begin{sphinxuseclass}{chunk}
@@ -302,6 +308,28 @@ Uses: {\hyperref[\detokenize{core/core:fragment-core.pair-logic}]{\sphinxcrossre
 
 \sphinxAtStartPar
 Fragment: {\hyperref[\detokenize{core/core:source-3}]{\sphinxcrossref{:core.pair\sphinxhyphen{}logic}}}
+
+\sphinxAtStartPar
+\sphinxstyleemphasis{Check (test)}
+
+\begingroup\fvset{fontsize=\small}
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{k}{module}\PYG{+w}{ }\PYG{n}{tb}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{initial}\PYG{+w}{ }\PYG{n+nb}{\PYGZdl{}finish}\PYG{p}{;}
+\PYG{k}{endmodule}
+\end{sphinxVerbatim}
+
+\endgroup
+
+\sphinxAtStartPar
+Verifies: {\hyperref[\detokenize{core/core:core.rotation}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{core.rotation}}}}}
+
+\sphinxAtStartPar
+\sphinxstyleemphasis{Check (equiv)}: the module \sphinxcode{\sphinxupquote{core\_rotate}} equals the twin \sphinxcode{\sphinxupquote{core\_next}}.
+
+\sphinxAtStartPar
+Verifies: {\hyperref[\detokenize{core/core:core.rotation}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{core.rotation}}}}}
 
 
 \section{Explanation}

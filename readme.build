@@ -69,9 +69,11 @@ make test     Runs the tests of the tools, in tools/tests, with pytest on
 make tangle   Writes the code of the book into build/: the Verilog into
               build/rtl, the twins into build/model, and the value of each
               PARAMETER into build/rtl/bcw_params.sv and
-              build/model/bcw_params.py. It also writes build/tangle.json,
-              with the chapter line of each line that it writes and a hash
-              of each file. If a file in build/ changed after the last
+              build/model/bcw_params.py. It writes the code of each check
+              into build/checks, and a list of the checks into
+              build/checks.json. It also writes build/tangle.json, with the
+              chapter line of each line that it writes and a hash of each
+              file. If a file in build/ changed after the last
               tangle, make tangle keeps the file and reports it, so that
               no edit is lost. Delete the file to tangle it again. A file
               of the last tangle that the book no longer tangles is
@@ -136,6 +138,31 @@ put a module in order. Each fragment and each file has one code block
 (doc.one-block), so code from another block joins a file only through a
 fragment use. A twin cannot use a fragment, because a twin stays whole. The
 rules of fragments are in the section Fragments of book/doc/doc.rst.
+
+
+Checks
+------
+
+A check directive names its kind in its argument: test, prove or equiv. Its
+option :verifies: lists the REQUIREMENTs that it checks:
+
+    .. check:: equiv
+       :verifies: core.rotation
+       :module: core_rotate
+
+A test holds a SystemVerilog testbench. A prove holds SystemVerilog
+properties, and its option :depth: sets the number of steps of the proof (20
+if the option is not there). An equiv holds no code. Its option :module:
+names a Verilog module, and its option :twin: names the function of the twin
+that the module must equal (the module name if the option is not there).
+
+Each REQUIREMENT must appear in the :verifies: list of a check or in an
+"# implements:" comment in tools/, or carry the option :verify: none
+(doc.verified). make tangle writes the code of each check into
+build/checks/<name>.sv. The name is the first anchor of :verifies: and the
+kind, such as core.rotation.test, with -2, -3 and so on for a later check of
+the same name. build/checks.json lists each check with its kind, its options,
+its file and its chapter line. No tool runs the checks yet.
 
 
 The tools

@@ -132,6 +132,7 @@ class Block:
     first: int  # the line of the first line of code
     text: str
     chunk: Chunk = None
+    check: str = None  # the kind of a check: test, prove or equiv
 
 
 @dataclass
@@ -211,7 +212,7 @@ def chunk_directive(label, anchored, options, titled=False):
 # implements: doc.attribute-keys
 CHUNK_DIRECTIVES = {
     "goal": chunk_directive("GOAL", True, ["parent"]),
-    "requirement": chunk_directive("REQUIREMENT", True, ["parent", "impl"]),
+    "requirement": chunk_directive("REQUIREMENT", True, ["parent", "impl", "verify"]),
     "parameter": chunk_directive("PARAMETER", True, ["parent", "value", "unit"]),
     "definition": chunk_directive("DEFINITION", True, ["parent", "never"]),
     "rationale": chunk_directive("RATIONALE", False, []),
@@ -259,7 +260,17 @@ class SourceDirective(CodeDirective):
 
 
 class CheckDirective(CodeDirective):
+    """A check of the REQUIREMENTs in its verifies option. Its argument is its kind, and it tangles to no file."""
     kind = "check"
+    required_arguments = 1
+    option_spec = {"verifies": directives.unchanged, "module": directives.unchanged, "twin": directives.unchanged,
+                   "depth": directives.unchanged}
+
+    def run(self):
+        [node] = super().run()
+        node["check"], node["target"] = self.arguments[0], None
+        node["language"] = "verilog" if node["check"] in ("test", "prove") else "none"
+        return [node]
 
 
 class CitationRole(SphinxRole):
@@ -347,7 +358,7 @@ def read_document(app, doctree):
                 walk(child, level, top, section, item)
             elif isinstance(child, nodes.literal_block):
                 block = Block(path, child.line, child.get("bcw"), child.get("options", {}), child.get("target"),
-                              child.get("first", child.line), child.astext(), owner)
+                              child.get("first", child.line), child.astext(), owner, child.get("check"))
                 document.blocks.append(block)
                 if is_fragment(block):
                     label(app, docname, child, fragment_id(block.target))
@@ -435,6 +446,7 @@ class Model:
     values: dict  # the value of each PARAMETER and TARGET that evaluates
     failures: dict  # (Chunk, reason) of each PARAMETER and TARGET whose value does not evaluate
     units: dict  # the unit of each PARAMETER and TARGET, or None
+    checks: list  # the Block of each check, in the chapter order
 
 
 def build_model(documents):
@@ -464,7 +476,8 @@ def build_model(documents):
         for chunk in document.chunks:
             if chunk.label in VALUED and chunk.anchor is not None:
                 units.setdefault(chunk.anchor, chunk.options.get("unit"))
-    return Model(documents, ordered, left, parts, fragments, files, uses, values, failures, units)
+    checks = [block for document in ordered for block in document.blocks if block.kind == "check"]
+    return Model(documents, ordered, left, parts, fragments, files, uses, values, failures, units, checks)
 
 
 def model(env):
@@ -698,6 +711,11 @@ def implements(block):
     return [entry.strip() for entry in block.options.get("implements", "").split(",")]
 
 
+def verifies(block):
+    """The anchors in the verifies option of a check."""
+    return [entry.strip() for entry in block.options.get("verifies", "").split(",") if entry.strip()]
+
+
 # implements: doc.implemented
 def check_implemented(documents, tools):
     named = {anchor for _, _, anchor in tools}
@@ -713,6 +731,56 @@ def check_implemented(documents, tools):
                               "no source directive and no check implements the REQUIREMENT",
                               "name it in an :implements: list or an implements: comment, "
                               "or set :impl: none")
+
+
+# The kinds of a check: a testbench that Verilator runs, properties that SymbiYosys proves, and a
+# proof that a module equals its twin.
+CHECK_KINDS = ("test", "prove", "equiv")
+
+
+# implements: doc.check-kinds
+def check_check_kinds(documents):
+    labels = {chunk.anchor: chunk.label for document in documents for chunk in document.chunks}
+    for document in documents:
+        for block in document.blocks:
+            if block.kind != "check":
+                continue
+            faults = []
+            if block.check not in CHECK_KINDS:
+                faults.append(f"the kind {block.check!r} is not test, prove or equiv")
+            names = verifies(block)
+            if not names:
+                faults.append("the check names no REQUIREMENT in a verifies option")
+            others = [name for name in names if labels.get(name, "REQUIREMENT") != "REQUIREMENT"]
+            if others:
+                faults.append(f"{', '.join(others)} is not a REQUIREMENT")
+            if block.check in ("test", "prove") and not block.text.strip():
+                faults.append(f"a {block.check} check holds no code")
+            if block.check == "equiv" and block.text.strip():
+                faults.append("an equiv check holds no code: the proof comes from the twin and the module")
+            if block.check == "equiv" and "module" not in block.options:
+                faults.append("an equiv check names its module in a module option")
+            if not block.options.get("depth", "1").isdigit():
+                faults.append(f"the depth {block.options['depth']!r} is not a number of steps")
+            for fault in faults:
+                yield Finding(document.path, block.line, "check-kinds", block.chunk.anchor if block.chunk else None,
+                              fault, "give the check the kind, the options and the code that doc.check describes")
+
+
+# implements: doc.verified
+def check_verified(documents, tools):
+    named = {anchor for _, _, anchor in tools}
+    for document in documents:
+        for block in document.blocks:
+            if block.kind == "check":
+                named.update(verifies(block))
+    for document in documents:
+        for chunk in document.chunks:
+            if (chunk.label == "REQUIREMENT" and chunk.anchor not in named
+                    and chunk.options.get("verify") != "none"):
+                yield Finding(chunk.path, chunk.line, "verified", chunk.anchor,
+                              "no check verifies the REQUIREMENT, and no implements: comment names it",
+                              "name it in the :verifies: list of a check, or set :verify: none")
 
 
 # implements: doc.references
@@ -734,6 +802,11 @@ def check_references(documents, anchors, tools):
                     if entry not in anchors:
                         yield Finding(document.path, block.line, "references", None,
                                       f"the :implements: entry {entry!r} is not an anchor in the book", fix)
+            if block.kind == "check":
+                for entry in verifies(block):
+                    if entry not in anchors:
+                        yield Finding(document.path, block.line, "references", None,
+                                      f"the :verifies: entry {entry!r} is not an anchor in the book", fix)
         for number, anchor, _ in document.citations:
             if anchor not in anchors:
                 yield Finding(document.path, number, "references", None,
@@ -1256,6 +1329,8 @@ def check(model, retired=(), tools=(), general=None):
             findings += check_dotted_words(chunk)
             findings += check_anchor_prefix(chunk)
     findings += check_implemented(documents, tools)
+    findings += check_check_kinds(documents)
+    findings += check_verified(documents, tools)
     findings += check_references(documents, set(seen), tools)
     findings += check_reaches_goal(documents)
     findings += check_ears(documents)
@@ -1367,6 +1442,11 @@ def tangle(app, exception):
     outputs = tangle_parameters(book)
     for target, block in book.files.items():
         outputs.append((target, [(text, [path, number]) for text, path, number in expand([block], book.fragments)]))
+    manifest = check_manifest(book)
+    for entry, block in zip(manifest, book.checks):
+        if entry["file"] is not None:
+            outputs.append((entry["file"], [(text, [block.path, block.first + offset])
+                                            for offset, text in enumerate(block.text.splitlines())]))
     path = Path(root) / "build" / "tangle.json"
     last = json.loads(path.read_text(encoding="utf-8"))["files"] if path.exists() else {}
     record = {}
@@ -1399,6 +1479,42 @@ def tangle(app, exception):
              + ",\n".join(f"  {json.dumps(place)}" for place in entry["lines"]) + "\n ]}"
              for name, entry in sorted(record.items())]
     write(path, '{"files": {\n' + ",\n".join(files) + "\n}}\n")
+    write(Path(root) / "build" / "checks.json", "[\n" + ",\n".join(json.dumps(entry) for entry in manifest) + "\n]\n")
+
+
+# A proof that names no depth looks this many steps from the reset.
+DEPTH = 20
+
+
+def check_manifest(book):
+    """The entry of build/checks.json for each check of the book, in the chapter order.
+
+    The name of a check is the first anchor in its verifies option and its kind, with
+    -2, -3 and so on after it for the later checks of that name. The code of a check
+    is the file build/checks/<name>.sv. An equiv check names the twin file of the
+    first REQUIREMENT that it verifies.
+    """
+    twins = {}
+    for document in book.ordered:
+        for block in document.blocks:
+            if block.kind == "twin" and block.chunk is not None:
+                twins.setdefault(block.chunk.anchor, block.target)
+    manifest, counts = [], {}
+    for block in book.checks:
+        names = verifies(block)
+        base = f"{names[0] if names else Path(block.path).stem}.{block.check}"
+        counts[base] = counts.get(base, 0) + 1
+        name = base if counts[base] == 1 else f"{base}-{counts[base]}"
+        equiv = block.check == "equiv"
+        depth = block.options.get("depth", str(DEPTH))
+        manifest.append({
+            "name": name, "kind": block.check, "verifies": names, "path": block.path, "line": block.line,
+            "file": f"build/checks/{name}.sv" if block.text.strip() else None,
+            "module": block.options.get("module"),
+            "twin": block.options.get("twin", block.options.get("module")) if equiv else None,
+            "twin_file": twins.get(names[0]) if equiv and names else None,
+            "depth": int(depth) if block.check == "prove" and depth.isdigit() else None})
+    return manifest
 
 
 def tangle_parameters(book):
