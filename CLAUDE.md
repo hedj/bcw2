@@ -112,7 +112,7 @@ These rules apply to every task in this repository, as the Proportionality secti
 - Write tests as follows:
   - Bug fix: write a test that fails before the fix and passes after it. Put the test and the fix in the same published commit (see section 7).
   - Refactor or simplification: follow the steps of section 11.4.
-  - New feature: write tests that specify the required behavior.
+  - New feature: write tests that specify the required behaviour.
 - For a bug fix or a new feature, test the test. Reverse every edit except the test edits.
 - Then confirm that the test fails.
 - After you fix a bug, search the codebase for the faulty code with a text pattern. Report the pattern and every match.
@@ -171,7 +171,7 @@ Do not apply this section to code or to code comments that quote code.
 - Use Australian spelling.
 - Do not use contractions.
 - Do not use em-dashes. Name the relation ("because", "but", "for example"), or write two sentences.
-- Define a concept term at its first use, in fewer than ten words, with one term per sentence: "idempotent (safe to run twice)".
+- Define a concept term at its first use, in fewer than ten words, with one term per sentence. For example, write "idempotent (safe to run twice)".
 - Do not define product names, standard names (Postgres, S3, HTTP), or the tool that the text is about.
 
 ### 9.2 The document
@@ -216,7 +216,7 @@ If no human can answer (e.g. in a CI or headless run), do not continue the block
 - End with a report: the blocker, the evidence, the options, and your recommended option.
 
 ## 11. Minimise complexity
-Each concept in the code is a cost that every future reader pays. Remove concepts when the behaviour survives without them. Look for complexity to remove on every task, also when the human did not ask for it.
+Each concept in the system is a cost that every future reader pays. Remove concepts when the behaviour survives without them. Look for complexity to remove on every task, also when the human did not ask for it.
 
 ### 11.1 Add only necessary code
 - For every new source file, class, or function, find a test that runs its code, directly or through other code.
@@ -271,10 +271,10 @@ Each concept in the code is a cost that every future reader pays. Remove concept
 - Report the number of tests before and after, with the tests added and the tests deleted as separate numbers.
 
 ### 11.5 Report complexity
-- In every final report, state each simplification that you made. Give the counts before and after (see section 5) and the tests that run the code.
+- In every final report, state each simplification that you made, and the tests that run the code.
 - For each simplification, name the concepts and mechanisms that it removed.
 - Name any new mechanism, and the mechanisms that it replaced. Give every measure before and after.
 - State each proposed simplification with the concepts removed, the functionality lost, the risk, and the effort.
-- Order the proposals by the number of concepts that they remove, largest first.
+- Order the proposals by the number of concepts and mechanisms that they remove, largest first.
 - State the rejected candidates and the reason for each.
 - If you found no candidates, say so and name the code that you examined.
