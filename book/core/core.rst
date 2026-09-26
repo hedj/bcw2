@@ -65,9 +65,6 @@ Rotation
       :file: build/model/core_rotate.py
       :stamp: 75abc2dc
 
-      from bcw_params import CORE_THREADS
-
-
       def core_rotate(turn):
           return {'next': (turn + 1) % CORE_THREADS}
 

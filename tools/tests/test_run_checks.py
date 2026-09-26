@@ -187,9 +187,7 @@ class EquivTest:
         assert lines[2] == "run_checks: 0 passed, 1 failed"
 
     def test_a_twin_reads_the_parameters_of_the_book(self, tmp_path):
-        chapter = twin("return {'next': (turn + 1) % CORE_THREADS}").replace(
-            "      def core_rotate(turn):", "      from bcw_params import CORE_THREADS\n\n\n      def core_rotate(turn):")
-        text, result = run(tmp_path, THREADS, chapter)
+        text, result = run(tmp_path, THREADS, twin("return {'next': (turn + 1) % CORE_THREADS}"))
         assert result.returncode == 0, result.stdout + result.stderr
 
     @pytest.mark.parametrize("module", [
@@ -215,27 +213,74 @@ class EquivTest:
         assert result.stdout.splitlines()[0] == failure(
             text, "the twin gives the outputs nxt, but the module has the outputs next")
 
-    def test_a_twin_that_branches_with_z3_if_passes(self, tmp_path):
-        chapter = twin("return {'next': z3.If(turn == 7, 0, turn + 1)}").replace(
-            "      def core_rotate(turn):", "      import z3\n\n\n      def core_rotate(turn):")
-        text, result = run(tmp_path, "", chapter)
+    def test_a_twin_that_branches_on_equality_passes(self, tmp_path):
+        text, result = run(tmp_path, "", twin("return {'next': 0 if turn == 7 else turn + 1}"))
         assert result.returncode == 0, result.stdout + result.stderr
         assert result.stdout.splitlines()[0] == f"{CHAPTER}:{line(text, '.. check:: equiv')}: PASS: [check] " \
                                                 "core.rotation.equiv"
 
-    def test_a_twin_that_raises_fails_with_its_traceback(self, tmp_path):
-        # A comparison other than == and != of a z3 value has no Python truth value, so the twin raises.
-        text, result = run(tmp_path, "", twin("return {'next': 0 if turn >= 7 else turn + 1}"))
+    def test_a_twin_outside_the_language_fails_at_its_chapter_line(self, tmp_path):
+        text, result = run(tmp_path, "", twin("return {'next': {7: 0}[turn]}"))
         assert result.returncode == 1
-        lines = result.stdout.splitlines()
-        assert lines[0] == failure(text, "the twin failed")
-        assert any(f'File "{CHAPTER}", line {line(text, "0 if turn")}, in core_rotate' in entry for entry in lines)
+        assert result.stdout.splitlines()[:2] == [
+            failure(text, "the twin cannot be translated"),
+            f"    {CHAPTER}:{line(text, '{7: 0}[turn]')}: '{{7: 0}}[turn]' is not in the twin language"]
+
+    def test_a_twin_that_returns_one_value_fails(self, tmp_path):
+        text, result = run(tmp_path, "", twin("return (turn + 1) % 8"))
+        assert result.returncode == 1
+        assert result.stdout.splitlines()[0] == failure(text, "core_rotate returns one value, not a dict of the "
+                                                              "output ports")
 
     def test_a_twin_function_that_does_not_exist_fails(self, tmp_path):
         text, result = run(tmp_path, "", GOOD.replace("   :module: core_rotate\n",
                                                       "   :module: core_rotate\n   :twin: nothing\n"))
         assert result.returncode == 1
-        assert result.stdout.splitlines()[0] == failure(text, "build/model/core_rotate.py defines no function nothing")
+        assert result.stdout.splitlines()[:2] == [
+            failure(text, "the twin cannot be translated"),
+            f"    {CHAPTER}:{line(text, 'def core_rotate')}: the twin defines no function nothing"]
+
+    MIX = ("\n.. source:: build/rtl/core/mix.v\n\n"
+           "   module mix (input wire [7:0] a, input wire [7:0] b, output wire [7:0] y);\n"
+           "       assign y = (a & b) ^ (a >> 1);\n   endmodule\n"
+           "\n.. check:: equiv\n   :verifies: core.rotation\n   :module: mix\n")
+
+    def mixed(self, body):
+        """GOOD with a second twin function mix, whose output y is body."""
+        return GOOD.replace("      def core_rotate(turn):",
+                            f"      def mix(a, b):\n          return {{'y': {body}}}\n\n\n      def core_rotate(turn):")
+
+    @pytest.mark.parametrize("value", [15, 255])
+    def test_a_negative_twin_value_never_equals_an_output(self, tmp_path, value):
+        # The twin needs 4 bits and the output has 8, so the runner must extend both correctly. With
+        # one output, a wrong extension makes the whole check pass.
+        wide = ("\n.. source:: build/rtl/core/wide.v\n\n"
+                "   module wide (input wire [2:0] turn, output wire [7:0] out);\n"
+                f"       assign out = 8'd{value};\n   endmodule\n"
+                "\n.. check:: equiv\n   :verifies: core.rotation\n   :module: wide\n")
+        chapter = GOOD.replace("      def core_rotate(turn):",
+                               "      def wide(turn):\n          return {'out': -1}\n\n\n      def core_rotate(turn):")
+        text, result = run(tmp_path, wide, chapter)
+        assert result.returncode == 1
+        lines = result.stdout.splitlines()
+        assert lines[1] == failure(text, "the module and the twin differ", 2)
+        assert re.fullmatch(rf"    turn=\d+: module out={value}, twin out=-1", lines[2]), lines[2]
+
+    def test_a_twin_with_bit_operations_passes(self, tmp_path):
+        text, result = run(tmp_path, self.MIX, self.mixed("(a & b) ^ (a >> 1)"))
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert result.stdout.splitlines()[1] == f"{CHAPTER}:{line(text, '.. check:: equiv', ':module: core_rotate')}: " \
+                                                "PASS: [check] core.rotation.equiv-2"
+
+    def test_a_twin_with_other_bit_operations_fails_with_the_inputs(self, tmp_path):
+        text, result = run(tmp_path, self.MIX, self.mixed("(a | b) ^ (a >> 1)"))
+        assert result.returncode == 1
+        lines = result.stdout.splitlines()
+        assert lines[1] == failure(text, "the module and the twin differ", 2)
+        match = re.fullmatch(r"    a=(\d+), b=(\d+): module y=(\d+), twin y=(\d+)", lines[2])
+        assert match, lines[2]
+        a, b, module, value = map(int, match.groups())
+        assert (module, value) == ((a & b) ^ (a >> 1), (a | b) ^ (a >> 1))
 
     def test_a_requirement_without_a_twin_fails(self, tmp_path):
         start, end = GOOD.index("   .. twin::"), GOOD.index(TWIN) + len(TWIN) + 1

@@ -44,7 +44,8 @@ new = '''
 
    .. twin::
 
-      x
+      def f(x):
+          return x
 
 '''
 
@@ -56,7 +57,8 @@ Some prose.
 
 .. twin::
 
-   x
+   def f(x):
+       return x
 '''
 findings = [
     {check = "stamps", at = ".. twin::", occurrence = 2},

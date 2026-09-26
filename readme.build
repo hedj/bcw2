@@ -174,10 +174,10 @@ with the smtbmc engine and Yices. The work of each check is in
 build/run/<name>.
 
 An equiv passes when z3 proves that the module equals its twin for every
-value of the input ports. yosys writes the module as SMT. The runner calls
-the function of the twin with a z3 integer for each input port. The function
-returns a dict with a value for each output port, as a z3 integer or a
-Python int. If an output of the module differs from the value of the twin
+value of the input ports. yosys writes the module as SMT. tools/twin.py
+translates the function of the twin to z3 terms. The function takes an
+argument for each input port, and returns a dict with a value for each
+output port. If an output of the module differs from the value of the twin
 for one input, the runner prints that input and both outputs:
 
     book/core/core.rst:82: FAIL: [check] core.rotation.equiv: the module and the twin differ
@@ -185,13 +185,6 @@ for one input, the runner prints that input and both outputs:
 
 An equiv fails for a module that holds state (a register or a memory).
 Prove such a module with a prove check.
-
-The function of a twin must compute with arithmetic, such as + and %, or
-with z3.If. It must not branch in Python on a comparison of its inputs. z3
-gives == and != of two terms a Python truth value that compares the terms
-as written, not their values. So "0 if turn == 7 else turn + 1" gives
-turn + 1 under z3. Any other comparison, such as >=, makes the twin fail
-with an error.
 
 The runner prints each result at the chapter line of its check directive.
 After a failure come the lines of the tool that tell why, with each location
@@ -204,6 +197,33 @@ The source lines that Verilator quotes under an error keep the line numbers
 of the file in build/checks.
 
 
+The twin language
+-----------------
+
+The tools never run a twin as Python. tools/twin.py reads the syntax of a
+twin and translates each form to a z3 term, so "0 if turn == 7 else turn + 1"
+means what a reader of Python expects. make check reports each form outside
+the language at its chapter line (doc.twin-forms). The language is:
+
+- A twin holds only function definitions, without decorators, default
+  values or keyword arguments, and without imports.
+- A function holds lines of the form "name = value", then one return. The
+  function that an equiv check names returns a dict of the output ports.
+- An integer is a literal, an argument, a local name or the constant name
+  of a PARAMETER, such as CORE_THREADS. The operators are + - * and unary -,
+  ** by a constant of 0 or more, // and % by a positive constant, << and >>
+  by a constant of 0 or more, and ~ & | ^. The functions are min, max, abs
+  and the other functions of the twin, which take integers and cannot call
+  themselves.
+- A condition is a comparison, a chain of comparisons, and, or, not, True
+  or False. "a if c else b" needs a condition c.
+
+A twin cannot use a loop, a dict, a list, a string, a float, "in", or a call
+of any other function. Each integer is exact: the translation gives each
+value enough bits that no value overflows, as in Python. A twin that needs
+more than 256 bits fails its equiv check.
+
+
 The tools
 ---------
 
@@ -212,6 +232,7 @@ tools/bcw.py        The Sphinx extension. It reads the chapters, applies
 tools/weave.py      The Sphinx extension that builds the reader edition.
 tools/linemap.py    Maps a location in build/ to its chapter line.
 tools/run_checks.py Runs each check directive of the book.
+tools/twin.py       Translates a twin in the twin language to z3.
 tools/ste_lint.py   The linter of plain English that doc.linter uses.
 tools/conf.py       The Sphinx configuration of the book.
 tools/hooks/        The Git pre-push hook.

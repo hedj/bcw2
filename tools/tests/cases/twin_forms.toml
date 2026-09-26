@@ -1,0 +1,305 @@
+# doc.twin-forms and doc.twin-language: each form outside the twin language is a finding on its line.
+
+[[case]]
+name = "a condition with == passes"
+findings = []
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': 0 if turn == 7 else turn + 1}\n"
+
+[[case]]
+name = "helpers, local names, bit operations, min, max, abs, chains and not pass"
+findings = []
+
+[[case.replace]]
+old = '''
+      def core_rotate(turn):
+          return {'next': (turn + 1) % 8}
+'''
+new = '''
+      def wrap(value):
+          return value % 8
+
+
+      def core_rotate(turn):
+          after = wrap(turn + 1)
+          low = min(after, max(turn, abs(turn - 9)))
+          return {'next': (after & 7) | (turn ^ turn) | (0 if not 0 <= low < 99 else low >> 9) | (~turn & 0)}
+'''
+
+[[case]]
+name = "an import is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "import os"},
+]
+
+[[case.replace]]
+old = "      def core_rotate(turn):\n"
+new = "      import os\n\n\n      def core_rotate(turn):\n"
+
+[[case]]
+name = "a decorator is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "@functools.cache"},
+]
+
+[[case.replace]]
+old = "      def core_rotate(turn):\n"
+new = "      @functools.cache\n      def core_rotate(turn):\n"
+
+[[case]]
+name = "a default value is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "def core_rotate(turn=0):"},
+]
+
+[[case.replace]]
+old = "      def core_rotate(turn):\n"
+new = "      def core_rotate(turn=0):\n"
+
+[[case]]
+name = "a loop is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "for step in"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          for step in turn:\n              turn = turn + 1\n          return {'next': turn % 8}\n"
+
+[[case]]
+name = "a while loop is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "while turn"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          while turn > 8:\n              turn = turn - 8\n          return {'next': turn}\n"
+
+[[case]]
+name = "a dict lookup is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "{7: 0}[turn]"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': {7: 0}[turn]}\n"
+
+[[case]]
+name = "in is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "turn in (0, 7)"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': 0 if turn in (0, 7) else turn + 1}\n"
+
+[[case]]
+name = "a lambda is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "lambda"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': (lambda t: t)(turn)}\n"
+
+[[case]]
+name = "a string is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "'seven'"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': 'seven'}\n"
+
+[[case]]
+name = "a float is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "1.5"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': turn * 1.5}\n"
+
+[[case]]
+name = "a division by an input is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "8 // turn"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': 8 // turn}\n"
+
+[[case]]
+name = "a modulo by 0 is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "% 0"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': (turn + 1) % 0}\n"
+
+[[case]]
+name = "a power of an input is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "2 ** turn"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': 2 ** turn}\n"
+
+[[case]]
+name = "a shift by an input is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "1 << turn"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': 1 << turn}\n"
+
+[[case]]
+name = "an integer as a condition is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "0 if turn else 1"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': 0 if turn else 1}\n"
+
+[[case]]
+name = "a truth value in arithmetic is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "(turn == 7) + 1"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': (turn == 7) + 1}\n"
+
+[[case]]
+name = "recursion is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "return again(value)"},
+]
+
+[[case.replace]]
+old = '''
+      def core_rotate(turn):
+          return {'next': (turn + 1) % 8}
+'''
+new = '''
+      def again(value):
+          return again(value)
+
+
+      def core_rotate(turn):
+          return {'next': again(turn)}
+'''
+
+[[case]]
+name = "an unknown name is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "turn + missing"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': turn + missing}\n"
+
+[[case]]
+name = "a call of an unknown function is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "round(turn)"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': round(turn)}\n"
+
+[[case]]
+name = "a twin that is not Python is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "turn ==}"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': turn ==}\n"
+
+[[case]]
+name = "a PARAMETER constant passes"
+findings = []
+append = '''
+
+.. parameter:: core.threads
+   :parent: core.core
+   :value: 8
+
+   The number of threads.
+'''
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': (turn + 1) % CORE_THREADS}\n"
+
+[[case]]
+name = "a call with the wrong number of arguments is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "wrap(turn, 1)"},
+]
+
+[[case.replace]]
+old = '''
+      def core_rotate(turn):
+          return {'next': (turn + 1) % 8}
+'''
+new = '''
+      def wrap(value):
+          return value % 8
+
+
+      def core_rotate(turn):
+          return {'next': wrap(turn, 1)}
+'''
+
+[[case]]
+name = "a function that does not end with a return is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "after = turn + 1"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          after = turn + 1\n"
+
+[[case]]
+name = "a key that is not a string is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "{1: turn}"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {1: turn}\n"
+
+[[case]]
+name = "a choice between an integer and a truth value is a finding"
+findings = [
+    {check = "twin-forms", anchor = "core.rotation", at = "turn if turn == 1 else turn == 2"},
+]
+
+[[case.replace]]
+old = "          return {'next': (turn + 1) % 8}\n"
+new = "          return {'next': turn if turn == 1 else turn == 2}\n"

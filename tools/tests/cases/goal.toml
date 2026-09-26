@@ -10,7 +10,8 @@ append = '''
 
    .. twin::
 
-      x
+      def f(x):
+          return x
 '''
 findings = [
     {check = "stamps", anchor = "core.timing", at = ".. twin::", occurrence = 2},

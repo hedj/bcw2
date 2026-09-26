@@ -11,8 +11,8 @@ prove passes when SymbiYosys proves each assertion with the smtbmc engine and
 Yices, to the depth of the check.
 
 An equiv passes when z3 proves that the module equals its twin. yosys writes
-the module as SMT. The runner calls the function of the twin with a z3 integer
-for each input port, and the function returns a dict of the output ports. z3
+the module as SMT. tools/twin.py translates the function of the twin, which
+returns a dict of the output ports, with a bit-vector for each input port. z3
 then looks for input values where an output of the module differs from the
 value of the twin. A module that holds state fails: a prove check can prove it.
 
@@ -28,28 +28,32 @@ It exits 1 if a check fails. The work of each check is in build/run/<name>.
 
 import json
 import re
-import runpy
 import subprocess
 import sys
-import traceback
 from pathlib import Path
 
 import z3
 
 import linemap
+import twin
 
 MODULE = re.compile(r"^\s*module\s+(\w+)", re.MULTILINE)
 # The lines of SymbiYosys that tell why a proof failed, and its last line.
 PROOF_LINES = re.compile(r"Assert failed|ERROR|DONE")
 PROOF_PREFIX = re.compile(r"^SBY\s+[\d:]+\s+\[[^\]]*\]\s+")
 # The comments of yosys write_smt2 that name each port, and that mark a register or a memory.
-PORT = re.compile(r"^; yosys-smt2-(input|output) (\S+) \d+$", re.MULTILINE)
+PORT = re.compile(r"^; yosys-smt2-(input|output) (\S+) (\d+)$", re.MULTILINE)
 STATE = re.compile(r"^; yosys-smt2-(register|memory) ", re.MULTILINE)
 
 
 def sources():
     """The package of PARAMETERs, then each Verilog file of build/rtl."""
     return ["build/rtl/bcw_params.sv"] + sorted(str(path) for path in Path("build/rtl").rglob("*.v"))
+
+
+def constants():
+    """The value of each PARAMETER of the book, by its constant name."""
+    return json.loads(Path("build/checks.json").read_text())["constants"]
 
 
 def run_test(check, top, work):
@@ -94,41 +98,46 @@ def run_equiv(check, top, work):
     if check["twin_file"] is None:
         return f"{check['verifies'][0]} has no twin", ""
     ports = PORT.findall(text)
-    inputs = {name: z3.Int(f"input_{name}") for kind, name in ports if kind == "input"}
-    outputs = [name for kind, name in ports if kind == "output"]
+    inputs = {name: z3.BitVec(f"port_{name}", int(width)) for kind, name, width in ports if kind == "input"}
+    outputs = {name: z3.BitVec(f"port_{name}", int(width)) for kind, name, width in ports if kind == "output"}
     try:
-        function = runpy.run_path(check["twin_file"]).get(check["twin"])
-        values = function(**inputs) if function else None
-    except Exception:
-        return "the twin failed", traceback.format_exc()
-    if function is None:
-        return f"{check['twin_file']} defines no function {check['twin']}", ""
+        width, values = twin.translate(Path(check["twin_file"]).read_text(), check["twin"], inputs, constants())
+    except twin.TwinError as error:
+        return "the twin cannot be translated", f"{check['twin_file']}:{error.line}: {error}"
+    if not isinstance(values, dict):
+        return f"{check['twin']} returns one value, not a dict of the output ports", ""
     if sorted(values) != sorted(outputs):
         return (f"the twin gives the outputs {', '.join(sorted(values))}, but the module has the outputs "
                 f"{', '.join(outputs)}"), ""
-    # Each port becomes an integer that equals the value of its bits in one state of the module.
+    # Each port becomes a bit-vector that equals its bits in one state of the module. The
+    # outputs are natural numbers, and the values of the twin are in two's complement.
     solver = z3.Solver()
     solver.add(z3.parse_smt2_string(text + f"(declare-const state |{top}_s|)" + "".join(
-        f"(declare-const {kind}_{name} Int)(assert (= {kind}_{name} (bv2nat (|{top}_n {name}| state))))"
-        for kind, name in ports)))
-    solver.add([z3.Int(f"twin_{name}") == values[name] for name in outputs])
-    solver.add(z3.Or([z3.Int(f"output_{name}") != z3.Int(f"twin_{name}") for name in outputs]))
+        f"(declare-const port_{name} (_ BitVec {size}))(assert (= port_{name} (|{top}_n {name}| state)))"
+        for _, name, size in ports)))
+    wide = max([width] + [term.size() + 1 for term in outputs.values()])
+    module = {name: z3.ZeroExt(wide - term.size(), term) for name, term in outputs.items()}
+    values = {name: z3.SignExt(wide - width, values[name]) for name in outputs}
+    solver.add(z3.Or([module[name] != values[name] for name in outputs]))
     if solver.check() == z3.unsat:
         return None
     model = solver.model()
-    shown = ", ".join(f"{name}={model.eval(value)}" for name, value in inputs.items())
+
+    def number(term, signed=False):
+        value = model.eval(term, model_completion=True)
+        return value.as_signed_long() if signed else value.as_long()
+
+    shown = ", ".join(f"{name}={number(term)}" for name, term in inputs.items())
     return "the module and the twin differ", "\n".join(
-        f"{shown}: module {name}={model.eval(z3.Int(f'output_{name}'))}, twin {name}={model.eval(z3.Int(f'twin_{name}'))}"
-        for name in outputs if model.eval(z3.Int(f"output_{name}") != z3.Int(f"twin_{name}")))
+        f"{shown}: module {name}={number(module[name])}, twin {name}={number(values[name], signed=True)}"
+        for name in outputs if number(module[name]) != number(values[name], signed=True))
 
 
 RUNNERS = {"test": run_test, "prove": run_prove, "equiv": run_equiv}
 
 
 def main():
-    checks = json.loads(Path("build/checks.json").read_text())
-    # A twin imports the constants of the book from build/model/bcw_params.py.
-    sys.path.insert(0, "build/model")
+    checks = json.loads(Path("build/checks.json").read_text())["checks"]
     passed = failed = 0
     for check in checks:
         place = f"{check['path']}:{check['line']}"

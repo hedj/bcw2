@@ -54,6 +54,7 @@ from sphinx.util.docutils import SphinxDirective, SphinxRole
 from sphinx.util.nodes import make_refnode
 
 import ste_lint
+import twin
 
 RULES = {"REQUIREMENT", "PARAMETER", "DEFINITION"}
 ANCHORED = RULES | {"GOAL", "TARGET"}
@@ -1288,6 +1289,18 @@ def check_scoped_constants(documents):
                                   "name each constant by its scope, such as bcw_params::CORE_THREADS")
 
 
+# implements: doc.twin-forms
+def check_twin_forms(model):
+    constants = parameter_constants(model)
+    for document in model.documents:
+        for block in document.blocks:
+            if block.kind == "twin":
+                for line, message in twin.errors(block.text, constants):
+                    yield Finding(document.path, block.first + line - 1, "twin-forms",
+                                  block.chunk.anchor if block.chunk else None, message,
+                                  "write the twin in the twin language that doc.twin-language describes")
+
+
 # implements: doc.whole-twins
 def check_whole_twins(documents):
     for document in documents:
@@ -1345,6 +1358,7 @@ def check(model, retired=(), tools=(), general=None):
     findings += check_fragments_used(model)
     findings += check_fragment_cycles(model)
     findings += check_whole_twins(documents)
+    findings += check_twin_forms(model)
     findings += check_scoped_constants(documents)
     findings += check_one_block(model)
     if general is not None:
@@ -1479,7 +1493,8 @@ def tangle(app, exception):
              + ",\n".join(f"  {json.dumps(place)}" for place in entry["lines"]) + "\n ]}"
              for name, entry in sorted(record.items())]
     write(path, '{"files": {\n' + ",\n".join(files) + "\n}}\n")
-    write(Path(root) / "build" / "checks.json", "[\n" + ",\n".join(json.dumps(entry) for entry in manifest) + "\n]\n")
+    write(Path(root) / "build" / "checks.json", f'{{"constants": {json.dumps(parameter_constants(book))}, "checks": [\n'
+          + ",\n".join(json.dumps(entry) for entry in manifest) + "\n]}\n")
 
 
 # A proof that names no depth looks this many steps from the reset.
@@ -1515,6 +1530,12 @@ def check_manifest(book):
             "twin_file": twins.get(names[0]) if equiv and names else None,
             "depth": int(depth) if block.check == "prove" and depth.isdigit() else None})
     return manifest
+
+
+def parameter_constants(book):
+    """The value of each PARAMETER that has a value, by its constant name."""
+    return {constant_name(chunk.anchor): book.values[chunk.anchor] for document in book.documents
+            for chunk in document.chunks if chunk.label == "PARAMETER" and chunk.anchor in book.values}
 
 
 def tangle_parameters(book):

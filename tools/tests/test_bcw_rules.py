@@ -400,8 +400,9 @@ class FragmentTest:
         text = GOOD.replace("      def core_rotate(turn):\n", f"      {use}\n      def core_rotate(turn):\n") + FRAGMENT
         assert text != GOOD + FRAGMENT
         book = Book({"core/core.rst": text})
+        # A fragment use is not Python either, so doc.twin-forms also reports its line.
         assert ([f[1:] for f in book.tuples() if f[2] != "fragments-used"] ==
-                [(line(text, use), "whole-twins", "core.rotation")])
+                [(line(text, use), "twin-forms", "core.rotation"), (line(text, use), "whole-twins", "core.rotation")])
         assert "a twin stays whole" in next(f for f in book.findings if f.check == "whole-twins").fix
 
 
@@ -542,7 +543,7 @@ class TangleTest:
 
     def test_the_manifest_lists_each_check_in_the_chapter_order(self):
         text = GOOD + self.CHECKS
-        checks = json.loads(Book({"core/core.rst": text}, tangle=True).files["build/checks.json"])
+        checks = json.loads(Book({"core/core.rst": text}, tangle=True).files["build/checks.json"])["checks"]
         assert checks == [
             {"name": "core.rotation.equiv", "kind": "equiv", "verifies": ["core.rotation"], "path": CHAPTER,
              "line": line(text, ".. check:: equiv"), "file": None, "module": "core_rotate", "twin": "core_rotate",
@@ -557,9 +558,14 @@ class TangleTest:
              "line": line(text, "module tb2;") - 3, "file": "build/checks/core.rotation.test-2.sv", "module": None,
              "twin": None, "twin_file": None, "depth": None}]
 
+    def test_the_manifest_holds_the_constant_of_each_parameter(self):
+        text = GOOD + THREADS + WIDTH
+        manifest = json.loads(Book({"core/core.rst": text}, tangle=True).files["build/checks.json"])
+        assert manifest["constants"] == {"CORE_THREADS": 8, "CORE_TURN_WIDTH": 3}
+
     def test_a_proof_without_a_depth_has_the_depth_20(self):
         text = GOOD + "\n.. check:: prove\n   :verifies: core.rotation\n\n   module props;\n   endmodule\n"
-        checks = json.loads(Book({"core/core.rst": text}, tangle=True).files["build/checks.json"])
+        checks = json.loads(Book({"core/core.rst": text}, tangle=True).files["build/checks.json"])["checks"]
         assert [check["depth"] for check in checks] == [None, 20]
 
     def test_without_a_root_nothing_is_tangled(self):

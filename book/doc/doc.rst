@@ -103,6 +103,19 @@ Terms and marking
 
    A :dfn:`twin` is a ``twin`` directive.
 
+.. definition:: doc.twin-language
+   :parent: doc.read-is-checked
+
+   The :dfn:`twin language` is the part of ``Python`` that ``tools/twin.py`` can give to ``z3``.
+   A twin in it holds only functions. Each function holds lines of the form ``name = value``
+   and ends with one ``return``. Its values are integers and the results of ``==``, ``<`` and
+   the other operators that compare, and ``tools/twin.py`` lists each operator that it allows.
+
+.. requirement:: doc.twin-forms
+   :parent: doc.read-is-checked
+
+   Each twin shall hold only the forms of the twin language.
+
 .. definition:: doc.stamp
    :parent: doc.read-is-checked
 
