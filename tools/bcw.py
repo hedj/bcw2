@@ -8,7 +8,6 @@ Each chunk of a chapter is a directive, such as
        The core shall give the turn after thread ``t`` to thread ``t + 1``.
 
        .. twin::
-          :file: build/model/core_rotate.py
           :stamp: 0123abcd
 
           def core_rotate(turn): ...
@@ -234,7 +233,7 @@ class CodeDirective(SphinxDirective):
         node.source, node.line = self.get_source_info()
         node["bcw"] = self.kind
         node["options"] = dict(self.options)
-        node["target"] = self.arguments[0] if self.required_arguments else self.options.get("file")
+        node["target"] = self.arguments[0] if self.required_arguments else None
         node["first"] = self.content_offset + 1
         node["language"] = language(node["target"], self.kind)
         return [node]
@@ -251,7 +250,7 @@ def language(target, kind):
 
 class TwinDirective(CodeDirective):
     kind = "twin"
-    option_spec = {"file": directives.unchanged, "stamp": directives.unchanged}
+    option_spec = {"stamp": directives.unchanged}
 
 
 class SourceDirective(CodeDirective):
@@ -442,7 +441,7 @@ class Model:
     left: list  # the names of the chapters that the chapter order leaves out
     parts: list  # (kind, [Document]) for each kind that has chapters, in the order of KINDS, then (None, the rest)
     fragments: dict  # the Block of each fragment name: its first block in the chapter order
-    files: dict  # the Block of each file that a twin or a source writes: its first block in the chapter order
+    files: dict  # the Block of each file that a source writes: its first block in the chapter order
     uses: dict  # (Block, chapter line) of each use of each fragment name, in the chapter order
     values: dict  # the value of each PARAMETER and TARGET that evaluates
     failures: dict  # (Chunk, reason) of each PARAMETER and TARGET whose value does not evaluate
@@ -467,7 +466,7 @@ def build_model(documents):
         for block in document.blocks:
             if is_fragment(block):
                 fragments.setdefault(block.target, block)
-            elif (block.kind == "twin" and block.target) or writes_file(block):
+            elif writes_file(block):
                 files.setdefault(block.target, block)
             for number, name, _ in fragment_uses(block):
                 uses.setdefault(name, []).append((block, number))
@@ -1192,7 +1191,7 @@ def fragment_uses(block):
 
 def named(block):
     """The file or the fragment name that the block defines, or None."""
-    return block.target if block.kind == "source" or (block.kind == "twin" and block.target) else None
+    return block.target if block.kind == "source" else None
 
 
 def fragment_graph(model):
@@ -1491,14 +1490,15 @@ def check_manifest(book):
 
     The name of a check is the first anchor in its verifies option and its kind, with
     -2, -3 and so on after it for the later checks of that name. The code of a check
-    is the file build/checks/<name>.sv. An equiv check names the twin file of the
-    first REQUIREMENT that it verifies.
+    is the file build/checks/<name>.sv. An equiv check holds the code of the twin of
+    the first REQUIREMENT that it verifies, with the chapter path and line of its
+    first line, so that the runner reports an error of the twin at its chapter line.
     """
     twins = {}
     for document in book.ordered:
         for block in document.blocks:
             if block.kind == "twin" and block.chunk is not None:
-                twins.setdefault(block.chunk.anchor, block.target)
+                twins.setdefault(block.chunk.anchor, block)
     manifest, counts = [], {}
     for block in book.checks:
         names = verifies(block)
@@ -1506,13 +1506,15 @@ def check_manifest(book):
         counts[base] = counts.get(base, 0) + 1
         name = base if counts[base] == 1 else f"{base}-{counts[base]}"
         equiv = block.check == "equiv"
+        verified = twins.get(names[0]) if equiv and names else None
         depth = block.options.get("depth", str(DEPTH))
         manifest.append({
             "name": name, "kind": block.check, "verifies": names, "path": block.path, "line": block.line,
             "file": f"build/checks/{name}.sv" if block.text.strip() else None,
             "module": block.options.get("module"),
             "twin": block.options.get("twin", block.options.get("module")) if equiv else None,
-            "twin_file": twins.get(names[0]) if equiv and names else None,
+            "twin_path": verified and verified.path, "twin_line": verified and verified.first,
+            "twin_code": verified and verified.text,
             "depth": int(depth) if block.check == "prove" and depth.isdigit() else None})
     return manifest
 

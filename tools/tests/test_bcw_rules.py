@@ -462,6 +462,8 @@ class ParseErrorTest:
                                   "the twin directive takes no argument."),
         "an unknown option on a twin": (f"      :stamp: {STAMP}\n", f"      :stamp: {STAMP}\n      :colour: red\n",
                                         ".. twin::", 'unknown option: "colour"'),
+        "a file on a twin": (f"      :stamp: {STAMP}\n", f"      :stamp: {STAMP}\n      :file: build/model/x.py\n",
+                             ".. twin::", 'unknown option: "file"'),
         "an unknown option on a source": (IMPLEMENTS, IMPLEMENTS + "   :colour: red\n", ".. source::",
                                           'unknown option: "colour"'),
         "an extra word on a source": (".. source:: build/rtl/core/core_rotate.v\n",
@@ -497,7 +499,7 @@ class ParseErrorTest:
 
 
 class TangleTest:
-    """The tangle writes each file of a twin or a source, and the chapter line of each of its lines."""
+    """The tangle writes each file of a source, and the chapter line of each of its lines. A twin writes no file."""
 
     def test_each_file_holds_its_code_and_each_line_maps_to_its_chapter_line(self):
         files = Book({"core/core.rst": GOOD}, tangle=True).files
@@ -505,11 +507,8 @@ class TangleTest:
         assert (files["build/rtl/bcw_params.sv"] ==
                 ("// The PARAMETERs of the book, which tools/bcw.py writes.\npackage bcw_params;\n"
                  "/* verilator lint_off UNUSEDPARAM */\n/* verilator lint_on UNUSEDPARAM */\nendpackage\n"))
-        assert sorted(files) == ["build/checks.json", "build/model/core_rotate.py", "build/rtl/bcw_params.sv",
-                                 "build/rtl/core/core_rotate.v", "build/tangle.json"]
-        first = line(GOOD, "def core_rotate")
-        assert tangled(files, "build/model/core_rotate.py") == [
-            ("def core_rotate(turn):", CHAPTER, first), ("    return {'next': (turn + 1) % 8}", CHAPTER, first + 1)]
+        assert sorted(files) == ["build/checks.json", "build/rtl/bcw_params.sv", "build/rtl/core/core_rotate.v",
+                                 "build/tangle.json"]
         first = line(GOOD, "module core_rotate")
         assert tangled(files, "build/rtl/core/core_rotate.v") == [
             ("module core_rotate (input wire [2:0] turn, output wire [2:0] next);", CHAPTER, first),
@@ -534,16 +533,17 @@ class TangleTest:
         assert checks == [
             {"name": "core.rotation.equiv", "kind": "equiv", "verifies": ["core.rotation"], "path": CHAPTER,
              "line": line(text, ".. check:: equiv"), "file": None, "module": "core_rotate", "twin": "core_rotate",
-             "twin_file": "build/model/core_rotate.py", "depth": None},
+             "twin_path": CHAPTER, "twin_line": line(text, "def core_rotate"),
+             "twin_code": "def core_rotate(turn):\n    return {'next': (turn + 1) % 8}", "depth": None},
             {"name": "core.rotation.test", "kind": "test", "verifies": ["core.rotation"], "path": CHAPTER,
              "line": line(text, ".. check:: test"), "file": "build/checks/core.rotation.test.sv", "module": None,
-             "twin": None, "twin_file": None, "depth": None},
+             "twin": None, "twin_path": None, "twin_line": None, "twin_code": None, "depth": None},
             {"name": "core.rotation.prove", "kind": "prove", "verifies": ["core.rotation"], "path": CHAPTER,
              "line": line(text, ".. check:: prove"), "file": "build/checks/core.rotation.prove.sv", "module": None,
-             "twin": None, "twin_file": None, "depth": 10},
+             "twin": None, "twin_path": None, "twin_line": None, "twin_code": None, "depth": 10},
             {"name": "core.rotation.test-2", "kind": "test", "verifies": ["core.rotation"], "path": CHAPTER,
              "line": line(text, "module tb2;") - 3, "file": "build/checks/core.rotation.test-2.sv", "module": None,
-             "twin": None, "twin_file": None, "depth": None}]
+             "twin": None, "twin_path": None, "twin_line": None, "twin_code": None, "depth": None}]
 
     def test_the_manifest_holds_the_constant_of_each_parameter(self):
         text = GOOD + THREADS + WIDTH
@@ -775,8 +775,7 @@ class ModelTest:
         text = GOOD + SKELETON + FRAGMENT
         model = Book({"core/core.rst": text}).model
         assert model.fragments[":core.pair-logic"].line == line(text, ".. source:: :core.pair-logic")
-        assert sorted(model.files) == ["build/model/core_rotate.py", "build/rtl/core/core_rotate.v",
-                                       "build/rtl/core/pair.v"]
+        assert sorted(model.files) == ["build/rtl/core/core_rotate.v", "build/rtl/core/pair.v"]
         [(block, number)] = model.uses[":core.pair-logic"]
         assert (block.target, number) == ("build/rtl/core/pair.v", line(text, "<<:core.pair-logic>>"))
 

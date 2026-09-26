@@ -62,7 +62,6 @@ Rotation
    :param:`core.threads`.
 
    .. twin::
-      :file: build/model/core_rotate.py
       :stamp: 75abc2dc
 
       def core_rotate(turn):

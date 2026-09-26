@@ -40,7 +40,7 @@ class GoodTest:
         assert [chunk.term for chunk in document.chunks if chunk.term] == ["turn", "core"]
         assert [(block.kind, block.line, block.target, block.chunk and block.chunk.anchor)
                 for block in document.blocks] == [
-    ("twin", line(GOOD, ".. twin::"), "build/model/core_rotate.py", "core.rotation"),
+    ("twin", line(GOOD, ".. twin::"), None, "core.rotation"),
     ("source", line(GOOD, ".. source::"), "build/rtl/core/core_rotate.v", None),
     ("check", line(GOOD, ".. check:: equiv"), None, None)]
         assert document.sections == [(line(GOOD, "Core"), 1, "Core"), (line(GOOD, "Overview"), 2, "Overview"),

@@ -95,15 +95,15 @@ def run_equiv(check, top, work):
     text = smt.read_text()
     if STATE.search(text):
         return "the module holds state: prove it with a prove check", ""
-    if check["twin_file"] is None:
+    if check["twin_code"] is None:
         return f"{check['verifies'][0]} has no twin", ""
     ports = PORT.findall(text)
     inputs = {name: z3.BitVec(f"port_{name}", int(width)) for kind, name, width in ports if kind == "input"}
     outputs = {name: z3.BitVec(f"port_{name}", int(width)) for kind, name, width in ports if kind == "output"}
     try:
-        width, values = twin.translate(Path(check["twin_file"]).read_text(), check["twin"], inputs, constants())
+        width, values = twin.translate(check["twin_code"], check["twin"], inputs, constants())
     except twin.TwinError as error:
-        return "the twin cannot be translated", f"{check['twin_file']}:{error.line}: {error}"
+        return "the twin cannot be translated", f"{check['twin_path']}:{check['twin_line'] + error.line - 1}: {error}"
     if not isinstance(values, dict):
         return f"{check['twin']} returns one value, not a dict of the output ports", ""
     if sorted(values) != sorted(outputs):

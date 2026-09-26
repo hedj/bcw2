@@ -51,7 +51,6 @@ Rotation
    thread *t* to thread *t* + 1.
 
    .. twin::
-      :file: build/model/core_rotate.py
       :stamp: {STAMP}
 
       def core_rotate(turn):

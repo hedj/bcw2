@@ -33,15 +33,3 @@ append = '''
 findings = [
     {check = "one-block", at = ".. source:: :core.pair-logic", occurrence = 2},
 ]
-
-[[case]]
-name = "a second block of a file or a fragment is a finding on its directive line [the file of a twin]"
-append = '''
-
-.. source:: build/model/core_rotate.py
-
-   MORE = 1
-'''
-findings = [
-    {check = "one-block", at = ".. source:: build/model/core_rotate.py"},
-]

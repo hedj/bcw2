@@ -68,17 +68,19 @@ make weave    Builds the reader edition: build/html/index.html and
 make test     Runs the tests of the tools, in tools/tests, with pytest on
               each core of the machine.
 make tangle   Writes the code of the book into build/: the Verilog into
-              build/rtl, the twins into build/model, and the value of each
-              PARAMETER into build/rtl/bcw_params.sv. It writes the code of
-              each check into build/checks, and a list of the checks and
-              the value of each PARAMETER into build/checks.json. It also writes build/tangle.json, with the
+              build/rtl, and the value of each PARAMETER into
+              build/rtl/bcw_params.sv. A twin is not a file: the tangle
+              writes its code into build/checks.json for each equiv check.
+              It writes the code of each check into build/checks, and a list
+              of the checks and the value of each PARAMETER into
+              build/checks.json. It also writes build/tangle.json, with the
               chapter line of each line that it writes and a hash of each
-              file. If a file in build/ changed after the last
-              tangle, make tangle keeps the file and reports it, so that
-              no edit is lost. Delete the file to tangle it again. A file
-              of the last tangle that the book no longer tangles is
-              deleted, unless it changed after the last tangle: then make
-              tangle keeps it and reports it too.
+              file. If a file in build/ changed after the last tangle, make
+              tangle keeps the file and reports it, so that no edit is lost.
+              Delete the file to tangle it again. A file of the last tangle
+              that the book no longer tangles is deleted, unless it changed
+              after the last tangle: then make tangle keeps it and reports
+              it too.
 make clean    Removes build/.
 
 Run make check after each edit to the book. Run make test after each edit
