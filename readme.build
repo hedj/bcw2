@@ -191,6 +191,14 @@ a case. To test a rule, add a case. Write a test in Python only if it must
 read more than the findings of one chapter, such as a message, the tangled
 files or the woven pages.
 
+The reference outputs in tools/tests/golden are the HTML pages and the
+LaTeX of one book that holds each feature of the weave. A test compares the
+weave of that book with them. If you change the weave on purpose, rewrite
+them, then read their difference in git before you commit it:
+
+    ./dev pytest --update-golden tools/tests/test_weave.py
+    git diff tools/tests/golden
+
 A new check needs a test that fails before the check exists and passes
 after it. A new rule in book/doc/doc.rst needs a check in tools/ that names
 the rule in an "# implements:" comment. It also needs a test that names the

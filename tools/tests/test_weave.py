@@ -1,11 +1,14 @@
 """Tests of tools/weave.py, which builds the reader edition as HTML and as LaTeX for the PDF.
 
-Each test builds a small book with the extensions bcw and weave, and reads the
-HTML or LaTeX that Sphinx writes. The tests that only read the HTML of BOOK share
-one build of it, through the fixture html.
+ReferenceTest compares the HTML and the LaTeX of one book, GOLDEN_BOOK, with the
+reference outputs in tools/tests/golden. The other tests each build a small book
+with the extensions bcw and weave, and test one meaning of the output, such as
+the order of the parts or a PDF without undefined references. The tests that only
+read the HTML of BOOK share one build of it, through the fixture html.
 """
 
 import re
+from pathlib import Path
 
 import pytest
 
@@ -83,80 +86,8 @@ class NumberingTest:
         assert (re.findall(r'href="\w+/\w+\.html">(\d+)\. (\w+)</a>', index) ==
                 [("1", "Guide"), ("2", "Design"), ("3", "Core")])
 
-    def test_a_chapter_and_its_sections_carry_its_number(self, core):
-        core = body(core)
-        assert (re.findall(r'<span class="section-number">([\d.]+) </span>', core) ==
-                ["3.", "3.1.", "3.2.", "3.3.", "3.4."])
-
     def test_the_link_to_the_previous_chapter_carries_its_number(self, core):
         assert 'title="previous chapter"><span class="section-number">2. </span>Design' in core
-
-    def test_the_contents_of_the_pdf_are_titled_contents_not_after_the_first_part(self):
-        tex = weave(BOOK, "latex").output["book.tex"]
-        assert after(tex, r"\begin{document}", r"\renewcommand{\contentsname}{Contents}\sphinxtableofcontents"), tex
-
-    def test_the_pdf_shows_chapter_numbers_in_numerals(self):
-        tex = weave(BOOK, "latex").output["book.tex"]
-        assert "fncychap" not in tex
-
-
-class ChunkTest:
-    @pytest.mark.parametrize("label, anchor", [("requirement", "core.rotation"), ("definition", "core.turn"),
-                                               ("goal", "core.timing")])
-    def test_each_chunk_is_a_container_whose_id_is_its_anchor(self, core, label, anchor):
-        assert re.search(rf'<div class="chunk {label}[^"]*" id="{re.escape(anchor)}">', core)
-
-    def test_the_first_line_shows_the_label_and_the_anchor(self, core):
-        assert re.search((r'<p class="chunk-label"><strong>REQUIREMENT</strong> '
-                          r'<code[^>]*><span class="pre">core.rotation</span></code></p>'), core)
-
-    def test_the_serves_line_links_to_each_parent(self, core):
-        assert re.search(r'Serves: <a class="reference internal" href="\.\./design/design\.html#design\.timing">',
-                         core)
-        assert re.search(r'Serves: <a class="reference internal" href="#core\.core">', core)
-
-    def test_an_open_chunk_shows_its_title(self, core):
-        assert re.search(r"<strong>OPEN</strong> The thread count is not settled\.", core)
-
-
-class CodeTest:
-    def test_in_html_each_twin_and_each_source_is_a_closed_disclosure(self, core):
-        assert re.search(r"(?s)<details><summary>Formal twin</summary>.*?return.*?</details>", core)
-        assert re.search(r"(?s)<details><summary>Verilog: build/rtl/core/core_rotate\.v</summary>"
-                         r".*?endmodule.*?</details>", core)
-
-    def test_in_latex_the_twin_is_small_under_its_rule(self):
-        tex = weave(BOOK, "latex").output["book.tex"]
-        assert after(tex, "The core shall give", "Formal twin", r"\fvset{fontsize=\small}", "return",
-                     r"\section{Explanation}"), tex
-
-    def test_in_latex_the_verilog_moves_to_the_end_of_its_chapter(self):
-        tex = weave(BOOK, "latex").output["book.tex"]
-        core = tex[tex.index(r"\chapter{Core}"):]
-        assert after(core, "Verilog:", r"\section{Explanation}", r"\section{Implementation}", "endmodule"), core
-        assert core.index(r"\section{Implementation}") < core.index("endmodule")
-
-
-class ExplanationTest:
-    @pytest.fixture
-    def heading(self, core):
-        """Where the Explanation section starts in the page of the core chapter."""
-        return core.index(">Explanation<")
-
-    def test_each_rationale_moves_to_the_explanation_section_at_the_end_of_its_chapter(self, core, heading):
-        assert core.index("eight cycles apart") > heading
-
-    def test_a_why_line_links_to_it_from_its_old_place(self, core, heading):
-        match = re.search(r'Why: <a class="reference internal" href="#([^"]+)">', core)
-        assert match.start() < heading
-        assert core.index(f'id="{match.group(1)}"') > heading
-
-    def test_the_why_line_is_not_styled_as_a_chunk(self, core):
-        assert '<p class="chunk-why">Why:' in core
-
-    def test_it_links_back_to_the_section_that_it_came_from(self, core, heading):
-        assert '<a class="reference internal" href="#rotation">Rotation</a>' in core[heading:]
-
 
 LABELS = ["goal", "requirement", "parameter", "definition", "rationale", "discussion", "target", "open"]
 
@@ -200,20 +131,6 @@ class ValueTest:
         assert ('one for each of <a class="reference internal" href="#core.threads">'
                 '<span class="param">8 threads</span></a>.') in core
 
-    def test_the_first_line_shows_the_value(self):
-        core = weave(VALUED_BOOK, "html").output["core/core.html"]
-        assert re.search((r'<strong>PARAMETER</strong> <code[^>]*><span class="pre">core\.threads</span></code>'
-                          r' = 8 threads</p>'), core)
-        assert re.search((r'<strong>PARAMETER</strong> <code[^>]*><span class="pre">core\.turn-width</span></code>'
-                          r' = clog2\(core\.threads\) = 3 bits</p>'), core)
-        assert re.search(r'<span class="pre">core\.spare</span></code> = 2</p>', core)
-
-    def test_the_latex_shows_the_values_too(self):
-        tex = weave(VALUED_BOOK, "latex").output["book.tex"]
-        assert (r"one for each of {\hyperref[\detokenize{core/core:core.threads}]"
-                r"{\sphinxcrossref{\DUrole{param}{8 threads}}}}") in tex
-        assert r"\sphinxcode{\sphinxupquote{core.threads}} = 8 threads" in tex
-
     def test_a_citation_of_a_parameter_without_a_value_shows_its_anchor(self):
         text = VALUED.replace("   :value: 8\n", "")
         core = weave({**BOOK, "core/core.rst": text}, "html").output["core/core.html"]
@@ -223,34 +140,6 @@ class ValueTest:
 
 TARGETED = VALUED.replace("A thread's instructions", "The aim is :param:`core.aim`. A thread's instructions") + \
     target("core.aim", "core.threads * 2", parent="core.threads", unit="threads", text="The aim of the core.")
-TARGETED_BOOK = {**BOOK, "core/core.rst": TARGETED}
-
-
-@pytest.fixture(scope="module")
-def targeted():
-    """The page of the core chapter of TARGETED_BOOK, woven as HTML once."""
-    return weave(TARGETED_BOOK, "html").output["core/core.html"]
-
-
-class TargetValueTest:
-    """The weave shows the value of a TARGET as it shows the value of a PARAMETER."""
-
-    def test_a_target_is_a_container_whose_id_is_its_anchor(self, targeted):
-        assert re.search(r'<div class="chunk target[^"]*" id="core\.aim">', targeted)
-
-    def test_the_first_line_shows_the_value(self, targeted):
-        assert re.search((r'<strong>TARGET</strong> <code[^>]*><span class="pre">core\.aim</span></code>'
-                          r' = core\.threads \* 2 = 16 threads</p>'), targeted)
-
-    def test_a_citation_shows_the_value_and_unit_as_a_link_to_the_target(self, targeted):
-        assert ('The aim is <a class="reference internal" href="#core.aim">'
-                '<span class="param">16 threads</span></a>.') in targeted
-
-    def test_the_latex_shows_the_values_too(self):
-        tex = weave(TARGETED_BOOK, "latex").output["book.tex"]
-        assert (r"The aim is {\hyperref[\detokenize{core/core:core.aim}]"
-                r"{\sphinxcrossref{\DUrole{param}{16 threads}}}}") in tex
-        assert r"\sphinxcode{\sphinxupquote{core.aim}} = core.threads * 2 = 16 threads" in tex
 
 
 class ChecksTest:
@@ -262,70 +151,14 @@ class ChecksTest:
         assert deprecations(lambda: weave(BOOK, builder)) == []
 
 
-# The bar and background of each label in weave.css, or of .chunk where the label sets none.
-COLOURS = {"goal": ("7B3FA0", "F7F7F7"), "requirement": ("1F5FBF", "EDF3FC"),
-           "parameter": ("0E7C86", "F7F7F7"), "definition": ("2E7D32", "EDF6EE"),
-           "rationale": ("8A8A8A", "F7F7F7"), "discussion": ("8A8A8A", "F7F7F7"),
-           "target": ("C26A00", "F7F7F7"), "open": ("C26A00", "F7F7F7")}
-
-
-@pytest.fixture(scope="module")
-def tex():
-    """BOOK woven as LaTeX, built once for the tests that only read it."""
-    return weave(BOOK, "latex").output["book.tex"]
-
-
-class PdfStyleTest:
-    """The PDF sets each chunk apart with the bar colour and background of its label in weave.css."""
-
-    @pytest.mark.parametrize("label, bar, background", [(label, *pair) for label, pair in COLOURS.items()])
-    def test_each_label_has_the_colours_of_the_stylesheet(self, tex, label, bar, background):
-        assert rf"\definecolor{{bcwbar{label}}}{{HTML}}{{{bar}}}" in tex
-        assert rf"\definecolor{{bcwback{label}}}{{HTML}}{{{background}}}" in tex
-
-    @pytest.mark.parametrize("label", LABELS)
-    def test_each_label_has_a_box_that_the_class_of_its_container_applies(self, tex, label):
-        assert (rf"\newenvironment{{sphinxclass{label}}}{{\begin{{bcwchunk}}{{bcwbar{label}}}"
-                rf"{{bcwback{label}}}}}{{\end{{bcwchunk}}}}") in tex
-
-    def test_the_box_holds_the_chunk(self, tex):
-        assert after(tex, r"\begin{sphinxuseclass}{requirement}", r"\sphinxstylestrong{REQUIREMENT}",
-                     "The core shall give", r"\end{sphinxuseclass}"), tex
-
-
 FRAGMENTED = (CORE_CHAPTER + "\n.. source:: build/rtl/core/pair.v\n\n"
               "   module pair (input wire a, output wire b);\n       <<:core.pair-logic>>\n   endmodule\n"
               "\n.. source:: :core.pair-logic\n\n   assign b = a;\n")
 FRAGMENTED_BOOK = {**BOOK, "core/core.rst": FRAGMENTED}
 
 
-@pytest.fixture(scope="module")
-def fragmented():
-    """The page of the core chapter of FRAGMENTED_BOOK, woven as HTML once."""
-    return weave(FRAGMENTED_BOOK, "html").output["core/core.html"]
-
-
 class FragmentWeaveTest:
     """The weave names each fragment, and links each block that uses fragments to them."""
-
-    def test_a_fragment_is_a_closed_disclosure_named_after_the_fragment(self, fragmented):
-        assert re.search(r"(?s)<details><summary>Fragment: :core\.pair-logic</summary>.*?assign.*?</details>",
-                         fragmented)
-
-    def test_the_first_block_of_a_fragment_carries_its_id(self, fragmented):
-        assert 'id="fragment-core.pair-logic"' in fragmented
-
-    def test_a_block_that_uses_fragments_links_to_each(self, fragmented):
-        assert re.search(r'<p class="fragment-uses">Uses: <a class="reference internal" '
-                         r'href="#fragment-core\.pair-logic"><code[^>]*><span class="pre">:core\.pair-logic</span>',
-                         fragmented)
-        # The line follows the disclosure of its block.
-        assert fragmented.index("Verilog: build/rtl/core/pair.v") < fragmented.index('class="fragment-uses"')
-
-    def test_the_latex_links_the_use_to_the_fragment(self):
-        tex = weave(FRAGMENTED_BOOK, "latex").output["book.tex"]
-        assert r"Uses: {\hyperref[\detokenize{core/core:fragment-core.pair-logic}]" in tex
-        assert r"\label{\detokenize{core/core:fragment-core.pair-logic}}" in tex
 
     def test_latexmk_makes_a_pdf_without_undefined_references(self):
         status, _, log = weave(FRAGMENTED_BOOK, "latex", pdf=True).pdf
@@ -346,51 +179,60 @@ class PdfTest:
 INDEXED = INDEX + "\n.. code-index::\n"
 
 
-@pytest.fixture(scope="module")
-def indexed():
-    """FRAGMENTED_BOOK with an index of code, woven as HTML once."""
-    return weave(FRAGMENTED_BOOK, "html", index=INDEXED)
-
-
 class CodeIndexTest:
     """The directive code-index lists each file and each fragment, where it is defined and where it is used."""
 
-    def entries(self, book):
-        """(name, [href]) of each entry of the index of code."""
-        index = body(book.output["index.html"])
-        return [(name, re.findall(r'href="([^"]+)"', item))
-                for name, item in re.findall(r'(?s)<li><p><code[^>]*><span class="pre">([^<]+)</span></code>(.*?)</li>',
-                                             index)]
-
-    def test_the_index_follows_a_heading(self, indexed):
-        assert indexed.tuples() == []
-        assert after(body(indexed.output["index.html"]), 'class="rubric">Index of code', "build/model/core_rotate.py")
-
-    def test_each_file_and_then_each_fragment_has_an_entry_with_links(self, indexed):
-        assert self.entries(indexed) == [
-            ("build/model/core_rotate.py", ["core/core.html#file-build/model/core_rotate.py"]),
-            ("build/rtl/core/core_rotate.v", ["core/core.html#file-build/rtl/core/core_rotate.v"]),
-            ("build/rtl/core/pair.v", ["core/core.html#file-build/rtl/core/pair.v"]),
-            (":core.pair-logic", ["core/core.html#fragment-core.pair-logic", "core/core.html#file-build/rtl/core/pair.v"]),
-        ]
-
-    def test_an_entry_names_the_chapter_that_defines_it_and_the_blocks_that_use_it(self, indexed):
-        index = body(indexed.output["index.html"])
-        assert after(index, ":core.pair-logic", "defined in", ">Core<", "used in", "build/rtl/core/pair.v")
-
-    def test_the_block_of_each_file_carries_its_id(self, indexed):
-        page = indexed.output["core/core.html"]
-        assert 'id="file-build/rtl/core/pair.v"' in page and 'id="file-build/model/core_rotate.py"' in page
-
     def test_without_the_directive_the_index_has_no_index_of_code(self, html):
         assert "Index of code" not in html.output["index.html"]
-
-    def test_the_latex_links_each_entry(self):
-        tex = weave(FRAGMENTED_BOOK, "latex", index=INDEXED).output["book.tex"]
-        assert r"\hyperref[\detokenize{core/core:file-build/rtl/core/pair.v}]" in tex
-        assert r"\label{\detokenize{core/core:file-build/rtl/core/pair.v}}" in tex
 
     def test_latexmk_makes_a_pdf_of_the_index_without_undefined_references(self):
         status, _, log = weave(FRAGMENTED_BOOK, "latex", index=INDEXED, pdf=True).pdf
         assert status == 0, log
         assert "undefined" not in log
+
+
+# The reference outputs: one book that holds each feature of the weave, woven once as HTML
+# and once as LaTeX. Each test compares an output with its file in tools/tests/golden. After
+# a change to the weave, run pytest --update-golden, then read the difference of the files
+# in git before the commit.
+GOLDEN = Path(__file__).resolve().parent / "golden"
+GOLDEN_BOOK = {**BOOK, "core/core.rst": TARGETED + FRAGMENTED[len(CORE_CHAPTER):]}
+PAGES = ["index.html", "guide/guide.html", "design/design.html", "core/core.html"]
+
+
+def main_part(page):
+    """The main part of a page: the body, without the head, the sidebar and the footer of the theme."""
+    start = page.index('<div class="body" role="main">')
+    return page[start:page.index('<div class="sphinxsidebar"', start)].rstrip() + "\n"
+
+
+def without_date(tex):
+    return re.sub(r"(?m)^\\date\{.*\}$", r"\\date{}", tex)
+
+
+def compare(request, name, text):
+    path = GOLDEN / name
+    if request.config.getoption("--update-golden"):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text)
+    assert text == path.read_text(), f"run pytest --update-golden, then read the difference of {path}"
+
+
+@pytest.fixture(scope="module")
+def golden_html():
+    return weave(GOLDEN_BOOK, "html", index=INDEXED)
+
+
+class ReferenceTest:
+    """The HTML and the LaTeX of GOLDEN_BOOK are the same as their reference outputs."""
+
+    def test_the_book_gives_no_finding(self, golden_html):
+        assert golden_html.tuples() == []
+
+    @pytest.mark.parametrize("page", PAGES)
+    def test_each_page_is_its_reference(self, request, golden_html, page):
+        compare(request, "html/" + page, main_part(golden_html.output[page]))
+
+    def test_the_latex_is_its_reference(self, request):
+        tex = weave(GOLDEN_BOOK, "latex", index=INDEXED).output["book.tex"]
+        compare(request, "latex/book.tex", without_date(tex))

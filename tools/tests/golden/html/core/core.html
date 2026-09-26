@@ -1,0 +1,94 @@
+<div class="body" role="main">
+            
+  <section id="core">
+<h1><span class="section-number">3. </span>Core<a class="headerlink" href="#core" title="Link to this heading">¶</a></h1>
+<section id="overview">
+<h2><span class="section-number">3.1. </span>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>The core runs every thread through one pipeline.</p>
+</section>
+<section id="rotation">
+<h2><span class="section-number">3.2. </span>Rotation<a class="headerlink" href="#rotation" title="Link to this heading">¶</a></h2>
+<div class="chunk requirement docutils container" id="core.rotation">
+<p class="chunk-label"><strong>REQUIREMENT</strong> <code class="docutils literal notranslate"><span class="pre">core.rotation</span></code></p>
+<p>The core shall give the turn after
+thread <em>t</em> to thread <em>t</em> + 1.</p>
+<details><summary>Formal twin</summary><div class="highlight-python notranslate" id="file-build/model/core_rotate.py"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">core_rotate</span><span class="p">(</span><span class="n">turn</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;next&#39;</span><span class="p">:</span> <span class="n">turn</span> <span class="o">+</span> <span class="mi">1</span><span class="p">}</span>
+</pre></div>
+</div>
+</details><p class="chunk-serves">Serves: <a class="reference internal" href="../design/design.html#design.timing"><code class="docutils literal notranslate"><span class="pre">design.timing</span></code></a></p>
+</div>
+<details><summary>Verilog: build/rtl/core/core_rotate.v</summary><div class="highlight-verilog notranslate" id="file-build/rtl/core/core_rotate.v"><div class="highlight"><pre><span></span><span class="k">module</span><span class="w"> </span><span class="n">core_rotate</span><span class="w"> </span><span class="p">(</span><span class="k">input</span><span class="w"> </span><span class="kt">wire</span><span class="w"> </span><span class="p">[</span><span class="mh">2</span><span class="o">:</span><span class="mh">0</span><span class="p">]</span><span class="w"> </span><span class="n">turn</span><span class="p">,</span><span class="w"> </span><span class="k">output</span><span class="w"> </span><span class="kt">wire</span><span class="w"> </span><span class="p">[</span><span class="mh">2</span><span class="o">:</span><span class="mh">0</span><span class="p">]</span><span class="w"> </span><span class="n">next</span><span class="p">);</span>
+<span class="w">    </span><span class="k">assign</span><span class="w"> </span><span class="n">next</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">turn</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mh">3</span><span class="mi">&#39;d1</span><span class="p">;</span>
+<span class="k">endmodule</span>
+</pre></div>
+</div>
+</details><p class="chunk-why">Why: <a class="reference internal" href="#why-1">see the explanation</a></p>
+<div class="chunk open docutils container">
+<p class="chunk-label"><strong>OPEN</strong> The thread count is not settled.</p>
+</div>
+<div class="chunk definition docutils container" id="core.turn">
+<p class="chunk-label"><strong>DEFINITION</strong> <code class="docutils literal notranslate"><span class="pre">core.turn</span></code></p>
+<p>A <em class="dfn">turn</em> is a thread’s cycle in the rotation.</p>
+<p class="chunk-serves">Serves: <a class="reference internal" href="#core.core"><code class="docutils literal notranslate"><span class="pre">core.core</span></code></a></p>
+</div>
+<div class="chunk definition docutils container" id="core.core">
+<p class="chunk-label"><strong>DEFINITION</strong> <code class="docutils literal notranslate"><span class="pre">core.core</span></code></p>
+<p>The <em class="dfn">core</em> runs the threads in turn.</p>
+<p class="chunk-serves">Serves: <a class="reference internal" href="../design/design.html#design.timing"><code class="docutils literal notranslate"><span class="pre">design.timing</span></code></a></p>
+</div>
+<p><strong>Thread.</strong> An unlabelled bold paragraph is prose.</p>
+</section>
+<section id="goals">
+<h2><span class="section-number">3.3. </span>Goals<a class="headerlink" href="#goals" title="Link to this heading">¶</a></h2>
+<div class="chunk goal docutils container" id="core.timing">
+<p class="chunk-label"><strong>GOAL</strong> <code class="docutils literal notranslate"><span class="pre">core.timing</span></code></p>
+<p>No thread can change the timing of another thread.</p>
+</div>
+<div class="chunk parameter docutils container" id="core.threads">
+<p class="chunk-label"><strong>PARAMETER</strong> <code class="docutils literal notranslate"><span class="pre">core.threads</span></code> = 8 threads</p>
+<p>The number of threads.</p>
+<p class="chunk-serves">Serves: <a class="reference internal" href="#core.core"><code class="docutils literal notranslate"><span class="pre">core.core</span></code></a></p>
+</div>
+<div class="chunk parameter docutils container" id="core.turn-width">
+<p class="chunk-label"><strong>PARAMETER</strong> <code class="docutils literal notranslate"><span class="pre">core.turn-width</span></code> = clog2(core.threads) = 3 bits</p>
+<p>The width.</p>
+<p class="chunk-serves">Serves: <a class="reference internal" href="#core.threads"><code class="docutils literal notranslate"><span class="pre">core.threads</span></code></a></p>
+</div>
+<div class="chunk parameter docutils container" id="core.spare">
+<p class="chunk-label"><strong>PARAMETER</strong> <code class="docutils literal notranslate"><span class="pre">core.spare</span></code> = 2</p>
+<p>A spare value.</p>
+<p class="chunk-serves">Serves: <a class="reference internal" href="#core.core"><code class="docutils literal notranslate"><span class="pre">core.core</span></code></a></p>
+</div>
+<div class="chunk target docutils container" id="core.aim">
+<p class="chunk-label"><strong>TARGET</strong> <code class="docutils literal notranslate"><span class="pre">core.aim</span></code> = core.threads * 2 = 16 threads</p>
+<p>The aim of the core.</p>
+<p class="chunk-serves">Serves: <a class="reference internal" href="#core.threads"><code class="docutils literal notranslate"><span class="pre">core.threads</span></code></a></p>
+</div>
+<details><summary>Verilog: build/rtl/core/pair.v</summary><div class="highlight-verilog notranslate" id="file-build/rtl/core/pair.v"><div class="highlight"><pre><span></span><span class="k">module</span><span class="w"> </span><span class="n">pair</span><span class="w"> </span><span class="p">(</span><span class="k">input</span><span class="w"> </span><span class="kt">wire</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">output</span><span class="w"> </span><span class="kt">wire</span><span class="w"> </span><span class="n">b</span><span class="p">);</span>
+<span class="w">    </span><span class="o">&lt;&lt;:</span><span class="n">core</span><span class="p">.</span><span class="n">pair</span><span class="o">-</span><span class="kt">logic</span><span class="o">&gt;&gt;</span>
+<span class="k">endmodule</span>
+</pre></div>
+</div>
+</details><p class="fragment-uses">Uses: <a class="reference internal" href="#fragment-core.pair-logic"><code class="docutils literal notranslate"><span class="pre">:core.pair-logic</span></code></a></p>
+<details><summary>Fragment: :core.pair-logic</summary><div class="highlight-none notranslate" id="fragment-core.pair-logic"><div class="highlight"><pre><span></span>assign b = a;
+</pre></div>
+</div>
+</details></section>
+<section id="explanation-1">
+<h2><span class="section-number">3.4. </span>Explanation<a class="headerlink" href="#explanation-1" title="Link to this heading">¶</a></h2>
+<div class="explanation docutils container" id="why-1">
+<p class="rubric"><a class="reference internal" href="#rotation">Rotation</a></p>
+<div class="chunk rationale docutils container">
+<p class="chunk-label"><strong>RATIONALE</strong></p>
+<p>The aim is <a class="reference internal" href="#core.aim"><span class="param">16 threads</span></a>. A thread’s instructions are eight cycles apart, one for each of <a class="reference internal" href="#core.threads"><span class="param">8 threads</span></a>.</p>
+</div>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
