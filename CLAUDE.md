@@ -22,7 +22,7 @@ Work as a sceptical scientist and a careful engineer. Treat complexity and uncle
 
 ## Complexity Measures
 
-Measure complexity with numbers, not adjectives. Run `./dev python3 tools/metrics.py` before and after every edit of code or documents, and report both results.
+Measure complexity with numbers, not adjectives. Run `./dev make check`, then `./dev python3 tools/metrics.py`, before and after every edit of code or documents. Report both results.
 
 * **Code** (each `.py` file under `tools/`, without `tools/tests/`):
   * **SLOC:** lines of code, without blank lines, comments, and docstrings.
@@ -32,6 +32,12 @@ Measure complexity with numbers, not adjectives. Run `./dev python3 tools/metric
   * **Word count.**
   * **Reading level:** Flesch-Kincaid grade of all the prose together. Lower is easier.
   * **STE violations:** the hard findings of `tools/ste_lint.py`. Report its advisory findings (passive voice, compound tenses) separately.
+* **Design** (the graph in `build/design.json`, where an edge means that a reader needs one element to understand another):
+  * **Interactivity:** the elements that each element needs. Report the mean, the maximum, and each element that needs more than 4, the span of working memory.
+  * **Propagation cost:** the mean share of the elements that an edit of one element can affect.
+  * **Live set:** the peak and mean number of elements that a reader holds in mind along the reading order, and the forward references.
+  * **Vocabulary:** the defined terms that each chapter uses.
+  * **Orphans:** the REQUIREMENTs that nothing implements or verifies. Do not lower the other measures by dropping links.
 * **No worse:** An edit that claims to simplify must not increase any of these measures for the whole system. If one measure gets worse, report the edit as a trade-off, with every measure before and after.
 
 ## Output
