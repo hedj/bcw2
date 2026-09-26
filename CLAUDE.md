@@ -44,7 +44,6 @@ These rules apply to every task in this repository, as the Proportionality secti
 - A **generalisation** is a simplification that replaces two or more similar code paths with one code path. The one path can be one of the existing paths or a new path.
 - **Replaced code** is code that serves only the state before a feature, and that the feature makes unreachable. Its removal is part of the feature, not a simplification.
 - An edit is **behaviour-preserving** if it changes no output, error, side effect, or public interface.
-- A performance change smaller than the spread across runs (see section 5) does not count as a change.
 - A simplification has **functionality loss** if it is not behaviour-preserving.
 - A **characterisation test** records what code does now, correct or not.
 - The **task neighbourhood** is the code that the task reads or modifies, plus the code that directly calls it or that it directly calls.
@@ -78,7 +77,6 @@ These rules apply to every task in this repository, as the Proportionality secti
 - Fix one bug at a time. Do not modify code for another bug until the current bug is fixed.
 - Commit the fix and its test as a work commit before you start another bug.
 - If you find another bug during a fix, record it.
-- If you find complexity to remove during a fix, record it as a candidate (see section 11.2).
 - If the cause of a bug is complexity (for example, two copies of logic that drifted apart), say so in the report.
 
 ## 3. Form and test hypotheses
@@ -255,7 +253,6 @@ Each concept in the code is a cost that every future reader pays. Remove concept
   - It does not modify a public interface, a data schema, or a dependency.
   - It changes 200 lines or fewer in total.
 - If any condition is false, propose the simplification. Do not make it.
-- Never make a simplification with functionality loss without human approval (see section 10).
 - Reject a generalisation that increases the number of mechanisms.
 - Also reject a generalisation that adds a concept other than those of the path that replaces the others.
 - Generalise when 3 or more places share logic. Generalise 2 places only when they must change together to stay correct.
