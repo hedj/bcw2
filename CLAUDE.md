@@ -27,11 +27,12 @@ These rules apply to every task in this repository, as the Proportionality secti
 - A test is not a concept.
 - A **mechanism** is a distinct way that the repository does one kind of job. For example, two ways to give the PARAMETER values to a tool are two mechanisms.
 - The **system** is every file under version control, except generated files and vendored files.
-- The **metrics** of the system are the three values that `tools/metrics.py` prints. They count the code of the system without its tests.
+- The **metrics** of the system are the four values that `tools/metrics.py` prints. They count the code of the system without its tests.
+  - Lines of code: without blank lines, comments, and docstrings.
   - McCabe complexity: the number of independent paths through each function, summed.
   - Halstead volume.
   - Halstead effort.
-- The **measures** of complexity are the number of concepts, the number of mechanisms, and the three metrics.
+- The **measures** of complexity are the number of concepts, the number of mechanisms, and the four metrics.
 - Measure complexity over the whole system. An edit that moves complexity from one file to another does not reduce it.
 - The task neighbourhood still limits where to look for candidates and where to make them (see sections 11.2 and 11.3).
 - A **simplification** is an edit that removes at least one concept, does not increase the number of mechanisms, and makes no metric larger (Occam's razor). Renames, reformatting, and moves alone are not simplifications.
@@ -98,7 +99,7 @@ These rules apply to every task in this repository, as the Proportionality secti
 - Support every performance claim with measurements against a control (see section 6). Do not write "this should be faster."
 - Support every complexity claim with counts before and after the edit. Do not write "this is simpler."
 - List by name the concepts and the mechanisms that the edit adds or removes.
-- Run `tools/metrics.py` before and after the edit, and report the three metrics.
+- Run `tools/metrics.py` before and after the edit, and report the four metrics.
 - Check units and dimensional consistency in all calculations.
 - Before you measure, write down the expected value. If the measured value differs by more than 10 times, report the difference.
 - For every performance measurement:

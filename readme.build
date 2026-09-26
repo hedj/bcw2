@@ -236,8 +236,9 @@ tools/weave.py      The Sphinx extension that builds the reader edition.
 tools/linemap.py    Maps a location in build/ to its chapter line.
 tools/run_checks.py Runs each check directive of the book.
 tools/twin.py       Translates a twin in the twin language to z3.
-tools/metrics.py    Prints the McCabe and Halstead metrics of the code in
-                    tools/, without its tests: ./dev python3 tools/metrics.py
+tools/metrics.py    Prints the lines of code, McCabe and Halstead metrics of
+                    the code in tools/, without its tests:
+                    ./dev python3 tools/metrics.py
 tools/ste_lint.py   The linter of plain English that doc.linter uses.
 tools/conf.py       The Sphinx configuration of the book.
 tools/hooks/        The Git pre-push hook.

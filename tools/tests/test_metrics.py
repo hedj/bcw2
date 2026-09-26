@@ -1,4 +1,4 @@
-"""Tests of tools/metrics.py, which counts the McCabe and Halstead metrics of the code of the system with radon."""
+"""Tests of tools/metrics.py, which counts the lines, McCabe and Halstead metrics of the code of the system with radon."""
 
 import json
 import subprocess
@@ -48,5 +48,14 @@ class MetricsTest:
     def test_the_halstead_measures_are_those_of_radon(self, tmp_path):
         text = "def f(x, y):\n    return (x + y) * (x - y) // 2\n"
         total = h_visit(text).total
-        assert measure(tmp_path, {"tools/a.py": text}) == {"mccabe": 1, "halstead_volume": total.volume,
+        assert measure(tmp_path, {"tools/a.py": text}) == {"lines": 2, "mccabe": 1, "halstead_volume": total.volume,
                                                            "halstead_effort": total.effort}
+
+    def test_lines_of_code_leave_out_blank_lines_comments_and_docstrings(self, tmp_path):
+        text = ('"""A module\ndocstring."""\n\nimport os\n\n\n# A comment.\ndef f(x):\n    """One line."""\n'
+                "    y = x + 1  # a comment after code\n    return y\n")
+        assert measure(tmp_path, {"tools/a.py": text})["lines"] == 4
+
+    def test_the_lines_of_the_files_add_up_without_the_tests(self, tmp_path):
+        files = {"tools/a.py": PLAIN, "tools/b.py": BRANCH, "tools/tests/test_a.py": BRANCH}
+        assert measure(tmp_path, files)["lines"] == 6

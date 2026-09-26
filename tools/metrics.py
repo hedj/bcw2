@@ -1,12 +1,15 @@
-"""The complexity metrics of the system, McCabe and Halstead, counted with radon.
+"""The complexity metrics of the system, counted with radon.
 
 The code of the system is each Python file under tools/, without tools/tests/. The
 metrics are:
 
+- lines: the lines of code of each file, without blank lines, comments and
+  docstrings, summed;
 - mccabe: the McCabe complexity (the number of independent paths) of each function,
   method and nested function, summed;
 - halstead_volume and halstead_effort: the Halstead volume and effort of each file,
-  summed.
+  summed. radon counts only the operators of arithmetic, comparisons and logic,
+  so a call or an assignment adds nothing to them, but it adds to lines.
 
 Run it from the root of the repository: ./dev python3 tools/metrics.py
 """
@@ -16,6 +19,7 @@ from pathlib import Path
 
 from radon.complexity import cc_visit
 from radon.metrics import h_visit
+from radon.raw import analyze
 from radon.visitors import Function
 
 
@@ -28,12 +32,13 @@ def mccabe(blocks):
 
 
 def main():
-    metrics = {"mccabe": 0, "halstead_volume": 0, "halstead_effort": 0}
+    metrics = {"lines": 0, "mccabe": 0, "halstead_volume": 0, "halstead_effort": 0}
     for path in sorted(Path("tools").rglob("*.py")):
         if path.relative_to("tools").parts[0] == "tests":
             continue
         text = path.read_text()
         halstead = h_visit(text).total
+        metrics["lines"] += analyze(text).sloc
         metrics["mccabe"] += mccabe(cc_visit(text))
         metrics["halstead_volume"] += halstead.volume
         metrics["halstead_effort"] += halstead.effort
