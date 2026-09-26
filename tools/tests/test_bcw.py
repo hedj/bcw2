@@ -48,13 +48,7 @@ class GoodTest:
 
 
 class LabelsTest:
-    """doc.labels: docutils rejects a directive that the extension does not register."""
-
-    def test_an_unknown_label_is_an_error_on_its_line(self):
-        text = GOOD.replace(".. rationale::", ".. reason::")
-        book = Book({"core/core.rst": text})
-        assert book.others() == [("book/core/core.rst", line(text, ".. reason::"),
-                                  'Unknown directive type "reason".')]
+    """doc.labels: the extension registers a directive for each label. ParseErrorTest has an unknown label."""
 
     def test_each_label_is_a_directive(self):
         assert (sorted(bcw.CHUNK_DIRECTIVES) ==
@@ -93,13 +87,6 @@ class OneShallTest:
 class AnchorsTest:
     """doc.anchors"""
 
-    def test_a_rule_without_an_anchor_is_an_error_on_its_line(self):
-        text = GOOD.replace(".. definition:: core.turn", ".. definition::")
-        book = Book({"core/core.rst": text})
-        assert ([(path, number) for path, number, _ in book.others()] ==
-                [("book/core/core.rst", line(text, ".. definition::"))])
-        assert "1 argument(s) required, 0 supplied" in book.warnings
-
     def test_an_anchor_outside_the_grammar_is_a_finding(self):
         text = GOOD.replace(".. definition:: core.turn", ".. definition:: Core_Turn")
         assert findings(text) == [(line(text, "Core_Turn"), "anchors", "Core_Turn")]
@@ -132,10 +119,6 @@ class AnchorsTest:
 class GoalTest:
     def test_a_goal_needs_no_shall(self):
         assert findings(GOOD) == []
-
-    def test_a_goal_without_an_anchor_is_an_error(self):
-        text = GOOD + "\n.. goal::\n\n   Another goal.\n"
-        assert findings(text) == [(line(text, "Another goal") - 2, "sphinx", None)]
 
     def test_a_twin_inside_a_goal_is_a_finding(self):
         text = GOOD + "\n   .. twin::\n\n      x\n"

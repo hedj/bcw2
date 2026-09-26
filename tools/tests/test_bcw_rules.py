@@ -136,12 +136,6 @@ class ReachesGoalTest:
                                   (line(text, ":parent: core.orphan"), "reaches-goal", "core.core"),
                                   (line(text, ".. definition:: core.orphan"), "reaches-goal", "core.orphan")]
 
-    def test_a_rationale_takes_no_anchor(self):
-        text = GOOD.replace(".. rationale::", ".. rationale:: core.why")
-        book = Book({"core/core.rst": text})
-        assert "the rationale directive takes no argument." in book.warnings
-        assert "core.why" not in [chunk.anchor for chunk in book.documents[0].chunks]
-
     def test_a_goal_can_serve_another_goal(self):
         text = GOOD.replace(CORE, CORE.replace("core.timing", "core.sub"))
         text += "\n.. goal:: core.sub\n   :parent: core.timing\n\n   Threads stay apart.\n"
@@ -297,15 +291,6 @@ class VocabularyTest:
             "in the rotation.", "in the rotation, not a ``slot``.")
         assert findings(text) == []
 
-    @pytest.mark.parametrize("old, new", [(ROTATION, ROTATION + "   :never: cpu\n"),
-                                          (".. goal:: core.timing\n", ".. goal:: core.timing\n   :never: cpu\n")])
-    def test_never_on_a_chunk_that_is_not_a_definition_is_an_error(self, old, new):
-        text = GOOD.replace(old, new)
-        book = Book({"core/core.rst": text})
-        assert book.tuples() == [("book/core/core.rst", line(text, new.splitlines()[0]), "sphinx", None)]
-        assert 'unknown option: "never"' in book.warnings
-
-
 class OverviewFirstTest:
     """doc.overview-first"""
 
@@ -412,63 +397,13 @@ class DottedWordsTest:
 
 
 class AttributeKeysTest:
-    """doc.attribute-keys: docutils rejects an option that the label does not register."""
-
-    def test_an_unknown_option_is_an_error_on_the_directive_line(self):
-        text = GOOD.replace(TURN, TURN + "   :colour: red\n")
-        book = Book({"core/core.rst": text})
-        assert book.tuples() == [("book/core/core.rst", line(text, ".. definition:: core.turn"), "sphinx", None)]
-        assert 'unknown option: "colour"' in book.warnings
+    """doc.attribute-keys: the options that each label registers pass. ParseErrorTest has the others."""
 
     def test_the_options_of_each_label_pass(self):
         text = GOOD.replace(TURN, TURN + "   :never: slot\n").replace(ROTATION, ROTATION + "   :impl: none\n")
         assert findings(text) == []
 
-    # A RATIONALE, a DISCUSSION and an OPEN allow no option. Docutils reads an
-    # option line under such a directive as text, so the extension rejects it.
-    NO_OPTIONS = [(".. rationale::", ".. rationale::"), (".. rationale::", ".. discussion::"),
-                  (".. open:: The thread count is not settled.", ".. open:: The thread count is not settled.")]
-
-    def error(self, text, needle):
-        """The chunks of text, after a check that text has one error, on the line of needle."""
-        book = Book({"core/core.rst": text})
-        assert book.tuples() == [("book/core/core.rst", line(text, needle), "sphinx", None)]
-        return book
-
-    @pytest.mark.parametrize("old, new", NO_OPTIONS)
-    def test_an_option_on_a_label_that_allows_none_is_an_error_on_the_directive_line(self, old, new):
-        text = GOOD.replace(old, new + "\n   :parent: core.core")
-        book = self.error(text, new)
-        assert 'unknown option: "parent"' in book.warnings
-        assert "parent" not in " ".join(chunk.english for chunk in book.documents[0].chunks)
-
-    @pytest.mark.parametrize("label", ["rationale", "discussion"])
-    def test_an_argument_on_a_label_that_takes_none_is_an_error_on_the_directive_line(self, label):
-        text = GOOD.replace(".. rationale::", f".. {label}:: core.why")
-        book = self.error(text, f".. {label}:: core.why")
-        assert "takes no argument" in book.warnings
-        assert "core.why" not in " ".join(chunk.english for chunk in book.documents[0].chunks)
-
     CHECK = "\n.. check::\n\n   x = 1\n"
-
-    def code(self, book):
-        return "\n".join(block.text for block in book.documents[0].blocks)
-
-    def test_an_option_on_a_check_is_an_error_on_the_directive_line(self):
-        text = GOOD + self.CHECK.replace(".. check::\n", ".. check::\n   :kind: static\n")
-        book = self.error(text, ".. check::")
-        assert 'unknown option: "kind"' in book.warnings
-        assert "kind" not in self.code(book)
-
-    @pytest.mark.parametrize("old, new", [
-        ("   .. twin::\n", "   .. twin:: extra\n"),
-        (".. check::", ".. check:: extra"),
-    ])
-    def test_an_argument_on_a_twin_or_a_check_is_an_error_on_the_directive_line(self, old, new):
-        text = (GOOD + self.CHECK).replace(old, new)
-        book = self.error(text, new.strip())
-        assert f"the {new.split()[1][:-2]} directive takes no argument." in book.warnings
-        assert "extra" not in self.code(book)
 
     def test_the_options_and_argument_of_a_code_directive_pass(self):
         assert findings(GOOD + self.CHECK) == []
@@ -482,147 +417,6 @@ class AttributeKeysTest:
                             f".. rationale::\n   {first}")
         assert text != GOOD
         assert findings(text) == []
-
-
-class DirectiveErrorTest:
-    """An error in the options or the argument of a directive is one finding: the chunk or the code block stays."""
-
-    # (old text, new text, the directive line of the error) of each case.
-    CASES = {
-        "an unknown option on a goal": (".. goal:: core.timing\n", ".. goal:: core.timing\n   :never: cpu\n",
-                                        ".. goal:: core.timing"),
-        "an unknown option on a definition": (".. definition:: core.core\n   :parent: core.timing\n",
-                                              ".. definition:: core.core\n   :parent: core.timing\n   :colour: red\n",
-                                              ".. definition:: core.core"),
-        "an unknown option on a requirement": (ROTATION, ROTATION + "   :never: cpu\n", ".. requirement:: core.rotation"),
-        "an option on a rationale": (".. rationale::", ".. rationale::\n   :parent: core.core", ".. rationale::"),
-        "an argument on a rationale": (".. rationale::", ".. rationale:: core.why", ".. rationale::"),
-        "an unknown option on a twin": (f"      :stamp: {STAMP}\n", f"      :stamp: {STAMP}\n      :colour: red\n",
-                                        ".. twin::"),
-        "an argument on a twin": ("   .. twin::\n", "   .. twin:: extra\n", ".. twin::"),
-        "an unknown option on a source": ("   :implements: core.rotation\n",
-                                          "   :implements: core.rotation\n   :colour: red\n", ".. source::"),
-    }
-
-    def book(self, case):
-        old, new, directive = self.CASES[case]
-        text = GOOD.replace(old, new)
-        assert text != GOOD
-        return text, directive, Book({"core/core.rst": text}, GENERAL)
-
-    @pytest.mark.parametrize("case", CASES)
-    def test_the_error_is_the_only_finding(self, case):
-        text, directive, book = self.book(case)
-        assert book.tuples() == [("book/core/core.rst", line(text, directive), "sphinx", None)]
-
-    @pytest.mark.parametrize("case, anchor", [("an unknown option on a goal", "core.timing"),
-                                              ("an unknown option on a requirement", "core.rotation")])
-    def test_the_chunk_keeps_its_known_options_only(self, case, anchor):
-        _, _, book = self.book(case)
-        [chunk] = [chunk for chunk in book.documents[0].chunks if chunk.anchor == anchor]
-        assert "never" not in chunk.options and "never" not in chunk.option_lines
-
-    @pytest.mark.parametrize("case", ["an option on a rationale", "an argument on a rationale"])
-    def test_the_rationale_keeps_its_text_without_the_option_or_the_argument(self, case):
-        _, _, book = self.book(case)
-        rationale = next(chunk for chunk in book.documents[0].chunks if chunk.label == "RATIONALE")
-        assert rationale.english == "A thread's instructions are eight cycles apart."
-
-    @pytest.mark.parametrize("case", ["an unknown option on a twin", "an argument on a twin",
-                                      "an unknown option on a source"])
-    def test_the_code_block_keeps_its_code_and_known_options(self, case):
-        _, _, book = self.book(case)
-        kind = "source" if "source" in case else "twin"
-        block = next(block for block in book.documents[0].blocks if block.kind == kind)
-        assert block.text.splitlines()[0] in ("def core_rotate(turn):", "module core_rotate (input wire [2:0] turn, "
-                                              "output wire [2:0] next);")
-        assert "colour" not in block.options
-
-
-class CascadeTest:
-    """Each finding that follows from a directive that failed names the line of that directive in its fix."""
-
-    CORE = ".. definition:: core.core\n   :parent: core.timing\n"
-    # (old text, new text, the line of the directive that fails) of each case.
-    CASES = {
-        "an extra word in an anchor": (".. goal:: core.timing\n", ".. goal:: core.timing extra\n",
-                                       ".. goal:: core.timing extra"),
-        "a repeated option": (ROTATION, ROTATION + "   :parent: core.core\n", ".. requirement:: core.rotation"),
-        "text right under the options": (CORE + "\n   The :dfn:`core`", CORE + "   The :dfn:`core`",
-                                         ".. definition:: core.core"),
-        "a misspelt label": (".. definition:: core.core\n", ".. defnition:: core.core\n", ".. defnition:: core.core"),
-        "an extra word on a source": (".. source:: build/rtl/core/core_rotate.v\n",
-                                      ".. source:: build/rtl/core/core_rotate.v extra\n", ".. source::"),
-    }
-
-    def book(self, old, new, extra=""):
-        text = GOOD.replace(old, new) + extra
-        assert text != GOOD + extra
-        return text, Book({"core/core.rst": text}, GENERAL)
-
-    @pytest.mark.parametrize("case", CASES)
-    def test_each_finding_that_follows_names_the_failed_directive(self, case):
-        old, new, failed = self.CASES[case]
-        text, book = self.book(old, new)
-        number = line(text, failed)
-        assert ("book/core/core.rst", number, "sphinx", None) in book.tuples()
-        assert book.findings
-        for finding in book.findings:
-            assert f"correct the directive at book/core/core.rst:{number} first" in finding.fix, str(finding)
-
-    @pytest.mark.parametrize("case, checks", [("an extra word in an anchor", {"references"}),
-                                              ("text right under the options", {"ears", "known-words", "references"}),
-                                              ("an extra word on a source", {"implemented"})])
-    def test_the_findings_that_follow_are_those_of_the_lost_names(self, case, checks):
-        old, new, _ = self.CASES[case]
-        assert {finding.check for finding in self.book(old, new)[1].findings} == checks
-
-    # (text after GOOD, the line of the directive that fails, the check of the finding that follows).
-    # The fixtures come from further down the file, so each case builds its text when it runs.
-    MORE = {
-        "a fragment": (lambda: SKELETON + source(":core.pair-logic extra", "assign b = a;"),
-                       ".. source:: :core.pair-logic", "fragment-uses"),
-        "the file that uses a fragment": (lambda: SKELETON.replace("pair.v", "pair.v extra") + FRAGMENT,
-                                          ".. source:: build/rtl/core/pair.v", "fragments-used"),
-        "a parameter": (lambda: THREADS.replace("   :unit: threads", "   :unit: threads\n   :unit: threads")
-                        + WIDTH, ".. parameter:: core.threads", "parameter-values"),
-        "a cited goal": (lambda: "\n.. goal:: core.aim extra\n\n   No aim.\n\n.. rationale::\n\n"
-                         "   It serves :rule:`core.aim`.\n", ".. goal:: core.aim", "references"),
-        "a fragment inside a failed goal": (lambda: SKELETON + "\n.. goal:: core.aim extra\n\n   No aim.\n\n"
-                                            "   .. source:: :core.pair-logic\n\n      assign b = a;\n",
-                                            ".. goal:: core.aim", "fragment-uses"),
-    }
-
-    def test_each_word_of_a_lost_term_names_the_failed_directive(self):
-        text = (GOOD + "\n.. definition:: core.slot extra\n   :parent: core.core\n\n"
-                "   A :dfn:`time slot` is a turn of the core.\n\n.. goal:: core.aim\n\n   No time slot can change.\n")
-        book = Book({"core/core.rst": text}, GENERAL)
-        number = line(text, ".. definition:: core.slot")
-        found = [finding for finding in book.findings if finding.check == "known-words"]
-        assert [finding.missing for finding in found] == ["time", "slot"]
-        for finding in found:
-            assert f"correct the directive at book/core/core.rst:{number} first" in finding.fix, str(finding)
-
-    @pytest.mark.parametrize("case", MORE)
-    def test_each_path_of_a_cascade_names_the_failed_directive(self, case):
-        extra, failed, check = self.MORE[case]
-        text = GOOD + extra()
-        book = Book({"core/core.rst": text})
-        number = line(text, failed)
-        assert ("book/core/core.rst", number, "sphinx", None) in book.tuples()
-        [finding] = [finding for finding in book.findings if finding.check == check]
-        assert f"correct the directive at book/core/core.rst:{number} first" in finding.fix, str(finding)
-
-    def test_a_finding_of_a_name_that_no_failed_directive_gives_keeps_its_own_fix(self):
-        old, new, _ = self.CASES["an extra word in an anchor"]
-        text, book = self.book(old, new, parameter("core.x", "1", parent="core.nowhere", text="The core."))
-        [finding] = [f for f in book.findings if "core.nowhere" in f.message]
-        assert finding.fix == "name an existing anchor, and separate the entries of a list with commas"
-
-    def test_a_directive_without_its_anchor_gives_no_pointer(self):
-        text, book = self.book(".. goal:: core.timing\n", ".. goal::\n")
-        assert {finding.check for finding in book.findings} == {"references"}
-        assert not any("correct the directive" in finding.fix for finding in book.findings)
 
 
 class KnownWordsTest:
@@ -1088,13 +882,6 @@ class TargetTest:
         assert book.tuples() == []
         assert book.values["core.aim"] == 16
 
-    def test_a_target_without_an_anchor_is_an_error_on_its_line(self):
-        text = GOOD + "\n.. target::\n\n   The number of threads.\n"
-        book = Book({"core/core.rst": text})
-        assert ([(path, number) for path, number, _ in book.others()] ==
-                [("book/core/core.rst", line(text, ".. target::"))])
-        assert "1 argument(s) required, 0 supplied" in book.warnings
-
     def test_a_target_without_a_value_is_a_finding_on_the_directive_line(self):
         text = GOOD + target("core.aim", None)
         assert findings(text) == [(line(text, ".. target:: core.aim"), "target-values", "core.aim")]
@@ -1215,6 +1002,87 @@ class FragmentTest:
         assert ([f[1:] for f in book.tuples() if f[2] != "fragments-used"] ==
                 [(line(text, use), "whole-twins", "core.rotation")])
         assert "a twin stays whole" in next(f for f in book.findings if f.check == "whole-twins").fix
+
+
+class ParseErrorTest:
+    """doc.labels and doc.attribute-keys: if docutils cannot read a directive, the error is its only finding.
+
+    No check runs on a book with such an error, and the tangle writes nothing, so no
+    finding can follow from a directive that docutils left out.
+    """
+
+    CHECK = "\n.. check::\n\n   x = 1\n"
+    # (old text, new text, the line of the error, a part of its message). Without old text,
+    # the new text goes after GOOD.
+    CASES = {
+        "an unknown label": (".. rationale::", ".. reason::", ".. reason::", 'Unknown directive type "reason".'),
+        "a rule without its anchor": (".. definition:: core.turn", ".. definition::", ".. definition::",
+                                      "1 argument(s) required, 0 supplied"),
+        "a goal without its anchor": (".. goal:: core.timing", ".. goal::", ".. goal::", "1 argument(s) required"),
+        "a target without its anchor": (None, "\n.. target::\n\n   The number of threads.\n", ".. target::",
+                                        "1 argument(s) required"),
+        "an extra word in an anchor": (".. goal:: core.timing\n", ".. goal:: core.timing extra\n", ".. goal::",
+                                       "maximum 1 argument(s) allowed"),
+        "an unknown option on a goal": (".. goal:: core.timing\n", ".. goal:: core.timing\n   :never: cpu\n",
+                                        ".. goal::", 'unknown option: "never"'),
+        "an unknown option on a requirement": (ROTATION, ROTATION + "   :never: cpu\n", ".. requirement::",
+                                               'unknown option: "never"'),
+        "an unknown option on a definition": (TURN, TURN + "   :colour: red\n", ".. definition:: core.turn",
+                                              'unknown option: "colour"'),
+        "a repeated option": (ROTATION, ROTATION + "   :parent: core.core\n", ".. requirement::", "duplicate option"),
+        "text right under the options": (CORE + "\n   The :dfn:`core`", CORE + "   The :dfn:`core`",
+                                         ".. definition:: core.core", "invalid option block"),
+        "an option on a rationale": (".. rationale::", ".. rationale::\n   :parent: core.core", ".. rationale::",
+                                     'unknown option: "parent"'),
+        "an option on a discussion": (".. rationale::", ".. discussion::\n   :parent: core.core", ".. discussion::",
+                                      'unknown option: "parent"'),
+        "an option on an open": (".. open:: The thread count is not settled.",
+                                 ".. open:: The thread count is not settled.\n   :parent: core.core", ".. open::",
+                                 'unknown option: "parent"'),
+        "an argument on a rationale": (".. rationale::", ".. rationale:: core.why", ".. rationale::",
+                                       "the rationale directive takes no argument."),
+        "an argument on a discussion": (".. rationale::", ".. discussion:: core.why", ".. discussion::",
+                                        "the discussion directive takes no argument."),
+        "an option on a check": (None, CHECK.replace(".. check::\n", ".. check::\n   :kind: static\n"), ".. check::",
+                                 'unknown option: "kind"'),
+        "an argument on a check": (None, CHECK.replace(".. check::", ".. check:: extra"), ".. check::",
+                                   "the check directive takes no argument."),
+        "an argument on a twin": ("   .. twin::\n", "   .. twin:: extra\n", ".. twin::",
+                                  "the twin directive takes no argument."),
+        "an unknown option on a twin": (f"      :stamp: {STAMP}\n", f"      :stamp: {STAMP}\n      :colour: red\n",
+                                        ".. twin::", 'unknown option: "colour"'),
+        "an unknown option on a source": (IMPLEMENTS, IMPLEMENTS + "   :colour: red\n", ".. source::",
+                                          'unknown option: "colour"'),
+        "an extra word on a source": (".. source:: build/rtl/core/core_rotate.v\n",
+                                      ".. source:: build/rtl/core/core_rotate.v extra\n", ".. source::",
+                                      "maximum 1 argument(s) allowed"),
+        "an extra word on a fragment": (None, SKELETON + source(":core.pair-logic extra", "assign b = a;"),
+                                        ".. source:: :core.pair-logic", "maximum 1 argument(s) allowed"),
+        "a repeated option on a parameter": (None, THREADS.replace("   :unit: threads", "   :unit: threads\n"
+                                                                   "   :unit: threads") + WIDTH,
+                                             ".. parameter:: core.threads", "duplicate option"),
+        "a fragment inside a failed goal": (None, SKELETON + "\n.. goal:: core.aim extra\n\n   No aim.\n\n"
+                                            "   .. source:: :core.pair-logic\n\n      assign b = a;\n",
+                                            ".. goal:: core.aim", "maximum 1 argument(s) allowed"),
+    }
+
+    @pytest.mark.parametrize("case", CASES)
+    def test_the_error_is_the_only_finding_and_the_tangle_writes_nothing(self, case):
+        old, new, error, message = self.CASES[case]
+        text = GOOD + new if old is None else GOOD.replace(old, new)
+        assert text != GOOD
+        book = Book({"core/core.rst": text}, GENERAL, tangle=True)
+        assert book.tuples() == [("", None, "sphinx", None), ("book/core/core.rst", line(text, error), "sphinx", None)]
+        assert message in book.warnings
+        assert "bcw: 1 error in the chapters, so no check ran: correct the errors first" in book.warnings
+        assert book.files == {}
+
+    def test_the_stop_counts_every_error(self):
+        text = GOOD.replace(".. rationale::", ".. reason::").replace(TURN, TURN + "   :colour: red\n")
+        book = Book({"core/core.rst": text})
+        assert "bcw: 2 errors in the chapters, so no check ran" in book.warnings
+        assert book.tuples() == [("", None, "sphinx", None), ("book/core/core.rst", line(text, ".. reason::"), "sphinx", None),
+                                 ("book/core/core.rst", line(text, ".. definition:: core.turn"), "sphinx", None)]
 
 
 class TangleTest:

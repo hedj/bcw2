@@ -89,7 +89,6 @@ class Finding:
     anchor: str
     message: str
     fix: str
-    missing: str = None  # the anchor, term, word or fragment that the finding could not find
 
     def __str__(self):
         return f"[{self.check}] {self.anchor or '-'}: {self.message}\n    fix: {self.fix}"
@@ -143,15 +142,7 @@ class Document:
     sections: list = field(default_factory=list)  # (title line, level, title)
     strays: list = field(default_factory=list)  # lines of text outside the title's section
     titles: list = field(default_factory=list)  # the line of each top-level title
-    failed: list = field(default_factory=list)  # a Failed for each directive that docutils dropped
-
-
-@dataclass
-class Failed:
-    """A directive that docutils dropped, and the names that it would have given the book."""
-    path: str
-    line: int
-    names: set
+    errors: int = 0  # the number of messages of level ERROR or above in the doctree
 
 
 # The directives and the role
@@ -161,52 +152,28 @@ class chunk(nodes.General, nodes.Element):
     """A labelled chunk. Its attributes are label, anchor, options and option_lines."""
 
 
-class AnyOption(dict):
-    """The options of a directive, as an option spec that accepts every name.
+def option_lines(directive):
+    """The line of each option under the directive, by name.
 
-    Docutils drops a directive with an unknown option, so every chunk that names
-    its anchor would fail too. With this spec, docutils keeps the directive, and
-    checked() reports each name that is not a key.
+    Docutils rejects an unknown option only for a directive that allows some
+    options, and an argument only for a directive that takes some. For any other
+    directive, it reads them as text. This raises the error for both.
     """
-
-    def __missing__(self, name):
-        return directives.unchanged
-
-    def __bool__(self):
-        return True
-
-
-def checked(directive):
-    """The known options of the directive, the line of each, its content and content offset, and its errors.
-
-    Each unknown option and each argument of a directive that takes none is an
-    error on the directive line. The directive keeps its node without them, so
-    that one fault gives one finding. Docutils reads an argument of a directive
-    that takes none as the first lines of the content, up to a blank line.
-    """
-    lines, errors = {}, []
+    lines = {}
     for offset, text in enumerate(directive.block_text.splitlines()[1:], 1):
         match = re.match(r"\s+:([\w-]+):(\s|$)", text)
         if not match:
             break
-        # implements: doc.attribute-keys
-        if match.group(1) in directive.option_spec:
-            lines[match.group(1)] = directive.lineno + offset
-        else:
-            errors.append(f'Error in "{directive.name}" directive: unknown option: "{match.group(1)}".')
-    options = {name: value for name, value in directive.options.items() if name in directive.option_spec}
-    content, content_offset = directive.content, directive.content_offset
+        lines[match.group(1)] = directive.lineno + offset
+    # implements: doc.attribute-keys
+    for name in lines:
+        if name not in (directive.option_spec or {}):
+            raise directive.error(f'unknown option: "{name}".')
     # implements: doc.labels
     argument = directive.block_text.split("\n")[0].split("::", 1)[1].strip()
     if argument and not (directive.required_arguments or directive.optional_arguments):
-        errors.append(f"the {directive.name} directive takes no argument.")
-        skip = next((index for index, text in enumerate(content) if not text.strip()), len(content))
-        while skip < len(content) and not content[skip].strip():
-            skip += 1
-        content, content_offset = content[skip:], content_offset + skip
-    reporter = directive.state_machine.reporter
-    return (options, lines, content, content_offset,
-            [reporter.error(message, line=directive.lineno) for message in errors])
+        raise directive.error(f"the {directive.name} directive takes no argument.")
+    return lines
 
 
 class ChunkDirective(SphinxDirective):
@@ -214,13 +181,13 @@ class ChunkDirective(SphinxDirective):
     label = None
 
     def run(self):
-        options, lines, content, content_offset, errors = checked(self)
         node = chunk(label=self.label, anchor=self.arguments[0] if self.required_arguments else None,
-                     options=options, title=self.arguments[0] if self.optional_arguments and self.arguments else None)
+                     options=dict(self.options),
+                     title=self.arguments[0] if self.optional_arguments and self.arguments else None)
         node.source, node.line = self.get_source_info()
-        node["option_lines"] = lines
-        self.state.nested_parse(content, content_offset, node)
-        return [node, *errors]
+        node["option_lines"] = option_lines(self)
+        self.state.nested_parse(self.content, self.content_offset, node)
+        return [node]
 
 
 def chunk_directive(label, anchored, options, titled=False):
@@ -230,12 +197,12 @@ def chunk_directive(label, anchored, options, titled=False):
         "required_arguments": 1 if anchored else 0,
         "optional_arguments": 1 if titled else 0,
         "final_argument_whitespace": titled,
-        "option_spec": AnyOption({name: directives.unchanged for name in options}),
+        "option_spec": {name: directives.unchanged for name in options},
     })
 
 
 # The registry is the list of labels and the options of each: docutils rejects
-# any other directive, and checked() any other option.
+# any other directive and any other option.
 # implements: doc.labels
 # implements: doc.attribute-keys
 CHUNK_DIRECTIVES = {
@@ -255,16 +222,16 @@ class CodeDirective(SphinxDirective):
     kind = None
 
     def run(self):
-        options, _, content, content_offset, errors = checked(self)
-        text = "\n".join(content)
+        option_lines(self)
+        text = "\n".join(self.content)
         node = nodes.literal_block(text, text)
         node.source, node.line = self.get_source_info()
         node["bcw"] = self.kind
-        node["options"] = options
-        node["target"] = self.arguments[0] if self.required_arguments else options.get("file")
-        node["first"] = content_offset + 1
+        node["options"] = dict(self.options)
+        node["target"] = self.arguments[0] if self.required_arguments else self.options.get("file")
+        node["first"] = self.content_offset + 1
         node["language"] = language(node["target"], self.kind)
-        return [node, *errors]
+        return [node]
 
 
 def language(target, kind):
@@ -278,18 +245,17 @@ def language(target, kind):
 
 class TwinDirective(CodeDirective):
     kind = "twin"
-    option_spec = AnyOption(file=directives.unchanged, stamp=directives.unchanged)
+    option_spec = {"file": directives.unchanged, "stamp": directives.unchanged}
 
 
 class SourceDirective(CodeDirective):
     kind = "source"
     required_arguments = 1
-    option_spec = AnyOption(implements=directives.unchanged)
+    option_spec = {"implements": directives.unchanged}
 
 
 class CheckDirective(CodeDirective):
     kind = "check"
-    option_spec = AnyOption()
 
 
 class CitationRole(SphinxRole):
@@ -343,39 +309,6 @@ def normalise(text):
     return " ".join(re.sub(r"[*_]", "", text).lower().split())
 
 
-# A directive line, with the first word of its argument, and a term that :dfn: defines.
-DIRECTIVE = re.compile(r"^[ \t]*\.\. [\w-]+::[ \t]*(?P<argument>\S*)", re.MULTILINE)
-DFN = re.compile(r":dfn:`(?P<term>[^`]+)`")
-
-
-def lost_names(text):
-    """The names that the text of a dropped directive would give the book.
-
-    These are the argument of the directive and of each directive inside it, each
-    term that :dfn: defines and each word of that term, each :implements: entry and
-    each fragment that a line of it uses.
-    """
-    names = {match["argument"] for match in DIRECTIVE.finditer(text)} - {""}
-    for match in DFN.finditer(text):
-        names.add(normalise(match["term"]))
-        names.update(normalise(match["term"]).split())
-    for match in re.finditer(r"^[ \t]*:implements:(?P<entries>.*)$", text, re.MULTILINE):
-        names.update(entry.strip() for entry in match["entries"].split(","))
-    names.update(match["name"] for line in text.splitlines() if (match := USE.match(line)))
-    return names
-
-
-def point_back(documents, findings):
-    """Give each finding of a name that a dropped directive would give a fix that names that directive."""
-    failed = {name: item for document in documents for item in document.failed for name in item.names}
-    for finding in findings:
-        if finding.missing in failed:
-            item = failed[finding.missing]
-            finding.fix = (f"correct the directive at {item.path}:{item.line} first, because it failed, "
-                           f"and it would give {finding.missing}")
-    return findings
-
-
 def read_document(app, doctree):
     """Turn a chapter into a Document, and keep it in the environment."""
     docname = app.env.docname
@@ -423,10 +356,7 @@ def read_document(app, doctree):
                     walk(child, level, top, section, owner)
 
     walk(doctree, 0, 0, None, None)
-    for message in doctree.findall(nodes.system_message):
-        text = next((child.astext() for child in message.children if isinstance(child, nodes.literal_block)), "")
-        if message["level"] >= 3 and DIRECTIVE.match(text):
-            document.failed.append(Failed(path, message["line"], lost_names(text)))
+    document.errors = sum(1 for message in doctree.findall(nodes.system_message) if message["level"] >= 3)
     for child in doctree.children:
         if not isinstance(child, (nodes.section, nodes.comment, nodes.target)) and child.line is not None:
             document.strays.append(child.line)
@@ -719,7 +649,7 @@ def check_implemented(documents, tools):
                 yield Finding(chunk.path, chunk.line, "implemented", chunk.anchor,
                               "no source directive and no check implements the REQUIREMENT",
                               "name it in an :implements: list or an implements: comment, "
-                              "or set :impl: none", chunk.anchor)
+                              "or set :impl: none")
 
 
 # implements: doc.references
@@ -727,24 +657,24 @@ def check_references(documents, anchors, tools):
     fix = "name an existing anchor, and separate the entries of a list with commas"
     for path, number, anchor in tools:
         if anchor not in anchors:
-            yield Finding(path, number, "references", None, f"{anchor} is not an anchor in the book", fix, anchor)
+            yield Finding(path, number, "references", None, f"{anchor} is not an anchor in the book", fix)
     for document in documents:
         for chunk in document.chunks:
             if "parent" in chunk.options:
                 for entry in chunk.options["parent"].split(","):
                     if entry.strip() not in anchors:
                         yield Finding(chunk.path, chunk.option_line("parent"), "references", chunk.anchor,
-                                      f"the parent {entry.strip()!r} is not an anchor in the book", fix, entry.strip())
+                                      f"the parent {entry.strip()!r} is not an anchor in the book", fix)
         for block in document.blocks:
             if block.kind == "source" and "implements" in block.options:
                 for entry in implements(block):
                     if entry not in anchors:
                         yield Finding(document.path, block.line, "references", None,
-                                      f"the :implements: entry {entry!r} is not an anchor in the book", fix, entry)
+                                      f"the :implements: entry {entry!r} is not an anchor in the book", fix)
         for number, anchor, _ in document.citations:
             if anchor not in anchors:
                 yield Finding(document.path, number, "references", None,
-                              f"the citation {anchor} names no anchor in the book", fix, anchor)
+                              f"the citation {anchor} names no anchor in the book", fix)
 
 
 # implements: doc.reaches-goal
@@ -807,7 +737,7 @@ def check_ears(documents):
                 actor = normalise(DETERMINER.sub("", match.group("actor")))
                 if actor not in terms:
                     yield Finding(chunk.path, number, "ears", chunk.anchor,
-                                  f"the actor {actor!r} is not a defined term", fix, actor)
+                                  f"the actor {actor!r} is not a defined term", fix)
 
 
 # implements: doc.vocabulary
@@ -874,7 +804,7 @@ def check_known_words(documents, general):
                     yield Finding(chunk.path, words[index][1], "known-words", chunk.anchor,
                                   f"{words[index][0]!r} is not a known word",
                                   "define it in a DEFINITION, list it in book/general-words.txt, "
-                                  "or put it in a quotation", words[index][0])
+                                  "or put it in a quotation")
                 index += max(size, 1)
 
 
@@ -952,11 +882,7 @@ FUNCTIONS = {"clog2": lambda number: max(0, number - 1).bit_length(), "min": min
 
 
 class NoValue(Exception):
-    """A value that does not evaluate, with the reason as its message, and the anchor that it misses."""
-
-    def __init__(self, reason, missing=None):
-        super().__init__(reason)
-        self.missing = missing
+    """A value that does not evaluate, with the reason as its message."""
 
 
 def constant_name(anchor):
@@ -985,9 +911,7 @@ def compute(node, names):
 
 
 def parameter_values(documents):
-    """The value of each PARAMETER and TARGET that evaluates, and (chunk, reason, missing) for each that does not.
-
-    missing is the anchor that a value names and the book does not have, or None.
+    """The value of each PARAMETER and TARGET that evaluates, and the reason for each that does not.
 
     A value names a PARAMETER by its anchor, and never a TARGET. The anchors become Python
     names before the parse, because Python would read a hyphen as a minus sign.
@@ -997,7 +921,7 @@ def parameter_values(documents):
         for chunk in document.chunks:
             if chunk.label in VALUED and chunk.anchor is not None:
                 chunks.setdefault(chunk.anchor, chunk)
-    values, failures, missing = {}, {}, {}
+    values, failures = {}, {}
 
     def evaluate(anchor, path):
         if anchor in values or anchor in failures:
@@ -1016,7 +940,7 @@ def parameter_values(documents):
             tree = ast.parse(source, mode="eval")
             for other in names.values():
                 if other not in chunks:
-                    raise NoValue(f"{other} is not a PARAMETER in the book", other)
+                    raise NoValue(f"{other} is not a PARAMETER in the book")
                 if chunks[other].label == "TARGET":
                     raise NoValue(f"{other} is a TARGET, and a value names only PARAMETERs")
                 if other in path + [anchor]:
@@ -1035,23 +959,22 @@ def parameter_values(documents):
             failures.setdefault(anchor, "the value is not an expression")
         except NoValue as error:
             failures.setdefault(anchor, str(error))
-            missing.setdefault(anchor, error.missing)
         except (ArithmeticError, TypeError, ValueError) as error:
             failures.setdefault(anchor, f"the value does not evaluate: {error}")
 
     for anchor in chunks:
         evaluate(anchor, [])
-    return values, {anchor: (chunks[anchor], reason, missing.get(anchor)) for anchor, reason in failures.items()}
+    return values, {anchor: (chunks[anchor], reason) for anchor, reason in failures.items()}
 
 
 # implements: doc.parameter-values
 # implements: doc.target-values
 def check_parameter_values(documents):
-    for anchor, (chunk, reason, missing) in parameter_values(documents)[1].items():
+    for anchor, (chunk, reason) in parameter_values(documents)[1].items():
         name = "target-values" if chunk.label == "TARGET" else "parameter-values"
         yield Finding(chunk.path, chunk.option_line("value"), name, anchor, reason,
                       "write the value as an integer, or an expression of integers, PARAMETER anchors, "
-                      "+ - * // % ** and clog2, min and max, with a space on each side of a minus sign", missing)
+                      "+ - * // % ** and clog2, min and max, with a space on each side of a minus sign")
 
 
 # implements: doc.constant-names
@@ -1175,7 +1098,7 @@ def check_fragment_uses(documents):
                 if name not in defined:
                     yield Finding(document.path, number, "fragment-uses", None,
                                   f"no source directive defines the fragment {name}",
-                                  f"define it with .. source:: {name}, or name a fragment that exists", name)
+                                  f"define it with .. source:: {name}, or name a fragment that exists")
 
 
 # implements: doc.fragments-used
@@ -1186,7 +1109,7 @@ def check_fragments_used(documents):
         if name not in used:
             yield Finding(blocks[0].path, blocks[0].line, "fragments-used", None,
                           f"the fragment {name} reaches no file",
-                          f"use it with a line <<{name}>> in a source directive that writes a file", name)
+                          f"use it with a line <<{name}>> in a source directive that writes a file")
 
 
 # implements: doc.fragment-cycles
@@ -1256,7 +1179,7 @@ def check(documents, retired=(), tools=(), general=None):
     if general is not None:
         findings += check_known_words(documents, general)
         findings += check_general_words(documents, general)
-    return sorted(point_back(documents, findings), key=lambda f: (f.path, f.line, f.check))
+    return sorted(findings, key=lambda f: (f.path, f.line, f.check))
 
 
 def listed(path):
@@ -1268,9 +1191,21 @@ def listed(path):
 
 
 def check_book(app, env):
-    """Run every check on the book, and log each finding as a warning."""
+    """Run every check on the book, and log each finding as a warning.
+
+    If docutils could not read some of the chapters, no check runs and the tangle
+    writes nothing: a directive with an error is missing from the Documents, so the
+    findings would follow from the error and not from the book.
+    """
     config = app.config
     documents = [env.bcw_documents[name] for name in sorted(env.bcw_documents)]
+    errors = sum(document.errors for document in documents)
+    env.bcw_stopped = errors > 0
+    if env.bcw_stopped:
+        env.bcw_findings, env.bcw_values = [], {}
+        logger.warning(f"bcw: {errors} error{'s' if errors > 1 else ''} in the chapters, so no check ran: "
+                       "correct the errors first", type="bcw", subtype="stopped")
+        return
     general = None
     if config.bcw_general_words is not None:
         general = {word.lower() for word in listed(config.bcw_general_words)}
@@ -1319,7 +1254,7 @@ def tangle(app, exception):
     the path of the file in build/. tools/linemap.py reads it.
     """
     root = app.config.bcw_tangle_root
-    if exception is not None or root is None:
+    if exception is not None or root is None or app.env.bcw_stopped:
         return
     record = tangle_parameters(app, root)
     documents = [app.env.bcw_documents[name] for name in sorted(app.env.bcw_documents)]
@@ -1371,6 +1306,7 @@ def init_environment(app):
     if not hasattr(app.env, "bcw_documents"):
         app.env.bcw_documents = {}
     app.env.bcw_values = {}
+    app.env.bcw_stopped = False
 
 
 def setup(app):

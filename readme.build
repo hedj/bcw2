@@ -86,13 +86,13 @@ chunk (the labelled block of text) that breaks the rule. The second line
 tells you how to fix the finding.
 
 If docutils cannot read a directive, it reports an ERROR on the directive
-line and leaves the directive out. The anchors, terms and fragments of that
-directive are then missing, so other findings can follow from the one error.
-The fix of each such finding names the line of the directive that failed:
+line and leaves the directive out. The book then misses the anchors, terms and
+code of that directive, so make check runs no other check and make tangle
+writes nothing. make check prints:
 
-    fix: correct the directive at book/core/core.rst:46 first, because it failed, and it would give core.core
+    WARNING: bcw: 1 error in the chapters, so no check ran: correct the errors first
 
-Correct that directive first, then run make check again.
+Correct the errors, then run make check again.
 
 Verilator and the twins report locations in the files of build/.
 tools/linemap.py changes each of these locations to the line of the chapter
