@@ -31,46 +31,71 @@ DISCUSSION to an Explanation section at the end of its chapter.
 ``book/general-words.txt`` lists the words that need no definition. ``make check`` also prints
 the number of rules with more than two parents, because a long list of parents says little.
 
-The goals come first. The later sections define the terms and state the rules.
+Each later section states one goal, then the terms and the rules that serve it.
 
-Goals
-=====
-
-.. goal:: doc.one-reading
-
-   Every rule has one meaning, so that two readers of the rule build the same machine.
-
-.. goal:: doc.one-source
-
-   Each rule is stated once. Its formal twin, its Verilog, its checks and every view of it
-   are tied to that statement or generated from it.
-
-.. goal:: doc.read-is-checked
-
-   The English of a rule and its formal twin cannot drift apart without a check failing.
-
-.. goal:: doc.traceable
-
-   Every rule traces up to the goal or security property that it serves, and down to its
-   checks and its implementation. A reference stays valid when the chapters change.
+Size and reading burden
+=======================
 
 .. goal:: doc.one-engineer
 
    The chapters stay small and plain enough for one engineer to read completely, and their
    reading burden is measured.
 
+.. definition:: doc.section
+   :parent: doc.one-engineer
+
+   A :dfn:`section` is the text after a heading of level 2, 3 or 4, up to the next heading of
+   those levels.
+
+.. requirement:: doc.argument-budget
+   :parent: doc.one-engineer, doc.rules-apart
+
+   Where a section holds a chunk that carries an anchor, the section shall hold at most one
+   RATIONALE or
+   DISCUSSION, of 40 words or fewer.
+
+.. definition:: doc.chapter
+   :parent: doc.one-engineer
+
+   A :dfn:`chapter` is a reStructuredText file in ``book/`` other than ``book/index.rst``. The
+   name of a chapter is the name of its file without ``.rst``.
+
+.. requirement:: doc.chapter-path
+   :parent: doc.one-engineer
+
+   Each chapter shall have the path ``book/<name>/<name>.rst``.
+
+.. requirement:: doc.chapter-title
+   :parent: doc.one-engineer
+
+   Each chapter shall hold exactly one heading of level 1, and no text before it.
+
+.. definition:: doc.chapter-order
+   :parent: doc.one-engineer
+
+   The :dfn:`chapter order` puts the chapters of each kind together, in the order tutorial,
+   how-to, reference and explanation. Within a kind, it puts each chapter after every other
+   chapter of that kind that holds a parent of one of its chunks. Where two or more chapters
+   can come next, the order takes the first name in alphabetical order.
+
+.. requirement:: doc.chapters-ordered
+   :parent: doc.one-engineer
+
+   The chapter order shall hold every chapter.
+
+.. rationale::
+
+   The weave numbers the chapters and their sections, so a new section never changes a number
+   in the source. The kinds keep tutorial, guide, reference and explanation apart, and the
+   trace sets the order within a kind.
+
+Rules apart from explanation
+============================
+
 .. goal:: doc.rules-apart
 
    A reader can tell at once which text is a rule, which is explanation, and which is an open
    question or a record.
-
-.. goal:: doc.changes-reach-author
-
-   A script finds each change to what the machine does, and sends it to the author for
-   approval.
-
-Terms and marking
-=================
 
 .. definition:: doc.chunk
    :parent: doc.rules-apart
@@ -91,36 +116,50 @@ Terms and marking
    The :dfn:`normative text` of the book is the English of its rules. Text outside a chunk
    states no rule.
 
-.. definition:: doc.scripted
-   :parent: doc.one-reading
+.. requirement:: doc.labels
+   :parent: doc.rules-apart
 
-   A :dfn:`documentation rule` is a rule in this chapter that a script checks when
-   ``make check`` runs. The author drops a rule that no script can check, or reduces it to a
-   part that a script can check.
+   No chapter shall hold a directive that docutils, Sphinx or ``tools/bcw.py`` does not
+   define.
 
-.. definition:: doc.twin
-   :parent: doc.read-is-checked
+.. requirement:: doc.overview-first
+   :parent: doc.rules-apart, doc.one-engineer
 
-   A :dfn:`twin` is a ``twin`` directive.
+   Each chunk shall stand after the second heading of level 2 in its chapter.
 
-.. definition:: doc.twin-language
-   :parent: doc.read-is-checked
+.. definition:: doc.code-block
+   :parent: doc.rules-apart
 
-   The :dfn:`twin language` is the part of ``Python`` that ``tools/twin.py`` can give to ``z3``.
-   A twin in it holds only functions. Each function holds lines of the form ``name = value``
-   and ends with one ``return``. Its values are integers and the results of ``==``, ``<`` and
-   the other operators that compare, and ``tools/twin.py`` lists each operator that it allows.
+   A :dfn:`code block` is a block of code in a chapter, such as a literal block after ``::``
+   or a ``code-block`` directive.
 
-.. requirement:: doc.twin-forms
-   :parent: doc.read-is-checked
+.. requirement:: doc.code-kinds
+   :parent: doc.rules-apart
 
-   Each twin shall hold only the forms of the twin language.
+   Each code block shall be a ``twin``, ``source`` or ``check`` directive.
 
-.. definition:: doc.stamp
-   :parent: doc.read-is-checked
+.. requirement:: doc.chapter-kind
+   :parent: doc.rules-apart
 
-   The :dfn:`stamp` of a rule is the first eight hexadecimal digits of the SHA-256 hash of its
-   label, a space and its English.
+   Each chapter shall start with the field ``:kind:``, whose value is ``tutorial``,
+   ``how-to``, ``reference`` or ``explanation``.
+
+.. rationale::
+
+   A reader meets the purpose of a chapter before its rules, as Diátaxis keeps explanation
+   apart from reference. The budget keeps argument short. A code block is part of the machine
+   or a check of it.
+
+Traceability
+============
+
+.. goal:: doc.traceable
+
+   Every rule traces up to the goal or security property that it serves, and down to its
+   checks and its implementation. A reference stays valid when the chapters change.
+
+Terms and marking
+-----------------
 
 .. definition:: doc.allowed-options
    :parent: doc.traceable
@@ -133,18 +172,6 @@ Terms and marking
    :parent: doc.traceable
 
    Each chunk shall carry only the allowed options of its label.
-
-.. requirement:: doc.labels
-   :parent: doc.rules-apart
-
-   No chapter shall hold a directive that docutils, Sphinx or ``tools/bcw.py`` does not
-   define.
-
-.. requirement:: doc.one-shall
-   :parent: doc.one-reading, doc.rules-apart
-
-   Each chunk shall hold ``shall`` exactly once if it is a REQUIREMENT, and not at all
-   otherwise.
 
 .. definition:: doc.anchor
    :parent: doc.traceable
@@ -159,18 +186,8 @@ Terms and marking
    Where a chunk is a rule or a GOAL or a TARGET, the chunk shall carry a unique anchor that
    is not retired.
 
-.. requirement:: doc.stamps
-   :parent: doc.read-is-checked
-
-   Each twin shall stand inside a rule and carry the stamp of that rule in its ``stamp``
-   option.
-
-.. rationale::
-
-   Judgement decides whether a rule is right. A script decides whether the text obeys it.
-
 Trace
-=====
+-----
 
 .. requirement:: doc.implemented
    :parent: doc.traceable
@@ -232,8 +249,70 @@ Trace
    option. A check in ``tools/`` names its rule in an ``# implements:`` comment, so each
    documentation rule traces down to its script.
 
-Sentences
-=========
+Chapters
+--------
+
+.. requirement:: doc.anchor-prefix
+   :parent: doc.traceable
+
+   Where a chunk carries an anchor, the chunk shall carry the name of its chapter as the first
+   part of the anchor.
+
+Parameters
+----------
+
+.. requirement:: doc.param-citations
+   :parent: doc.traceable
+
+   Where a citation uses the role ``param``, the citation shall name a PARAMETER or a TARGET.
+
+Targets
+-------
+
+.. requirement:: doc.target-parents
+   :parent: doc.traceable
+
+   No chunk shall name a TARGET in its ``parent`` option.
+
+.. rationale::
+
+   A measurement of the finished hardware decides a TARGET. No design decision can rest on a
+   goal that nobody has met yet, so no chunk serves a TARGET and no value names one. The tangle
+   writes no TARGET.
+
+Fragments
+---------
+
+.. requirement:: doc.source-targets
+   :parent: doc.traceable
+
+   Where a code block is a ``source`` directive, the code block shall name a file in ``build/``
+   or a fragment name.
+
+.. requirement:: doc.fragment-uses
+   :parent: doc.traceable
+
+   Each fragment use shall name a fragment.
+
+One reading
+===========
+
+.. goal:: doc.one-reading
+
+   Every rule has one meaning, so that two readers of the rule build the same machine.
+
+.. definition:: doc.scripted
+   :parent: doc.one-reading
+
+   A :dfn:`documentation rule` is a rule in this chapter that a script checks when
+   ``make check`` runs. The author drops a rule that no script can check, or reduces it to a
+   part that a script can check.
+
+.. requirement:: doc.one-shall
+   :parent: doc.one-reading, doc.rules-apart
+
+   Each chunk shall hold ``shall`` exactly once if it is a REQUIREMENT, and not at all
+   otherwise.
 
 .. definition:: doc.requirement-sentence
    :parent: doc.one-reading
@@ -313,87 +392,16 @@ Sentences
    and plain, and a ``never`` option keeps one word for each meaning. A quotation keeps a full
    stop from splitting a sentence.
 
-Layout
-======
+One source
+==========
 
-.. requirement:: doc.overview-first
-   :parent: doc.rules-apart, doc.one-engineer
+.. goal:: doc.one-source
 
-   Each chunk shall stand after the second heading of level 2 in its chapter.
-
-.. definition:: doc.section
-   :parent: doc.one-engineer
-
-   A :dfn:`section` is the text after a heading of level 2, 3 or 4, up to the next heading of
-   those levels.
-
-.. requirement:: doc.argument-budget
-   :parent: doc.one-engineer, doc.rules-apart
-
-   Where a section holds a chunk that carries an anchor, the section shall hold at most one
-   RATIONALE or
-   DISCUSSION, of 40 words or fewer.
-
-.. definition:: doc.code-block
-   :parent: doc.rules-apart
-
-   A :dfn:`code block` is a block of code in a chapter, such as a literal block after ``::``
-   or a ``code-block`` directive.
-
-.. requirement:: doc.code-kinds
-   :parent: doc.rules-apart
-
-   Each code block shall be a ``twin``, ``source`` or ``check`` directive.
-
-.. rationale::
-
-   A reader meets the purpose of a chapter before its rules, as Diátaxis keeps explanation
-   apart from reference. The budget keeps argument short. A code block is part of the machine
-   or a check of it.
+   Each rule is stated once. Its formal twin, its Verilog, its checks and every view of it
+   are tied to that statement or generated from it.
 
 Chapters
-========
-
-.. definition:: doc.chapter
-   :parent: doc.one-engineer
-
-   A :dfn:`chapter` is a reStructuredText file in ``book/`` other than ``book/index.rst``. The
-   name of a chapter is the name of its file without ``.rst``.
-
-.. requirement:: doc.chapter-path
-   :parent: doc.one-engineer
-
-   Each chapter shall have the path ``book/<name>/<name>.rst``.
-
-.. requirement:: doc.chapter-title
-   :parent: doc.one-engineer
-
-   Each chapter shall hold exactly one heading of level 1, and no text before it.
-
-.. requirement:: doc.chapter-kind
-   :parent: doc.rules-apart
-
-   Each chapter shall start with the field ``:kind:``, whose value is ``tutorial``,
-   ``how-to``, ``reference`` or ``explanation``.
-
-.. requirement:: doc.anchor-prefix
-   :parent: doc.traceable
-
-   Where a chunk carries an anchor, the chunk shall carry the name of its chapter as the first
-   part of the anchor.
-
-.. definition:: doc.chapter-order
-   :parent: doc.one-engineer
-
-   The :dfn:`chapter order` puts the chapters of each kind together, in the order tutorial,
-   how-to, reference and explanation. Within a kind, it puts each chapter after every other
-   chapter of that kind that holds a parent of one of its chunks. Where two or more chapters
-   can come next, the order takes the first name in alphabetical order.
-
-.. requirement:: doc.chapters-ordered
-   :parent: doc.one-engineer
-
-   The chapter order shall hold every chapter.
+--------
 
 .. definition:: doc.section-number
    :parent: doc.one-source
@@ -408,14 +416,8 @@ Chapters
 
    No chapter shall hold a heading that starts with a section number.
 
-.. rationale::
-
-   The weave numbers the chapters and their sections, so a new section never changes a number
-   in the source. The kinds keep tutorial, guide, reference and explanation apart, and the
-   trace sets the order within a kind.
-
 Parameters
-==========
+----------
 
 .. definition:: doc.parameter-value
    :parent: doc.one-source
@@ -448,11 +450,6 @@ Parameters
    Where a code block holds Verilog, the code block shall put ``bcw_params::`` before each
    constant name.
 
-.. requirement:: doc.param-citations
-   :parent: doc.traceable
-
-   Where a citation uses the role ``param``, the citation shall name a PARAMETER or a TARGET.
-
 .. rationale::
 
    The tangle writes each PARAMETER as a constant in ``build/rtl/bcw_params.sv`` and in
@@ -460,7 +457,7 @@ Parameters
    where the text cites it.
 
 Targets
-=======
+-------
 
 .. requirement:: doc.target-values
    :parent: doc.one-source
@@ -468,19 +465,8 @@ Targets
    Where a chunk is a TARGET, the chunk shall carry a parameter value that evaluates to an
    integer.
 
-.. requirement:: doc.target-parents
-   :parent: doc.traceable
-
-   No chunk shall name a TARGET in its ``parent`` option.
-
-.. rationale::
-
-   A measurement of the finished hardware decides a TARGET. No design decision can rest on a
-   goal that nobody has met yet, so no chunk serves a TARGET and no value names one. The tangle
-   writes no TARGET.
-
 Fragments
-=========
+---------
 
 .. definition:: doc.fragment-name
    :parent: doc.one-source
@@ -500,17 +486,6 @@ Fragments
    A :dfn:`fragment use` is a line of a ``source`` directive that holds only a fragment name
    between ``<<`` and ``>>``, after spaces. ``make tangle`` puts the fragment in place of the
    line, with those spaces before each line of the fragment.
-
-.. requirement:: doc.source-targets
-   :parent: doc.traceable
-
-   Where a code block is a ``source`` directive, the code block shall name a file in ``build/``
-   or a fragment name.
-
-.. requirement:: doc.fragment-uses
-   :parent: doc.traceable
-
-   Each fragment use shall name a fragment.
 
 .. requirement:: doc.fragments-used
    :parent: doc.one-source
@@ -533,3 +508,52 @@ Fragments
    A fragment lets the code of a rule stand next to the rule, while a skeleton puts a module in
    order. ``make tangle`` writes ``build/tangle.json``, which traces each tangled line to its
    chapter line.
+
+Twins and stamps
+================
+
+.. goal:: doc.read-is-checked
+
+   The English of a rule and its formal twin cannot drift apart without a check failing.
+
+.. definition:: doc.twin
+   :parent: doc.read-is-checked
+
+   A :dfn:`twin` is a ``twin`` directive.
+
+.. definition:: doc.twin-language
+   :parent: doc.read-is-checked
+
+   The :dfn:`twin language` is the part of ``Python`` that ``tools/twin.py`` can give to ``z3``.
+   A twin in it holds only functions. Each function holds lines of the form ``name = value``
+   and ends with one ``return``. Its values are integers and the results of ``==``, ``<`` and
+   the other operators that compare, and ``tools/twin.py`` lists each operator that it allows.
+
+.. requirement:: doc.twin-forms
+   :parent: doc.read-is-checked
+
+   Each twin shall hold only the forms of the twin language.
+
+.. definition:: doc.stamp
+   :parent: doc.read-is-checked
+
+   The :dfn:`stamp` of a rule is the first eight hexadecimal digits of the SHA-256 hash of its
+   label, a space and its English.
+
+.. requirement:: doc.stamps
+   :parent: doc.read-is-checked
+
+   Each twin shall stand inside a rule and carry the stamp of that rule in its ``stamp``
+   option.
+
+.. rationale::
+
+   Judgement decides whether a rule is right. A script decides whether the text obeys it.
+
+Review of changes
+=================
+
+.. goal:: doc.changes-reach-author
+
+   A script finds each change to what the machine does, and sends it to the author for
+   approval.
