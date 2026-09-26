@@ -521,7 +521,7 @@ class TangleTest:
                                  "build/rtl/bcw_params.sv", "build/rtl/core/core_rotate.v", "build/tangle.json"]
         first = line(GOOD, "def core_rotate")
         assert tangled(files, "build/model/core_rotate.py") == [
-            ("def core_rotate(turn):", CHAPTER, first), ("    return {'next': turn + 1}", CHAPTER, first + 1)]
+            ("def core_rotate(turn):", CHAPTER, first), ("    return {'next': (turn + 1) % 8}", CHAPTER, first + 1)]
         first = line(GOOD, "module core_rotate")
         assert tangled(files, "build/rtl/core/core_rotate.v") == [
             ("module core_rotate (input wire [2:0] turn, output wire [2:0] next);", CHAPTER, first),

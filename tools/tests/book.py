@@ -55,7 +55,7 @@ Rotation
       :stamp: {STAMP}
 
       def core_rotate(turn):
-          return {{'next': turn + 1}}
+          return {{'next': (turn + 1) % 8}}
 
 .. source:: build/rtl/core/core_rotate.v
    :implements: core.rotation

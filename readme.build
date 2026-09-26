@@ -166,12 +166,32 @@ the same name. build/checks.json lists each check with its kind, its options,
 its file and its chapter line.
 
 make check runs each check with tools/run_checks.py, in the chapter order.
-The first module in the code of a check is its top module. Each check reads
-build/rtl/bcw_params.sv and each Verilog file of build/rtl. A test passes
-when Verilator builds the testbench and the testbench exits 0, so $fatal
-fails it. A prove passes when SymbiYosys proves each assertion with the
-smtbmc engine and Yices. The runner cannot run an equiv check yet: it prints
-a NOTE for it. The work of each check is in build/run/<name>.
+The first module in the code of a test or a prove is its top module. Each
+check reads build/rtl/bcw_params.sv and each Verilog file of build/rtl. A
+test passes when Verilator builds the testbench and the testbench exits 0,
+so $fatal fails it. A prove passes when SymbiYosys proves each assertion
+with the smtbmc engine and Yices. The work of each check is in
+build/run/<name>.
+
+An equiv passes when z3 proves that the module equals its twin for every
+value of the input ports. yosys writes the module as SMT. The runner calls
+the function of the twin with a z3 integer for each input port. The function
+returns a dict with a value for each output port, as a z3 integer or a
+Python int. If an output of the module differs from the value of the twin
+for one input, the runner prints that input and both outputs:
+
+    book/core/core.rst:82: FAIL: [check] core.rotation.equiv: the module and the twin differ
+        turn=7: module next=0, twin next=8
+
+An equiv fails for a module that holds state (a register or a memory).
+Prove such a module with a prove check.
+
+The function of a twin must compute with arithmetic, such as + and %, or
+with z3.If. It must not branch in Python on a comparison of its inputs. z3
+gives == and != of two terms a Python truth value that compares the terms
+as written, not their values. So "0 if turn == 7 else turn + 1" gives
+turn + 1 under z3. Any other comparison, such as >=, makes the twin fail
+with an error.
 
 The runner prints each result at the chapter line of its check directive.
 After a failure come the lines of the tool that tell why, with each location

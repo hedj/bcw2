@@ -13,7 +13,7 @@
 <p>The core shall give the turn after
 thread <em>t</em> to thread <em>t</em> + 1.</p>
 <details><summary>Formal twin</summary><div class="highlight-python notranslate" id="file-build/model/core_rotate.py"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">core_rotate</span><span class="p">(</span><span class="n">turn</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;next&#39;</span><span class="p">:</span> <span class="n">turn</span> <span class="o">+</span> <span class="mi">1</span><span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;next&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">turn</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">8</span><span class="p">}</span>
 </pre></div>
 </div>
 </details><p class="chunk-serves">Serves: <a class="reference internal" href="../design/design.html#design.timing"><code class="docutils literal notranslate"><span class="pre">design.timing</span></code></a></p>
