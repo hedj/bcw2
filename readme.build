@@ -12,7 +12,8 @@ Nix pins every tool that the book uses. flake.nix names the tools, and
 flake.lock records the release of nixpkgs that they come from. So every
 machine uses the same versions: Python 3.13, Sphinx 9.1, Verilator 5.048,
 Icarus Verilog 13.0, yosys 0.62, SymbiYosys 0.61, Yices 2.7.0, z3 4.16,
-nextpnr 0.10 with ecppack of trellis for the ECP5, and TeX Live 2025.
+radon 6.0.1, nextpnr 0.10 with ecppack of trellis for the ECP5, and TeX Live
+2025.
 
 1. Install Nix. The instructions are at https://nixos.org/download.
 2. Run ./dev to open a shell in the environment.
@@ -235,6 +236,8 @@ tools/weave.py      The Sphinx extension that builds the reader edition.
 tools/linemap.py    Maps a location in build/ to its chapter line.
 tools/run_checks.py Runs each check directive of the book.
 tools/twin.py       Translates a twin in the twin language to z3.
+tools/metrics.py    Prints the McCabe and Halstead metrics of the code in
+                    tools/, without its tests: ./dev python3 tools/metrics.py
 tools/ste_lint.py   The linter of plain English that doc.linter uses.
 tools/conf.py       The Sphinx configuration of the book.
 tools/hooks/        The Git pre-push hook.

@@ -16,7 +16,7 @@
         in
         pkgs.mkShellNoCC {
           packages = [
-            (pkgs.python3.withPackages (ps: [ ps.sphinx ps.z3-solver ps.pytest ps.pytest-xdist ]))
+            (pkgs.python3.withPackages (ps: [ ps.sphinx ps.z3-solver ps.pytest ps.pytest-xdist ps.radon ]))
             pkgs.verilator
             pkgs.iverilog
             # The formal tools: yosys writes a module as SMT for z3, and SymbiYosys
