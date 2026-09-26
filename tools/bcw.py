@@ -14,8 +14,11 @@ Each chunk of a chapter is a directive, such as
           def core_rotate(turn): ...
 
 At doctree-read, the extension turns each chapter into a Document of Chunks and
-Blocks. At env-check-consistency, when every chapter is read, it runs each check
-and logs each finding as a Sphinx warning, such as
+Blocks. When every chapter is read, model() builds the Model of the whole book
+once: the chapter order and its parts, the fragments, the files, the uses of
+each fragment, and the values. The checks, the tangle and tools/weave.py read
+the Model. At env-check-consistency, the extension runs each check and logs
+each finding as a Sphinx warning, such as
 
     book/core/core.rst:12: WARNING: [stamps] core.rotation: message
         fix: what to do
@@ -109,6 +112,7 @@ class Chunk:
     top: int = 0  # the number of the second-level section that holds it, or 0
     section: int = None  # the title line of the innermost section of level 2 to 4
     blocks: list = field(default_factory=list)
+    title: str = None  # the title of an OPEN
 
     @property
     def english(self):
@@ -330,7 +334,7 @@ def read_document(app, doctree):
             elif isinstance(child, chunk):
                 label(app, docname, child, child["anchor"])
                 item = Chunk(path, document.name, child.line, child["label"], child["anchor"], child["options"],
-                             child["option_lines"], [], top=top, section=section)
+                             child["option_lines"], [], top=top, section=section, title=child.get("title"))
                 for paragraph in child.children:
                     if isinstance(paragraph, nodes.paragraph):
                         item.lines += [(paragraph.line + offset, text)
@@ -346,7 +350,7 @@ def read_document(app, doctree):
                               child.get("first", child.line), child.astext(), owner)
                 document.blocks.append(block)
                 if is_fragment(block):
-                    label(app, docname, child, "fragment-" + block.target[1:])
+                    label(app, docname, child, fragment_id(block.target))
                 if owner is not None:
                     owner.blocks.append(block)
             elif not isinstance(child, nodes.system_message):
@@ -362,6 +366,7 @@ def read_document(app, doctree):
             document.strays.append(child.line)
     document.titles += [child.line - 1 for child in doctree.children if isinstance(child, nodes.section)]
     app.env.bcw_documents[docname] = document
+    app.env.bcw_model = None
 
 
 def label(app, docname, node, name):
@@ -409,6 +414,62 @@ def read_kind(app, doctree):
 
 def purge_document(app, env, docname):
     env.bcw_documents.pop(docname, None)
+    env.bcw_model = None
+
+
+# The model
+
+
+@dataclass
+class Model:
+    """What the checks, the tangle and the weave read about the whole book, built once from the Documents."""
+    documents: list  # the Documents, by name
+    ordered: list  # the Documents in the chapter order, then the chapters that it leaves out, by name
+    left: list  # the names of the chapters that the chapter order leaves out
+    parts: list  # (kind, [Document]) for each kind that has chapters, in the order of KINDS, then (None, the rest)
+    fragments: dict  # the Block of each fragment name: its first block in the chapter order
+    files: dict  # the Block of each file that a twin or a source writes: its first block in the chapter order
+    uses: dict  # (Block, chapter line) of each use of each fragment name, in the chapter order
+    values: dict  # the value of each PARAMETER and TARGET that evaluates
+    failures: dict  # (Chunk, reason) of each PARAMETER and TARGET whose value does not evaluate
+    units: dict  # the unit of each PARAMETER and TARGET, or None
+
+
+def build_model(documents):
+    documents = sorted(documents, key=lambda document: document.name)
+    order, left = chapter_order(documents)
+    by_name = {document.name: document for document in documents}
+    ordered = [by_name[name] for name in order + left]
+    parts = [(kind, [document for document in ordered if document.kind == kind and document.name not in left])
+             for kind in KINDS]
+    parts = [(kind, members) for kind, members in parts if members]
+    placed = {document.name for _, members in parts for document in members}
+    rest = [document for document in documents if document.name not in placed]
+    if rest:
+        parts.append((None, rest))
+    fragments, files, uses = {}, {}, {}
+    for document in ordered:
+        for block in document.blocks:
+            if is_fragment(block):
+                fragments.setdefault(block.target, block)
+            elif (block.kind == "twin" and block.target) or writes_file(block):
+                files.setdefault(block.target, block)
+            for number, name, _ in fragment_uses(block):
+                uses.setdefault(name, []).append((block, number))
+    values, failures = parameter_values(documents)
+    units = {}
+    for document in documents:
+        for chunk in document.chunks:
+            if chunk.label in VALUED and chunk.anchor is not None:
+                units.setdefault(chunk.anchor, chunk.options.get("unit"))
+    return Model(documents, ordered, left, parts, fragments, files, uses, values, failures, units)
+
+
+def model(env):
+    """The model of the book, built again after a chapter is read or removed."""
+    if getattr(env, "bcw_model", None) is None:
+        env.bcw_model = build_model(env.bcw_documents.values())
+    return env.bcw_model
 
 
 # The checks on one chunk
@@ -856,20 +917,12 @@ def chapter_order(documents):
     return order, sorted(set(part) - set(order))
 
 
-def book_order(documents):
-    """The documents in the chapter order, then the chapters that it leaves out, by name."""
-    order, left = chapter_order(documents)
-    position = {name: index for index, name in enumerate(order + left)}
-    return sorted(documents, key=lambda document: position[document.name])
-
-
 # implements: doc.chapters-ordered
-def check_chapters_ordered(documents):
-    left = chapter_order(documents)[1]
-    for document in documents:
-        if document.name in left:
+def check_chapters_ordered(model):
+    for document in model.documents:
+        if document.name in model.left:
             yield Finding(document.path, 1, "chapters-ordered", None,
-                          f"the chapter order leaves out {', '.join(left)}, because their parents form a cycle "
+                          f"the chapter order leaves out {', '.join(model.left)}, because their parents form a cycle "
                           "or depend on one", "change a parent so that the parents between chapters run one way")
 
 
@@ -969,8 +1022,8 @@ def parameter_values(documents):
 
 # implements: doc.parameter-values
 # implements: doc.target-values
-def check_parameter_values(documents):
-    for anchor, (chunk, reason) in parameter_values(documents)[1].items():
+def check_parameter_values(model):
+    for anchor, (chunk, reason) in model.failures.items():
         name = "target-values" if chunk.label == "TARGET" else "parameter-values"
         yield Finding(chunk.path, chunk.option_line("value"), name, anchor, reason,
                       "write the value as an integer, or an expression of integers, PARAMETER anchors, "
@@ -1028,9 +1081,19 @@ def check_param_citations(documents):
 # Fragments
 
 
+def is_fragment_name(target):
+    """Whether the argument of a source directive is a fragment name: a colon and the form of an anchor."""
+    return target.startswith(":") and bool(ANCHOR.fullmatch(target[1:]))
+
+
 def is_fragment(block):
-    """Whether the block is a source directive that defines a fragment: its argument is a colon and an anchor."""
-    return block.kind == "source" and block.target.startswith(":") and bool(ANCHOR.fullmatch(block.target[1:]))
+    """Whether the block is a source directive that defines a fragment."""
+    return block.kind == "source" and is_fragment_name(block.target)
+
+
+def fragment_id(name):
+    """The id and label of the block of the fragment name: fragment-<name without its colon>."""
+    return "fragment-" + name[1:]
 
 
 def writes_file(block):
@@ -1046,30 +1109,15 @@ def fragment_uses(block):
             for offset, text in enumerate(block.text.splitlines()) if (match := USE.match(text))]
 
 
-def fragments(documents):
-    """The block of each fragment, by name: the first block with that name in the chapter order."""
-    result = {}
-    for document in book_order(documents):
-        for block in document.blocks:
-            if is_fragment(block):
-                result.setdefault(block.target, block)
-    return result
-
-
 def named(block):
     """The file or the fragment name that the block defines, or None."""
     return block.target if block.kind == "source" or (block.kind == "twin" and block.target) else None
 
 
-def fragment_graph(documents):
-    """The fragments that the blocks of each fragment use, and the fragments that a file uses."""
-    graph, roots = {}, set()
-    for name, block in fragments(documents).items():
-        graph[name] = {used for _, used, _ in fragment_uses(block)}
-    for document in documents:
-        for block in document.blocks:
-            if writes_file(block):
-                roots.update(used for _, used, _ in fragment_uses(block))
+def fragment_graph(model):
+    """The fragments that the block of each fragment uses, and the fragments that a file uses."""
+    graph = {name: {used for _, used, _ in fragment_uses(block)} for name, block in model.fragments.items()}
+    roots = {name for name, places in model.uses.items() for block, _ in places if writes_file(block)}
     return graph, roots
 
 
@@ -1095,22 +1143,21 @@ def check_source_targets(documents):
 
 
 # implements: doc.fragment-uses
-def check_fragment_uses(documents):
-    defined = fragments(documents)
-    for document in documents:
+def check_fragment_uses(model):
+    for document in model.documents:
         for block in document.blocks:
             for number, name, _ in fragment_uses(block):
-                if name not in defined:
+                if name not in model.fragments:
                     yield Finding(document.path, number, "fragment-uses", None,
                                   f"no source directive defines the fragment {name}",
                                   f"define it with .. source:: {name}, or name a fragment that exists")
 
 
 # implements: doc.fragments-used
-def check_fragments_used(documents):
-    graph, roots = fragment_graph(documents)
+def check_fragments_used(model):
+    graph, roots = fragment_graph(model)
     used = reached(graph, roots)
-    for name, block in fragments(documents).items():
+    for name, block in model.fragments.items():
         if name not in used:
             yield Finding(block.path, block.line, "fragments-used", None,
                           f"the fragment {name} reaches no file",
@@ -1118,9 +1165,9 @@ def check_fragments_used(documents):
 
 
 # implements: doc.fragment-cycles
-def check_fragment_cycles(documents):
-    graph = fragment_graph(documents)[0]
-    for name, block in fragments(documents).items():
+def check_fragment_cycles(model):
+    graph = fragment_graph(model)[0]
+    for name, block in model.fragments.items():
         if name in reached(graph, graph[name]):
             yield Finding(block.path, block.line, "fragment-cycles", None,
                           f"the fragment {name} reaches itself through its uses",
@@ -1128,9 +1175,9 @@ def check_fragment_cycles(documents):
 
 
 # implements: doc.one-block
-def check_one_block(documents):
+def check_one_block(model):
     first = {}
-    for document in book_order(documents):
+    for document in model.ordered:
         for block in document.blocks:
             name = named(block)
             if name is None:
@@ -1163,13 +1210,14 @@ def crowded(documents):
                if chunk.label in RULES and len(parents(chunk)) > 2)
 
 
-def check(documents, retired=(), tools=(), general=None):
-    """Return every finding in the given documents, in order of path, line and check.
+def check(model, retired=(), tools=(), general=None):
+    """Return every finding in the book of the model, in order of path, line and check.
 
     tools holds the (path, line, anchor) of each "# implements:" comment. With
     general=None, doc.known-words and doc.general-words are not checked, so that a
     test of another rule can use words that no list holds.
     """
+    documents = model.documents
     findings, seen = [], {}
     for document in documents:
         for function in [check_overview_first, check_argument_budget, check_code_kinds, check_chapter_path,
@@ -1187,17 +1235,17 @@ def check(documents, retired=(), tools=(), general=None):
     findings += check_reaches_goal(documents)
     findings += check_ears(documents)
     findings += check_vocabulary(documents)
-    findings += check_chapters_ordered(documents)
-    findings += check_parameter_values(documents)
+    findings += check_chapters_ordered(model)
+    findings += check_parameter_values(model)
     findings += check_constant_names(documents)
     findings += check_param_citations(documents)
     findings += check_target_parents(documents)
     findings += check_source_targets(documents)
-    findings += check_fragment_uses(documents)
-    findings += check_fragments_used(documents)
-    findings += check_fragment_cycles(documents)
+    findings += check_fragment_uses(model)
+    findings += check_fragments_used(model)
+    findings += check_fragment_cycles(model)
     findings += check_whole_twins(documents)
-    findings += check_one_block(documents)
+    findings += check_one_block(model)
     if general is not None:
         findings += check_known_words(documents, general)
         findings += check_general_words(documents, general)
@@ -1220,8 +1268,8 @@ def check_book(app, env):
     findings would follow from the error and not from the book.
     """
     config = app.config
-    documents = [env.bcw_documents[name] for name in sorted(env.bcw_documents)]
-    errors = sum(document.errors for document in documents)
+    book = model(env)
+    errors = sum(document.errors for document in book.documents)
     env.bcw_stopped = errors > 0
     if env.bcw_stopped:
         env.bcw_findings, env.bcw_values = [], {}
@@ -1232,13 +1280,13 @@ def check_book(app, env):
     if config.bcw_general_words is not None:
         general = {word.lower() for word in listed(config.bcw_general_words)}
     retired = listed(config.bcw_retired_anchors) if config.bcw_retired_anchors is not None else set()
-    env.bcw_findings = check(documents, retired, tool_implements(config.bcw_tools), general)
-    env.bcw_values = parameter_values(documents)[0]
+    env.bcw_findings = check(book, retired, tool_implements(config.bcw_tools), general)
+    env.bcw_values = book.values
     for finding in env.bcw_findings:
         logger.warning(str(finding), location=f"{finding.path}:{finding.line}", type="bcw", subtype=finding.check)
     if config.bcw_summary:
-        print(f"bcw: {len(documents)} chapters, {len(env.bcw_findings)} findings, "
-              f"{crowded(documents)} rules with more than 2 parents")
+        print(f"bcw: {len(book.documents)} chapters, {len(env.bcw_findings)} findings, "
+              f"{crowded(book.documents)} rules with more than 2 parents")
 
 
 # The tangle
@@ -1279,16 +1327,10 @@ def tangle(app, exception):
     root = app.config.bcw_tangle_root
     if exception is not None or root is None or app.env.bcw_stopped:
         return
-    record = tangle_parameters(app, root)
-    documents = [app.env.bcw_documents[name] for name in sorted(app.env.bcw_documents)]
-    files = {}
-    for document in book_order(documents):
-        for block in document.blocks:
-            if (block.kind == "twin" and block.target) or writes_file(block):
-                files.setdefault(block.target, block)
-    defined = fragments(documents)
-    for target, block in files.items():
-        lines = expand([block], defined)
+    book = model(app.env)
+    record = tangle_parameters(book, root)
+    for target, block in book.files.items():
+        lines = expand([block], book.fragments)
         write(Path(root) / target, "".join(text + "\n" for text, _, _ in lines))
         record[target.removeprefix("build/")] = [[path, number] for _, path, number in lines]
     # One line for each tangled line, so that a reader can follow the file.
@@ -1297,17 +1339,14 @@ def tangle(app, exception):
     write(Path(root) / "build" / "tangle.json", '{"files": {\n' + ",\n".join(files) + "\n}}\n")
 
 
-def tangle_parameters(app, root):
+def tangle_parameters(book, root):
     """Write each PARAMETER that has a value as a constant, in SystemVerilog and in Python.
 
     It returns the chapter line of each line of the two files, by their paths in
     build/: the value line of a constant, and None for any other line.
     """
-    constants = []
-    for name in sorted(app.env.bcw_documents):
-        for chunk in app.env.bcw_documents[name].chunks:
-            if chunk.label == "PARAMETER" and chunk.anchor in app.env.bcw_values:
-                constants.append((chunk, constant_name(chunk.anchor), app.env.bcw_values[chunk.anchor]))
+    constants = [(chunk, constant_name(chunk.anchor), book.values[chunk.anchor]) for document in book.documents
+                 for chunk in document.chunks if chunk.label == "PARAMETER" and chunk.anchor in book.values]
     header = "The PARAMETERs of the book, which tools/bcw.py writes."
     # A module that reads some of the constants is correct, so the package turns off
     # Verilator's warning on an unused parameter for its own constants only.
@@ -1330,6 +1369,7 @@ def init_environment(app):
         app.env.bcw_documents = {}
     app.env.bcw_values = {}
     app.env.bcw_stopped = False
+    app.env.bcw_model = None
 
 
 def setup(app):

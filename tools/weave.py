@@ -3,9 +3,9 @@
 make weave runs Sphinx with this extension and tools/bcw.py. The weave reads
 and checks nothing itself. It orders and reshapes what bcw.py reads:
 
-- The index holds the directive chapters. It lists the chapters in the order
-  of bcw.chapter_order: one numbered toctree for each kind, with the kind as
-  its caption. Sphinx reads the index last, so that the order is known.
+- The index holds the directive chapters. It lists the chapters in the parts
+  of bcw.model: one numbered toctree for each kind, with the kind as its
+  caption. Sphinx reads the index last, so that the order is known.
 - At doctree-read, after bcw.py reads a chapter, each chunk becomes a container
   whose id is its anchor. Its first line shows its label and its anchor, and a
   "Serves:" line links to each parent.
@@ -50,23 +50,13 @@ def read_index_last(app, env, docnames):
 
 
 def parts(env):
-    """(caption, [docname]) for each part of the book, in order.
+    """(caption, [docname]) for each part of the book, in order, from the parts of the model.
 
     A chapter that the chapter order leaves out, or whose kind is not known,
     goes in a last part.
     """
-    documents = {document.name: document for document in env.bcw_documents.values()}
-    order = bcw.chapter_order(list(documents.values()))[0]
-    result, placed = [], set()
-    for kind in bcw.KINDS:
-        names = [name for name in order if documents[name].kind == kind]
-        if names:
-            result.append((CAPTIONS[kind], [documents[name].docname for name in names]))
-            placed.update(names)
-    rest = sorted(name for name in documents if name not in placed)
-    if rest:
-        result.append((LEFT_OUT, [documents[name].docname for name in rest]))
-    return result
+    return [(CAPTIONS.get(kind, LEFT_OUT), [document.docname for document in documents])
+            for kind, documents in bcw.model(env).parts]
 
 
 def number_through(app, env):
@@ -117,20 +107,20 @@ def link(anchor, docname):
     return bcw.citation_link("", nodes.literal(text=anchor), anchor, docname)
 
 
-def container(chunk, docname):
-    """The chunk as a container of standard nodes."""
-    result = nodes.container(classes=["chunk", chunk["label"].lower()], ids=chunk["ids"])
-    if chunk["label"] in bcw.VALUED:
-        result["anchor"], result["value"] = chunk["anchor"], chunk["options"].get("value")
+def container(node, chunk, docname):
+    """The chunk node as a container of standard nodes, from the Chunk that bcw.py read from it."""
+    result = nodes.container(classes=["chunk", chunk.label.lower()], ids=node["ids"])
+    if chunk.label in bcw.VALUED:
+        result["anchor"], result["value"] = chunk.anchor, chunk.options.get("value")
     head = nodes.paragraph(classes=["chunk-label"])
-    head += nodes.strong(text=chunk["label"])
-    if chunk["anchor"]:
-        head += [nodes.Text(" "), nodes.literal(text=chunk["anchor"])]
-    if chunk.get("title"):
-        head += nodes.Text(" " + chunk["title"])
+    head += nodes.strong(text=chunk.label)
+    if chunk.anchor:
+        head += [nodes.Text(" "), nodes.literal(text=chunk.anchor)]
+    if chunk.title:
+        head += nodes.Text(" " + chunk.title)
     result += head
-    result += chunk.children
-    parents = [entry.strip() for entry in chunk["options"].get("parent", "").split(",") if entry.strip()]
+    result += node.children
+    parents = bcw.parents(chunk)
     if parents:
         serves = nodes.paragraph(classes=["chunk-serves"])
         serves += nodes.Text("Serves: ")
@@ -172,12 +162,13 @@ def swap(old, new):
     old.parent.replace(old, new)
 
 
-def link_uses(doctree, docname):
+def link_uses(doctree, document):
     """Put a line Uses: after each source block that uses fragments, with a link to each fragment."""
+    blocks = {block.line: block for block in document.blocks}
     for block in list(doctree.findall(nodes.literal_block)):
         if block.get("bcw") != "source":
             continue
-        names = dict.fromkeys(match["name"] for text in block.astext().splitlines() if (match := bcw.USE.match(text)))
+        names = dict.fromkeys(name for _, name, _ in bcw.fragment_uses(blocks[block.line]))
         if not names:
             continue
         uses = nodes.paragraph(classes=["fragment-uses"])
@@ -185,7 +176,7 @@ def link_uses(doctree, docname):
         for number, name in enumerate(names):
             if number:
                 uses += nodes.Text(", ")
-            uses += bcw.citation_link("", nodes.literal(text=name), "fragment-" + name[1:], docname)
+            uses += bcw.citation_link("", nodes.literal(text=name), bcw.fragment_id(name), document.docname)
         block.parent.insert(block.parent.index(block) + 1, uses)
 
 
@@ -194,12 +185,15 @@ def reshape(app, doctree):
     docname = app.env.docname
     if docname == app.config.root_doc:
         return
-    link_uses(doctree, docname)
+    document = app.env.bcw_documents[docname]
+    link_uses(doctree, document)
+    chunks = {chunk.line: chunk for chunk in document.chunks}
     moved = []
-    for chunk in list(doctree.findall(bcw.chunk)):
-        box = container(chunk, docname)
-        swap(chunk, box)
-        if chunk["label"] in MOVED:
+    for node in list(doctree.findall(bcw.chunk)):
+        chunk = chunks[node.line]
+        box = container(node, chunk, docname)
+        swap(node, box)
+        if chunk.label in MOVED:
             moved.append(box)
     if not moved:
         return
@@ -219,9 +213,9 @@ def reshape(app, doctree):
 def summary(block):
     if block["bcw"] == "twin":
         return "Formal twin"
-    if block["target"].startswith(":"):
+    if bcw.is_fragment_name(block["target"]):
         return f"Fragment: {block['target']}"
-    kind = "Verilog" if block["target"].endswith((".v", ".sv")) else "Source"
+    kind = "Verilog" if block["language"] == "verilog" else "Source"
     return f"{kind}: {block['target']}"
 
 
@@ -286,14 +280,9 @@ def weave_latex(app, doctree, docname):
         weave_latex_chapter(doctree)
 
 
-def units(env):
-    return {chunk.anchor: chunk.options.get("unit") for document in env.bcw_documents.values()
-            for chunk in document.chunks if chunk.label in bcw.VALUED}
-
-
 def show_values(env, doctree):
     """Show the value of each cited PARAMETER or TARGET, and the value on the first line of each."""
-    values, unit = env.bcw_values, units(env)
+    values, unit = env.bcw_values, bcw.model(env).units
 
     def shown(anchor):
         return " ".join(part for part in [str(values[anchor]), unit.get(anchor)] if part)

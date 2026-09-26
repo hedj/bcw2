@@ -20,6 +20,8 @@ from sphinx.application import Sphinx
 from sphinx.util.console import nocolor
 from sphinx.util.docutils import docutils_namespace
 
+import bcw
+
 ROOT = Path(__file__).resolve().parents[2]
 
 nocolor()
@@ -153,6 +155,7 @@ class Book:
                                  for name in sorted(app.env.found_docs)}
             self.findings = app.env.bcw_findings
             self.values = app.env.bcw_values
+            self.model = bcw.model(app.env)
             for finding in self.findings:
                 finding.path = finding.path.replace(str(self.root) + "/", "")
             self.documents = [app.env.bcw_documents[name] for name in sorted(app.env.bcw_documents)]

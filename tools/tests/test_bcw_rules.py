@@ -1227,3 +1227,46 @@ class FragmentTangleTest:
             signal.signal(signal.SIGALRM, previous)
         assert tangled.count("<<:core.pair-logic>>") == 1
 
+
+
+class ModelTest:
+    """The model that the checks, the tangle and the weave read, built once from the chapters."""
+
+    def test_the_model_orders_the_chapters_and_groups_them_in_parts(self):
+        zeta = chapter("Zeta", kind="tutorial")
+        alpha = chapter("Alpha")
+        model = Book({"alpha/alpha.rst": alpha, "core/core.rst": GOOD, "zeta/zeta.rst": zeta}).model
+        assert [document.name for document in model.documents] == ["alpha", "core", "zeta"]
+        assert [document.name for document in model.ordered] == ["zeta", "alpha", "core"]
+        assert [(kind, [document.name for document in documents]) for kind, documents in model.parts] == [
+            ("tutorial", ["zeta"]), ("reference", ["alpha", "core"])]
+        assert model.left == []
+
+    def test_a_chapter_of_no_known_kind_is_in_a_last_part(self):
+        model = Book({"core/core.rst": GOOD, "story/story.rst": chapter("Story", kind="story")}).model
+        assert [(kind, [document.name for document in documents]) for kind, documents in model.parts] == [
+            ("reference", ["core"]), (None, ["story"])]
+
+    def test_the_model_holds_the_fragments_the_files_and_the_uses(self):
+        text = GOOD + SKELETON + FRAGMENT
+        model = Book({"core/core.rst": text}).model
+        assert model.fragments[":core.pair-logic"].line == line(text, ".. source:: :core.pair-logic")
+        assert sorted(model.files) == ["build/model/core_rotate.py", "build/rtl/core/core_rotate.v",
+                                       "build/rtl/core/pair.v"]
+        [(block, number)] = model.uses[":core.pair-logic"]
+        assert (block.target, number) == ("build/rtl/core/pair.v", line(text, "<<:core.pair-logic>>"))
+
+    def test_a_use_inside_a_fragment_is_a_use(self):
+        text = (GOOD + SKELETON.replace("<<:core.pair-logic>>", "<<:core.outer>>")
+                + source(":core.outer", "<<:core.pair-logic>>") + FRAGMENT)
+        uses = Book({"core/core.rst": text}).model.uses
+        assert [(block.target, number) for block, number in uses[":core.pair-logic"]] == [
+            (":core.outer", line(text, "<<:core.pair-logic>>"))]
+        assert [block.target for block, _ in uses[":core.outer"]] == ["build/rtl/core/pair.v"]
+
+    def test_the_model_holds_the_values_the_units_and_the_failures(self):
+        text = GOOD + THREADS + WIDTH + parameter("core.bad", "core.none", unit="bits")
+        model = Book({"core/core.rst": text}).model
+        assert model.values == {"core.threads": 8, "core.turn-width": 3}
+        assert model.units == {"core.threads": "threads", "core.turn-width": "bits", "core.bad": "bits"}
+        assert list(model.failures) == ["core.bad"]
