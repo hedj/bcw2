@@ -113,8 +113,8 @@ Terms and marking
    :parent: doc.traceable
 
    The :dfn:`allowed options` of a GOAL are ``parent`` alone. A PARAMETER and a TARGET allow
-   ``parent``, ``value`` and ``unit``, and a REQUIREMENT allows ``parent`` and ``impl``. A DEFINITION allows
-   ``parent`` and ``never``, and no other label allows an option.
+   ``parent``, ``value`` and ``unit``, and a REQUIREMENT allows ``parent``, ``impl`` and ``verify``. A
+   DEFINITION allows ``parent`` and ``never``, and no other label allows an option.
 
 .. requirement:: doc.attribute-keys
    :parent: doc.traceable
