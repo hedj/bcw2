@@ -38,11 +38,6 @@ A fragment adds a second module to the same file.
    module core_other (input wire c, output wire d);
        assign d = c
    endmodule
-
-.. source:: build/model/twin.py
-
-   def twin(turn):
-       return {'next': turn + undefined_name}
 """
 
 VERILOG = "build/rtl/core/core_pair.v"
@@ -81,15 +76,9 @@ class LinemapTest:
         assert f"{VERILOG}:6: syntax error" in result.stderr
         assert f"{SOURCE}:{line(CHAPTER, 'module core_other') + 2}: syntax error" in self.filter(result.stderr)
 
-    def test_python_traceback_maps_to_its_chapter_line(self):
-        code = "import runpy; runpy.run_path('build/model/twin.py')['twin'](1)"
-        result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
-        assert 'File "build/model/twin.py", line 2, in twin' in result.stderr
-        assert f'File "{SOURCE}", line {line(CHAPTER, "undefined_name")}, in twin' in self.filter(result.stderr)
-
-    def test_an_absolute_path_maps_like_a_relative_one(self):
-        text = f'File "{self.root / "build/model/twin.py"}", line 2, in twin'
-        assert linemap.rewrite(text) == f'File "{SOURCE}", line {line(CHAPTER, "undefined_name")}, in twin'
+    def test_an_absolute_path_in_a_tool_message_maps_like_a_relative_one(self):
+        text = f"%Error: {self.root / VERILOG}:3:1: x"
+        assert linemap.rewrite(text) == f"%Error: {SOURCE}:{line(CHAPTER, 'endmodule')}:1: x"
 
     def test_each_line_maps_to_its_chapter_line(self):
         assert linemap.lookup(VERILOG, 1) == (SOURCE, line(CHAPTER, "module core_pair"))

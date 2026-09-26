@@ -1,8 +1,7 @@
 """Map locations in tangled files back to the chapter lines that they came from.
 
 As a filter, it rewrites every location in a tangled file, such as
-build/rtl/core/core_rotate.v:9 or File "build/model/x.py", line 3, to the
-chapter and line that hold that code:
+build/rtl/core/core_rotate.v:9, to the chapter and line that hold that code:
 
     verilator --lint-only -Wall build/rtl/bcw_params.sv build/rtl/core/core_rotate.v 2>&1 | \
         python3 tools/linemap.py
@@ -24,12 +23,9 @@ import re
 import sys
 from pathlib import Path
 
-# A range of line.column-line.column. The patterns of LOCATIONS leave a range alone.
+# A range of line.column-line.column. LOCATION leaves a range alone.
 RANGE = re.compile(r"(?P<path>[^\s:\"'()]*build/[^\s:\"'()]+):(?P<line>\d+)(?P<column>\.\d+-)(?P<end>\d+)(?=\.\d)")
-LOCATIONS = [
-    re.compile(r'(?P<before>File ")(?P<path>[^"]*build/[^"]+)(?P<middle>", line )(?P<line>\d+)'),
-    re.compile(r"(?P<before>)(?P<path>[^\s:\"'()]*build/[^\s:\"'()]+)(?P<middle>:)(?P<line>\d+)(?!\d|\.\d+-\d)"),
-]
+LOCATION = re.compile(r"(?P<path>[^\s:\"'()]*build/[^\s:\"'()]+):(?P<line>\d+)(?!\d|\.\d+-\d)")
 NOTE = "  (linemap: no source for this location)"
 
 
@@ -68,7 +64,7 @@ def rewrite(text):
             unmapped = True
             return match.group(0)
         source, line = result
-        return f"{match.group('before')}{source}{match.group('middle')}{line}"
+        return f"{source}:{line}"
 
     def replace_range(match):
         nonlocal unmapped
@@ -79,9 +75,7 @@ def rewrite(text):
             return match.group(0)
         return f"{first[0]}:{first[1]}{match.group('column')}{last[1]}"
 
-    text = RANGE.sub(replace_range, text)
-    for pattern in LOCATIONS:
-        text = pattern.sub(replace, text)
+    text = LOCATION.sub(replace, RANGE.sub(replace_range, text))
     return text + NOTE if unmapped else text
 
 
