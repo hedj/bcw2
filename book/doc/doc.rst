@@ -37,6 +37,7 @@ Size and reading burden
 =======================
 
 .. goal:: doc.one-engineer
+   :parent: design.auditability
 
    The chapters stay small and plain enough for one engineer to read completely, and their
    reading burden is measured.
@@ -93,6 +94,7 @@ Rules apart from explanation
 ============================
 
 .. goal:: doc.rules-apart
+   :parent: design.auditability
 
    A reader can tell at once which text is a rule, which is explanation, and which is an open
    question or a record.
@@ -147,6 +149,7 @@ Traceability
 ============
 
 .. goal:: doc.traceable
+   :parent: design.auditability
 
    Every rule traces up to the goal or security property that it serves, and down to its
    checks and its implementation. A reference stays valid when the chapters change.
@@ -293,6 +296,7 @@ One reading
 ===========
 
 .. goal:: doc.one-reading
+   :parent: design.auditability
 
    Every rule has one meaning, so that two readers of the rule build the same machine.
 
@@ -422,6 +426,7 @@ One source
 ==========
 
 .. goal:: doc.one-source
+   :parent: design.auditability
 
    Each rule is stated once. Its formal twin, its Verilog, its checks and every view of it
    are tied to that statement or generated from it.
@@ -530,6 +535,7 @@ Twins and stamps
 ================
 
 .. goal:: doc.read-is-checked
+   :parent: design.auditability
 
    The English of a rule and its formal twin cannot drift apart without a check failing.
 
@@ -609,6 +615,7 @@ Review of changes
 =================
 
 .. goal:: doc.changes-reach-author
+   :parent: design.auditability
 
    A script finds each change to what the machine does, and sends it to the author for
    approval.
