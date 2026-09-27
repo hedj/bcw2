@@ -92,7 +92,7 @@ def functions(text):
 def translate(text, function, inputs, constants):
     """(width, outputs) of the function of a twin, with its arguments bound to the input terms.
 
-    inputs maps each argument to a z3 bit-vector, and constants maps each PARAMETER
+    inputs maps each argument, by name, to a z3 bit-vector, and constants maps each PARAMETER
     constant to its integer. outputs is the dict of terms that the function returns, or
     its one term, at the width.
     """
@@ -101,13 +101,13 @@ def translate(text, function, inputs, constants):
         raise TwinError(1, f"the twin defines no function {function}")
     node = defined[function]
     names = [argument.arg for argument in node.args.args]
-    if names != list(inputs):
+    if sorted(names) != sorted(inputs):
         raise TwinError(node.lineno, f"the function {function} takes {', '.join(names)}, "
                                      f"but the inputs are {', '.join(inputs)}")
     walk = Walk(defined, constants)
-    result = walk.call(node, [walk.integer(0, 2 ** term.size() - 1, False,
-                                           lambda width, term=term: z3.ZeroExt(width - term.size(), term))
-                              for term in inputs.values()], ())
+    result = walk.call(node, [walk.integer(0, 2 ** inputs[name].size() - 1, False,
+                                           lambda width, term=inputs[name]: z3.ZeroExt(width - term.size(), term))
+                              for name in names], ())
     width = max(value.bits() for value in walk.integers)
     if width > LIMIT:
         raise TwinError(node.lineno, f"the twin needs {width} bits, more than {LIMIT}")

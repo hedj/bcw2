@@ -21,7 +21,8 @@ An equiv passes when z3 proves that the module equals its twin. yosys writes
 the module as SMT. tools/twin.py translates the function of the twin, which
 returns a dict of the output ports, with a bit-vector for each input port. z3
 then looks for input values where an output of the module differs from the
-value of the twin. A module that holds state fails: a prove check can prove it.
+value of the twin, comparing the term of each output with the term of the twin.
+A module that holds state fails: a prove check can prove it.
 
 The runner prints each result at the chapter line of its check directive. After
 a failure come the lines of the tool that tell why, with each location mapped
@@ -122,6 +123,50 @@ def run_prove(check, top, work, files):
     return reason, "\n".join(lines)
 
 
+def port_terms(text, top, ports):
+    """The term of each port of the module that yosys wrote as SMT, in one state of the module.
+
+    yosys writes a port of 1 bit as a Bool, which becomes a bit-vector of 1 bit here.
+    """
+    probes = "".join(f"(declare-const probe_{name} (_ BitVec {size}))(assert (= probe_{name} "
+                     + (f"(ite (|{top}_n {name}| state) #b1 #b0)" if size == "1" else f"(|{top}_n {name}| state)")
+                     + "))" for _, name, size in ports)
+    assertions = z3.parse_smt2_string(text + f"(declare-const state |{top}_s|)" + probes)
+    return {name: assertion.arg(1) for (_, name, _), assertion in zip(ports, assertions[-len(ports):])}
+
+
+def parts(term):
+    """The parts of a concat, from the top bit down."""
+    if z3.is_app_of(term, z3.Z3_OP_CONCAT):
+        return [part for child in term.children() for part in parts(child)]
+    return [term]
+
+
+def input_bits(inputs, terms):
+    """The (function, term) pairs that put the bits of each input bit-vector in place of the functions of yosys.
+
+    yosys declares a function of the state for some bits of the inputs, in any order, even
+    across ports, and writes each input port as a concat of these functions, of extracts of
+    them, and of (ite f #b1 #b0) for a bit that it holds as a Bool. With the bits in place,
+    each output is a term of the inputs alone, which z3 can compare with the twin term by
+    term: through the equalities of the ports, it cannot prove a 32-bit multiply.
+    """
+    bits, pairs = {}, []
+    for name, var in inputs.items():
+        high = var.size() - 1
+        for part in parts(terms[name]):
+            if z3.is_app_of(part, z3.Z3_OP_ITE):
+                pairs.append((part.arg(0), z3.Extract(high, high, var) == 1))
+            elif not z3.is_bv_value(part):
+                function, top, bottom = ((part.arg(0), *part.params()) if z3.is_app_of(part, z3.Z3_OP_EXTRACT)
+                                         else (part, part.size() - 1, 0))
+                for k in range(top, bottom - 1, -1):
+                    bits.setdefault(function, {})[k] = z3.Extract(high - top + k, high - top + k, var)
+            high -= part.size()
+    return pairs + [(function, z3.Concat(*[got[k] for k in reversed(range(function.size()))])
+                     if function.size() > 1 else got[0]) for function, got in bits.items()]
+
+
 def run_equiv(check, top, work, files):
     """None if z3 proves that each output of the module equals the value of the twin, or (reason, output)."""
     work.mkdir(parents=True, exist_ok=True)
@@ -147,17 +192,14 @@ def run_equiv(check, top, work, files):
     if sorted(values) != sorted(outputs):
         return (f"the twin gives the outputs {', '.join(sorted(values))}, but the module has the outputs "
                 f"{', '.join(outputs)}"), ""
-    # Each port becomes a bit-vector that equals its bits in one state of the module. The
-    # outputs are natural numbers, and the values of the twin are in two's complement.
-    solver = z3.Solver()
-    # yosys writes a port of 1 bit as a Bool, which becomes a bit-vector of 1 bit here.
-    solver.add(z3.parse_smt2_string(text + f"(declare-const state |{top}_s|)" + "".join(
-        f"(declare-const port_{name} (_ BitVec {size}))(assert (= port_{name} "
-        + (f"(ite (|{top}_n {name}| state) #b1 #b0)" if size == "1" else f"(|{top}_n {name}| state)") + "))"
-        for _, name, size in ports)))
+    # The outputs are natural numbers, and the values of the twin are in two's complement.
+    terms = port_terms(text, top, ports)
+    bits = input_bits(inputs, terms)
     wide = max([width] + [term.size() + 1 for term in outputs.values()])
-    module = {name: z3.ZeroExt(wide - term.size(), term) for name, term in outputs.items()}
-    values = {name: z3.SignExt(wide - width, values[name]) for name in outputs}
+    module = {name: z3.simplify(z3.ZeroExt(wide - term.size(), z3.substitute(terms[name], *bits)))
+              for name, term in outputs.items()}
+    values = {name: z3.simplify(z3.SignExt(wide - width, values[name])) for name in outputs}
+    solver = z3.Solver()
     solver.add(z3.Or([module[name] != values[name] for name in outputs]))
     if solver.check() == z3.unsat:
         return None

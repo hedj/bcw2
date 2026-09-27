@@ -440,6 +440,48 @@ class EquivTest:
         a, b, module, value = map(int, match.groups())
         assert (module, value) == ((a & b) ^ (a >> 1), (a | b) ^ (a >> 1))
 
+    def test_a_twin_takes_its_arguments_by_name_in_any_order(self, tmp_path):
+        chapter = self.mixed("(a & b) ^ (a >> 1)").replace("def mix(a, b):", "def mix(b, a):")
+        text, result = run(tmp_path, self.MIX, chapter)
+        assert result.returncode == 0, result.stdout + result.stderr
+
+    @staticmethod
+    def module(name, ports, body, function):
+        """(the source and the equiv of a module, GOOD with the twin function too)."""
+        extra = (f"\n.. source:: build/rtl/core/{name}.v\n\n   module {name} ({ports});\n       {body}\n"
+                 f"   endmodule\n\n.. check:: equiv\n   :verifies: core.rotation\n   :module: {name}\n")
+        lines = "".join(f"      {line}\n" for line in function.splitlines())
+        return extra, GOOD.replace("      def core_rotate(turn):", f"{lines}\n\n      def core_rotate(turn):")
+
+    MUL = ("input wire [1:0] f3, input wire [31:0] a, b, output wire [31:0] y",
+           "wire signed [63:0] p = $signed({f3 != 2'd3 && a[31], a}) * $signed({!f3[1] && b[31], b});\n"
+           "       assign y = f3 == 2'd0 ? p[31:0] : p[63:32];")
+
+    @pytest.mark.parametrize("unsigned_b, passes", [("f3 < 2", True), ("f3 == 0", False)])
+    def test_a_signed_32_bit_multiply_is_proved_or_refuted(self, tmp_path, unsigned_b, passes):
+        # Through equalities of the ports, z3 did not prove this multiply in 600 seconds.
+        extra, chapter = self.module("mul", *self.MUL, (
+            "def mul(f3, a, b):\n"
+            "    x = a - 4294967296 if f3 != 3 and a >= 2147483648 else a\n"
+            f"    z = b - 4294967296 if {unsigned_b} and b >= 2147483648 else b\n"
+            "    p = x * z\n"
+            "    return {'y': p & 4294967295 if f3 == 0 else (p >> 32) & 4294967295}"))
+        text, result = run(tmp_path, extra, chapter)
+        assert (result.returncode == 0) == passes, result.stdout + result.stderr
+        if not passes:
+            assert re.fullmatch(r"    a=\d+, b=\d+, f3=1: module y=\d+, twin y=\d+", result.stdout.splitlines()[2])
+
+    @pytest.mark.parametrize("bit, passes", [(20, True), (21, False)])
+    def test_input_bits_that_yosys_reorders_are_put_back(self, tmp_path, bit, passes):
+        # yosys declares one function for the bits 31, 19:12, 20 and 30:21 of i, in that order.
+        extra, chapter = self.module(
+            "jimm", "input wire [31:0] i, output wire [31:0] y",
+            "assign y = {{11{i[31]}}, i[31], i[19:12], i[20], i[30:21], 1'b0};",
+            f"def jimm(i):\n    j = (((i >> 31) << 20) | (((i >> 12) & 255) << 12) | (((i >> {bit}) & 1) << 11)\n"
+            "         | (((i >> 21) & 1023) << 1))\n    return {'y': j | 4292870144 if i >> 31 == 1 else j}")
+        text, result = run(tmp_path, extra, chapter)
+        assert (result.returncode == 0) == passes, result.stdout + result.stderr
+
     def test_a_requirement_without_a_twin_fails(self, tmp_path):
         start, end = GOOD.index("   .. twin::"), GOOD.index(TWIN) + len(TWIN) + 1
         text, result = run(tmp_path, "", GOOD[:start] + GOOD[end:])
