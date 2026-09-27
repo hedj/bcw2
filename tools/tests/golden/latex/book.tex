@@ -325,6 +325,18 @@ Fragment: {\hyperref[\detokenize{core/core:source-3}]{\sphinxcrossref{:core.pair
 Verifies: {\hyperref[\detokenize{core/core:core.rotation}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{core.rotation}}}}}
 
 \sphinxAtStartPar
+\sphinxstyleemphasis{Mutant of build/rtl/core/core\_rotate.v, which core.rotation.test must catch}
+
+\begingroup\fvset{fontsize=\small}
+
+\begin{sphinxVerbatim}[commandchars=\\\{\}]
+\PYG{g+gd}{\PYGZhy{}    assign next = turn + 3\PYGZsq{}d1;}
+\PYG{g+gi}{+    assign next = turn;}
+\end{sphinxVerbatim}
+
+\endgroup
+
+\sphinxAtStartPar
 \sphinxstyleemphasis{Check (equiv)}: the module \sphinxcode{\sphinxupquote{core\_rotate}} equals the twin \sphinxcode{\sphinxupquote{core\_next}}.
 
 \sphinxAtStartPar

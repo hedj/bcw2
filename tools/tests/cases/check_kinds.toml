@@ -19,6 +19,12 @@ append = '''
    :verifies: core.rotation
    :module: core_rotate
    :twin: core_rotate
+
+.. mutant:: build/rtl/core/core_rotate.v
+   :kills: core.rotation.test, core.rotation.prove
+
+   -    assign next = turn + 3'd1;
+   +    assign next = turn;
 '''
 findings = []
 
@@ -37,6 +43,7 @@ findings = [
 
 [[case]]
 name = "a check without a verifies option is a finding"
+only = "check-kinds"
 append = '''
 
 .. check:: test
@@ -49,6 +56,7 @@ findings = [
 
 [[case]]
 name = "a check that verifies a chunk that is not a REQUIREMENT is a finding"
+only = "check-kinds"
 append = '''
 
 .. check:: test
@@ -62,6 +70,7 @@ findings = [
 
 [[case]]
 name = "a test or a proof without code is a finding"
+only = "check-kinds"
 append = '''
 
 .. check:: prove
@@ -98,6 +107,7 @@ findings = [
 
 [[case]]
 name = "a depth that is not a number is a finding"
+only = "check-kinds"
 append = '''
 
 .. check:: prove

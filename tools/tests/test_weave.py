@@ -182,6 +182,8 @@ class CodeIndexTest:
 # in git before the commit.
 GOLDEN = Path(__file__).resolve().parent / "golden"
 TESTED = ("\n.. check:: test\n   :verifies: core.rotation\n\n   module tb;\n       initial $finish;\n   endmodule\n"
+          "\n.. mutant:: build/rtl/core/core_rotate.v\n   :kills: core.rotation.test\n\n"
+          "   -    assign next = turn + 3'd1;\n   +    assign next = turn;\n"
           "\n.. check:: equiv\n   :verifies: core.rotation\n   :module: core_rotate\n   :twin: core_next\n")
 MODEL = ("\n.. source:: build/model/core/ref.c\n\n   #include <stdint.h>\n"
          "   uint32_t ref_next(uint32_t turn, uint32_t threads) { return (turn + 1) % threads; }\n")

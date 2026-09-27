@@ -97,11 +97,18 @@ append = '''
    :verifies: core.rotation
 
    :rule:`core.nothing`
+
+.. mutant:: build/rtl/core/core_rotate.v
+   :kills: core.rotation.test
+
+   -    assign next = turn + 3'd1;
+   +    assign next = turn;
 '''
 findings = []
 
 [[case]]
 name = "a verifies entry that names no anchor is a finding on the directive line"
+only = "references"
 append = '''
 
 .. check:: test

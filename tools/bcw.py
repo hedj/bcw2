@@ -129,7 +129,7 @@ class Chunk:
 class Block:
     path: str
     line: int
-    kind: str  # twin, source or check; None for any other literal block
+    kind: str  # twin, source, check or mutant; None for any other literal block
     options: dict
     target: str  # the tangled file, or None
     first: int  # the line of the first line of code
@@ -275,6 +275,18 @@ class CheckDirective(CodeDirective):
         [node] = super().run()
         node["check"], node["target"] = self.arguments[0], None
         node["language"] = "verilog" if node["check"] in ("test", "prove") else "none"
+        return [node]
+
+
+class MutantDirective(CodeDirective):
+    """A fault in a file that a source writes: its - lines of the file, then the + lines that replace them."""
+    kind = "mutant"
+    required_arguments = 1
+    option_spec = {"kills": directives.unchanged}
+
+    def run(self):
+        [node] = super().run()
+        node["language"] = "diff"
         return [node]
 
 
@@ -645,8 +657,8 @@ def check_code_kinds(document):
     for block in document.blocks:
         if block.kind is None:
             yield Finding(document.path, block.line, "code-kinds", None,
-                          "the code block is not a twin, a source or a check",
-                          "write it in a twin, source or check directive")
+                          "the code block is not a twin, a source, a check or a mutant",
+                          "write it in a twin, source, check or mutant directive")
 
 
 # implements: doc.chapter-path
@@ -750,6 +762,68 @@ def check_implemented(documents, tools):
 # The kinds of a check: a testbench that Verilator runs, properties that SymbiYosys proves, and a
 # proof that a module equals its twin.
 CHECK_KINDS = ("test", "prove", "equiv")
+# The kinds of check that can pass without checking anything, so that each needs a mutant.
+MUTABLE = ("test", "prove")
+
+
+def kills(block):
+    """The names of the checks in the kills option of a mutant."""
+    return [entry.strip() for entry in block.options.get("kills", "").split(",") if entry.strip()]
+
+
+def mutation(block, book):
+    """The lines of the file of the mutant with its - lines replaced, as (text, [path, line]), or a fault."""
+    marks = [(text[:1], text[1:], block.first + offset) for offset, text in enumerate(block.text.splitlines())]
+    if any(mark not in ("-", "+") for mark, _, _ in marks):
+        return None, "a line of the mutant starts with neither - nor +"
+    removed = [text.strip() for mark, text, _ in marks if mark == "-"]
+    if not removed:
+        return None, "the mutant has no - line, so it names no lines of the file"
+    source = book.files.get(block.target)
+    if source is None or not block.target.endswith((".v", ".sv")):
+        return None, f"{block.target} is not a Verilog file that a source directive writes"
+    lines = expand([source], book.fragments)
+    size = len(removed)
+    starts = [start for start in range(len(lines) - size + 1)
+              if [text.strip() for text, _, _ in lines[start:start + size]] == removed]
+    if len(starts) != 1:
+        return None, f"the - lines occur {len(starts)} times in {block.target}, not once"
+    start = starts[0]
+    return ([(text, [path, number]) for text, path, number in lines[:start]]
+            + [(text, [block.path, number]) for mark, text, number in marks if mark == "+"]
+            + [(text, [path, number]) for text, path, number in lines[start + size:]]), None
+
+
+def mutants(book):
+    """Each mutant block of the book, in the chapter order."""
+    return [block for document in book.ordered for block in document.blocks if block.kind == "mutant"]
+
+
+# implements: doc.mutants
+def check_mutants(book):
+    killed = {name for block in mutants(book) for name in kills(block)}
+    for entry, block in zip(check_manifest(book), book.checks):
+        if block.check in MUTABLE and entry["name"] not in killed:
+            yield Finding(block.path, block.line, "mutants", block.chunk.anchor if block.chunk else None,
+                          f"no mutant names {entry['name']} in its kills option",
+                          "add a mutant directive with a fault that the check must catch")
+
+
+# implements: doc.mutant-form
+def check_mutant_form(book):
+    kinds = {entry["name"]: entry["kind"] for entry in check_manifest(book)}
+    for block in mutants(book):
+        faults = [] if kills(block) else ["the mutant names no check in a kills option"]
+        for name in kills(block):
+            if name not in kinds:
+                faults.append(f"{name} is not the name of a check")
+            elif kinds[name] not in MUTABLE:
+                faults.append(f"{name} is an {kinds[name]} check, which needs no mutant")
+        _, fault = mutation(block, book)
+        faults += [fault] if fault else []
+        for fault in faults:
+            yield Finding(block.path, block.line, "mutant-form", block.chunk.anchor if block.chunk else None, fault,
+                          "write a mutant as doc.mutant describes")
 
 
 # implements: doc.check-kinds
@@ -1357,6 +1431,8 @@ def check(model, retired=(), tools=(), general=None, tests=()):
     findings += check_twin_forms(model)
     findings += check_scoped_constants(documents)
     findings += check_one_block(model)
+    findings += check_mutants(model)
+    findings += check_mutant_form(model)
     if general is not None:
         findings += check_known_words(documents, general)
         findings += check_general_words(documents, general)
@@ -1491,7 +1567,8 @@ def tangle(app, exception):
              for name, entry in sorted(record.items())]
     write(path, '{"files": {\n' + ",\n".join(files) + "\n}}\n")
     write(Path(root) / "build" / "checks.json", f'{{"constants": {json.dumps(parameter_constants(book))}, "checks": [\n'
-          + ",\n".join(json.dumps(entry) for entry in manifest) + "\n]}\n")
+          + ",\n".join(json.dumps(entry) for entry in manifest) + '\n], "mutants": [\n'
+          + ",\n".join(json.dumps(entry) for entry in mutant_manifest(book)) + "\n]}\n")
     write(Path(root) / "build" / "design.json",
           json.dumps(design_graph(book, comments(app.config.bcw_tools, IMPLEMENTS),
                                   comments(app.config.bcw_tests, VERIFIES)), indent=1) + "\n")
@@ -1567,6 +1644,17 @@ def check_manifest(book):
     return manifest
 
 
+def mutant_manifest(book):
+    """The entry of build/checks.json for each mutant without a fault: its file, its kills and its text."""
+    entries = []
+    for block in mutants(book):
+        lines, fault = mutation(block, book)
+        if fault is None:
+            entries.append({"path": block.path, "line": block.line, "file": block.target, "kills": kills(block),
+                            "text": "".join(text + "\n" for text, _ in lines)})
+    return entries
+
+
 def parameter_constants(book):
     """The value of each PARAMETER that has a value, by its constant name."""
     return {constant_name(chunk.anchor): book.values[chunk.anchor] for document in book.documents
@@ -1613,6 +1701,7 @@ def setup(app):
     app.add_directive("twin", TwinDirective)
     app.add_directive("source", SourceDirective)
     app.add_directive("check", CheckDirective)
+    app.add_directive("mutant", MutantDirective)
     for kind in CITATIONS:
         app.add_role(kind, CitationRole(kind))
     app.connect("missing-reference", resolve_citation)

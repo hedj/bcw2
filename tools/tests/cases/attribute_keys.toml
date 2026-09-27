@@ -31,6 +31,12 @@ append = '''
    :verifies: core.rotation
 
    x = 1
+
+.. mutant:: build/rtl/core/core_rotate.v
+   :kills: core.rotation.test
+
+   -    assign next = turn + 3'd1;
+   +    assign next = turn;
 '''
 findings = []
 

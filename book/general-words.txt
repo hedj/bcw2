@@ -53,6 +53,7 @@ comment
 compare
 completely
 copies
+copy
 count
 counted
 counter
@@ -157,6 +158,7 @@ literal
 lower
 lower-case
 machine
+make
 makes
 meaning
 means
@@ -177,6 +179,7 @@ no
 not
 nothing
 number
+occur
 of
 on
 once

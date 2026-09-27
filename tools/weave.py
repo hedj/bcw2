@@ -271,6 +271,8 @@ def summary(block):
         return "Formal twin"
     if block["bcw"] == "check":
         return f"Check ({block['check']})"
+    if block["bcw"] == "mutant":
+        return f"Mutant of {block['target']}, which {block['options'].get('kills', '')} must catch"
     if bcw.is_fragment_name(block["target"]):
         return f"Fragment: {block['target']}"
     kind = "Verilog" if block["language"] == "verilog" else "Source"
@@ -288,7 +290,8 @@ def wrap(block, before, after):
 
 
 def weave_html(doctree):
-    for block in code_blocks(doctree, "twin") + code_blocks(doctree, "source") + code_blocks(doctree, "check"):
+    for block in (code_blocks(doctree, "twin") + code_blocks(doctree, "source") + code_blocks(doctree, "check")
+                  + code_blocks(doctree, "mutant")):
         wrap(block, nodes.raw("", f"<details><summary>{html.escape(summary(block))}</summary>", format="html"),
              nodes.raw("", "</details>", format="html"))
 
@@ -299,7 +302,7 @@ def weave_latex_chapter(root):
         if box["ids"]:
             box.insert(0, nodes.target(ids=box["ids"]))
             box["ids"] = []
-    for block in code_blocks(root, "twin") + code_blocks(root, "check"):
+    for block in code_blocks(root, "twin") + code_blocks(root, "check") + code_blocks(root, "mutant"):
         label = nodes.paragraph("", "", nodes.emphasis(text=summary(block)))
         block.parent.insert(block.parent.index(block), label)
         wrap(block, nodes.raw("", r"\begingroup\fvset{fontsize=\small}", format="latex"),

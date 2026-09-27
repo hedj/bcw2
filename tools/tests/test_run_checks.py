@@ -155,6 +155,69 @@ class ModelTest:
         assert lines[-1] == "run_checks: 1 passed, 1 failed"
 
 
+def mutant(old, new, kills="core.rotation.test", path="build/rtl/core/core_rotate.v"):
+    """A mutant of the file at path that replaces the line old with the line new."""
+    return f"\n.. mutant:: {path}\n   :kills: {kills}\n\n   -{old}\n   +{new}\n"
+
+
+# GOOD's core_rotate adds 1; each of these gives another next turn.
+ROTATE = "    assign next = turn + 3'd1;"
+PLUS_TWO = "    assign next = turn + 3'd2;"
+SAME = "    assign next = turn;"
+# A fault at turn 5 only, which the testbench of turn 2 cannot see.
+ONLY_AT_FIVE = "    assign next = (turn == 3'd5) ? 3'd0 : turn + 3'd1;"
+
+# verifies: doc.mutants-fail
+class MutantTest:
+    """Each mutant makes each check that its kills option names fail."""
+
+    def place(self, text):
+        return f"{CHAPTER}:{line(text, '.. mutant::')}"
+
+    def test_a_mutant_that_the_testbench_catches_passes(self, tmp_path):
+        text, result = run(tmp_path, check("test", TESTBENCH.format(expected=3)) + mutant(ROTATE, PLUS_TWO))
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert result.stdout.splitlines()[2:] == [f"{self.place(text)}: PASS: [mutant] core.rotation.test",
+                                                  "run_checks: 3 passed, 0 failed"]
+
+    def test_a_mutant_that_the_testbench_cannot_see_fails(self, tmp_path):
+        text, result = run(tmp_path, check("test", TESTBENCH.format(expected=3)) + mutant(ROTATE, ONLY_AT_FIVE))
+        assert result.returncode == 1
+        assert result.stdout.splitlines()[2:] == [
+            f"{self.place(text)}: FAIL: [mutant] core.rotation.test: the check passes with the mutant",
+            "run_checks: 2 passed, 1 failed"]
+
+    def test_a_mutant_leaves_the_tangled_file_as_it_was(self, tmp_path):
+        run(tmp_path, check("test", TESTBENCH.format(expected=3)) + mutant(ROTATE, PLUS_TWO))
+        assert ROTATE in (tmp_path / "build/rtl/core/core_rotate.v").read_text()
+
+    def test_a_mutant_that_a_proof_catches_passes(self, tmp_path):
+        text, result = run(tmp_path, check("prove", PROPERTIES.format(property="next != turn"))
+                           + mutant(ROTATE, SAME, kills="core.rotation.prove"))
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert result.stdout.splitlines()[2] == f"{self.place(text)}: PASS: [mutant] core.rotation.prove"
+
+    def test_a_mutant_that_a_proof_cannot_see_fails(self, tmp_path):
+        text, result = run(tmp_path, check("prove", PROPERTIES.format(property="next != turn"))
+                           + mutant(ROTATE, PLUS_TWO, kills="core.rotation.prove"))
+        assert result.returncode == 1
+        assert result.stdout.splitlines()[2] == (f"{self.place(text)}: FAIL: [mutant] core.rotation.prove: "
+                                                 "the check passes with the mutant")
+
+    def test_a_mutant_that_does_not_build_fails(self, tmp_path):
+        text, result = run(tmp_path, check("test", TESTBENCH.format(expected=3))
+                           + mutant(ROTATE, "    assign next = ;"))
+        assert result.returncode == 1
+        assert result.stdout.splitlines()[2] == (f"{self.place(text)}: FAIL: [mutant] core.rotation.test: "
+                                                 "the mutant does not build")
+
+    def test_the_mutants_of_a_check_that_fails_do_not_run(self, tmp_path):
+        text, result = run(tmp_path, check("test", TESTBENCH.format(expected=4)) + mutant(ROTATE, PLUS_TWO))
+        assert result.returncode == 1
+        assert not any("[mutant]" in entry for entry in result.stdout.splitlines())
+        assert result.stdout.splitlines()[-1] == "run_checks: 1 passed, 1 failed"
+
+
 class ProofTest:
     def test_a_property_that_holds_passes(self, tmp_path):
         text, result = run(tmp_path, check("prove", PROPERTIES.format(property="next != turn")))

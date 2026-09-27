@@ -129,7 +129,7 @@ Rules apart from explanation
 .. requirement:: doc.code-kinds
    :parent: doc.rules-apart
 
-   Each code block shall be a ``twin``, ``source`` or ``check`` directive.
+   Each code block shall be a ``twin``, ``source``, ``check`` or ``mutant`` directive.
 
 .. requirement:: doc.chapter-kind
    :parent: doc.rules-apart
@@ -528,6 +528,39 @@ Twins and stamps
 .. rationale::
 
    Judgement decides whether a rule is right. A script decides whether the text obeys it.
+
+Checks that can fail
+====================
+
+.. definition:: doc.mutant
+   :parent: doc.read-is-checked
+
+   A :dfn:`mutant` is a ``mutant`` directive. Its argument names a file, and its ``kills``
+   option names checks. Each of its lines starts with ``-`` or ``+``. ``tools/run_checks.py``
+   puts the ``+`` lines in place of the ``-`` lines in a copy of the file, and runs each check
+   that it names.
+
+.. requirement:: doc.mutants
+   :parent: doc.read-is-checked
+
+   Where a check directive is a ``test`` or a ``prove``, the check directive shall appear in
+   the ``kills`` option of a mutant.
+
+.. requirement:: doc.mutant-form
+   :parent: doc.read-is-checked
+
+   Each mutant shall name a Verilog file that a ``source`` directive writes, only ``test``
+   and ``prove`` checks, and ``-`` lines that occur once in that file.
+
+.. requirement:: doc.mutants-fail
+   :parent: doc.read-is-checked
+
+   Each mutant shall make each check that it names fail.
+
+.. rationale::
+
+   A check that cannot fail checks nothing. A mutant shows that a check sees a fault. A
+   compiler that makes a testbench check nothing makes its mutant fail too.
 
 Review of changes
 =================

@@ -82,7 +82,11 @@ thread <em>t</em> to thread <em>t</em> + 1.</p>
 </pre></div>
 </div>
 </details><p class="check-verifies">Verifies: <a class="reference internal" href="#core.rotation"><code class="docutils literal notranslate"><span class="pre">core.rotation</span></code></a></p>
-<p class="check-proof"><em>Check (equiv)</em>: the module <code class="docutils literal notranslate"><span class="pre">core_rotate</span></code> equals the twin <code class="docutils literal notranslate"><span class="pre">core_next</span></code>.</p>
+<details><summary>Mutant of build/rtl/core/core_rotate.v, which core.rotation.test must catch</summary><div class="highlight-diff notranslate"><div class="highlight"><pre><span></span><span class="gd">-    assign next = turn + 3&#39;d1;</span>
+<span class="gi">+    assign next = turn;</span>
+</pre></div>
+</div>
+</details><p class="check-proof"><em>Check (equiv)</em>: the module <code class="docutils literal notranslate"><span class="pre">core_rotate</span></code> equals the twin <code class="docutils literal notranslate"><span class="pre">core_next</span></code>.</p>
 <p class="check-verifies">Verifies: <a class="reference internal" href="#core.rotation"><code class="docutils literal notranslate"><span class="pre">core.rotation</span></code></a></p>
 <details><summary>Source: build/model/core/ref.c</summary><div class="highlight-c notranslate" id="file-build/model/core/ref.c"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdint.h&gt;</span>
 <span class="kt">uint32_t</span><span class="w"> </span><span class="nf">ref_next</span><span class="p">(</span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">turn</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">threads</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">turn</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="n">threads</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>

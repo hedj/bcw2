@@ -29,7 +29,16 @@ to its chapter line by tools/linemap.py:
     book/core/core.rst:91: FAIL: [check] core.rotation.test: the testbench stopped with exit 1
         %Error: book/core/core.rst:101: Verilog $stop
 
-It exits 1 if a check fails. The work of each check is in build/run/<name>.
+After a test or a prove passes, the runner runs it once for each mutant that
+names it in its kills option, with the mutated copy of the file in place of the
+file. The check must fail: a mutant passes when the check fails, and fails when
+the check passes or the mutated file does not build. The runner reports each
+mutant at the chapter line of its directive:
+
+    book/core/core.rst:95: FAIL: [mutant] core.rotation.test: the check passes with the mutant
+
+It exits 1 if a check or a mutant fails. The work of each check is in
+build/run/<name>, and of each of its mutants in build/run/<name>/mutant-<n>.
 """
 
 import functools
@@ -80,11 +89,11 @@ def compile_models():
     return objects, failures
 
 
-def run_test(check, top, work, objects):
+def run_test(check, top, work, files, objects):
     """None if the testbench passes, or (reason, output)."""
     work.mkdir(parents=True, exist_ok=True)
     build = subprocess.run(["verilator", "--binary", "--quiet", "-j", "0", "--top-module", top,
-                            "--Mdir", str(work), *sources(), check["file"], *objects],
+                            "--Mdir", str(work), *files, check["file"], *objects],
                            capture_output=True, text=True)
     if build.returncode:
         return "Verilator could not build the testbench", build.stdout + build.stderr
@@ -94,11 +103,11 @@ def run_test(check, top, work, objects):
     return None
 
 
-def run_prove(check, top, work):
+def run_prove(check, top, work, files):
     """None if SymbiYosys proves the properties, or (reason, output)."""
     work.parent.mkdir(parents=True, exist_ok=True)
     job = work.parent / f"{check['name']}.sby"
-    reads = "".join(f"read -formal {Path(path).absolute()}\n" for path in sources() + [check["file"]])
+    reads = "".join(f"read -formal {Path(path).absolute()}\n" for path in files + [check["file"]])
     job.write_text(f"[options]\nmode prove\ndepth {check['depth']}\n\n[engines]\nsmtbmc yices\n\n"
                    f"[script]\n{reads}prep -top {top}\n")
     result = subprocess.run(["sby", "-f", "-d", str(work), str(job)], capture_output=True, text=True)
@@ -109,11 +118,11 @@ def run_prove(check, top, work):
     return reason, "\n".join(lines)
 
 
-def run_equiv(check, top, work):
+def run_equiv(check, top, work, files):
     """None if z3 proves that each output of the module equals the value of the twin, or (reason, output)."""
     work.mkdir(parents=True, exist_ok=True)
     smt = work / "module.smt2"
-    result = subprocess.run(["yosys", "-q", "-p", f"read_verilog -sv {' '.join(sources())}; prep -top {top}; "
+    result = subprocess.run(["yosys", "-q", "-p", f"read_verilog -sv {' '.join(files)}; prep -top {top}; "
                              f"write_smt2 -wires {smt}"], capture_output=True, text=True)
     if result.returncode:
         return "yosys could not read the module", result.stdout + result.stderr
@@ -159,10 +168,28 @@ def run_equiv(check, top, work):
 
 
 RUNNERS = {"prove": run_prove, "equiv": run_equiv}
+# The reasons of a check that could not read its code: a mutant that gives one does not build.
+UNBUILT = ("Verilator could not build the testbench", "SymbiYosys stopped with an error")
+
+
+# implements: doc.mutants-fail
+def run_mutant(mutant, runner, check, top, work, files):
+    """None if the check fails with the mutated file in place of the file, or (reason, output)."""
+    copy = work / mutant["file"].removeprefix("build/")
+    copy.parent.mkdir(parents=True, exist_ok=True)
+    copy.write_text(mutant["text"])
+    failure = runner(check, top, work / "run", [str(copy) if path == mutant["file"] else path for path in files])
+    if failure is None:
+        return "the check passes with the mutant", ""
+    if failure[0] in UNBUILT:
+        return "the mutant does not build", failure[1]
+    return None
 
 
 def main():
-    checks = json.loads(Path("build/checks.json").read_text())["checks"]
+    manifest = json.loads(Path("build/checks.json").read_text())
+    checks, mutants = manifest["checks"], manifest["mutants"]
+    files = sources()
     objects, failures = compile_models()
     runners = {**RUNNERS, "test": functools.partial(run_test, objects=objects)}
     passed, failed = 0, len(failures)
@@ -181,10 +208,23 @@ def main():
         if top is None:
             failure = "the code declares no module", ""
         else:
-            failure = runners[check["kind"]](check, top, Path("build/run") / check["name"])
+            failure = runners[check["kind"]](check, top, Path("build/run") / check["name"], files)
         if failure is None:
             print(f"{place}: PASS: [check] {check['name']}")
             passed += 1
+            killers = [mutant for mutant in mutants if check["name"] in mutant["kills"]]
+            for number, mutant in enumerate(killers, 1):
+                work = Path("build/run") / check["name"] / f"mutant-{number}"
+                survived = run_mutant(mutant, runners[check["kind"]], check, top, work, files)
+                where = f"{mutant['path']}:{mutant['line']}: "
+                if survived is None:
+                    print(f"{where}PASS: [mutant] {check['name']}")
+                    passed += 1
+                    continue
+                print(f"{where}FAIL: [mutant] {check['name']}: {survived[0]}")
+                for text in survived[1].splitlines():
+                    print("    " + linemap.rewrite(text))
+                failed += 1
             continue
         reason, output = failure
         print(f"{place}: FAIL: [check] {check['name']}: {reason}")

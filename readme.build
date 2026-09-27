@@ -208,6 +208,24 @@ chapter line:
         build/model/core/ref.c: In function ‘ref_next’:
         book/core/core.rst:75:9: error: unused variable ‘unused’ [-Werror=unused-variable]
 
+A check that cannot fail checks nothing, so each test and each prove needs a
+mutant (doc.mutants): a planted fault that the check must catch. A mutant
+directive names a Verilog file that a source directive writes, and the checks
+that must catch it. Its lines that start with - are lines of the file, and its
+lines that start with + replace them:
+
+    .. mutant:: build/rtl/core/core_rotate.v
+       :kills: core.rotation.test
+
+       -    assign next = turn + 3'd1;
+       +    assign next = turn;
+
+make check reports a mutant whose - lines do not occur once in the file
+(doc.mutant-form). After a check passes, the runner runs it again for each of
+its mutants, with a mutated copy of the file in build/run/<name>/mutant-<n>.
+The mutant passes when the check fails. It fails when the check still passes, or when the mutated file
+does not build (doc.mutants-fail).
+
 The runner prints each result at the chapter line of its check directive.
 After a failure come the lines of the tool that tell why, with each location
 mapped to its chapter line:

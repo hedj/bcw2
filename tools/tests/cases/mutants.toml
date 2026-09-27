@@ -1,0 +1,282 @@
+# verifies: doc.mutants
+# verifies: doc.mutant-form
+
+[[case]]
+name = "a test and a proof that a mutant kills pass"
+append = '''
+
+.. check:: test
+   :verifies: core.rotation
+
+   module tb; initial $finish; endmodule
+
+.. check:: prove
+   :verifies: core.rotation
+
+   module props; endmodule
+
+.. mutant:: build/rtl/core/core_rotate.v
+   :kills: core.rotation.test, core.rotation.prove
+
+   -    assign next = turn + 3'd1;
+   +    assign next = turn;
+'''
+findings = []
+
+[[case]]
+name = "an equiv needs no mutant"
+only = "mutants"
+findings = []
+
+[[case]]
+name = "a test without a mutant is a finding on the directive line [test]"
+only = "mutants"
+append = '''
+
+.. check:: test
+   :verifies: core.rotation
+
+   module tb; initial $finish; endmodule
+'''
+findings = [
+    {check = "mutants", at = ".. check:: test"},
+]
+
+[[case]]
+name = "a test without a mutant is a finding on the directive line [prove]"
+only = "mutants"
+append = '''
+
+.. check:: prove
+   :verifies: core.rotation
+
+   module props; endmodule
+'''
+findings = [
+    {check = "mutants", at = ".. check:: prove"},
+]
+
+[[case]]
+name = "a mutant that kills one check leaves the other a finding"
+only = "mutants"
+append = '''
+
+.. check:: test
+   :verifies: core.rotation
+
+   module tb; initial $finish; endmodule
+
+.. check:: test
+   :verifies: core.rotation
+
+   module tb2; initial $finish; endmodule
+
+.. mutant:: build/rtl/core/core_rotate.v
+   :kills: core.rotation.test
+
+   -    assign next = turn + 3'd1;
+   +    assign next = turn;
+'''
+findings = [
+    {check = "mutants", at = ".. check:: test", occurrence = 2},
+]
+
+[[case]]
+name = "a mutant of a file built from fragments matches the expanded lines"
+only = "mutant-form"
+append = '''
+
+.. source:: build/rtl/core/pair.v
+
+   module pair (input wire a, output wire b);
+       <<:core.pair-logic>>
+   endmodule
+
+.. source:: :core.pair-logic
+
+   assign b = a;
+
+.. check:: test
+   :verifies: core.rotation
+
+   module tb; initial $finish; endmodule
+
+.. mutant:: build/rtl/core/pair.v
+   :kills: core.rotation.test
+
+   -assign b = a;
+   +assign b = ~a;
+'''
+findings = []
+
+[[case]]
+name = "a mutant that names no check is a finding on the directive line"
+only = "mutant-form"
+append = '''
+
+.. mutant:: build/rtl/core/core_rotate.v
+
+   -    assign next = turn + 3'd1;
+   +    assign next = turn;
+'''
+findings = [
+    {check = "mutant-form", at = ".. mutant::"},
+]
+
+[[case]]
+name = "a mutant that kills an unknown check is a finding"
+only = "mutant-form"
+append = '''
+
+.. mutant:: build/rtl/core/core_rotate.v
+   :kills: core.rotation.test
+
+   -    assign next = turn + 3'd1;
+   +    assign next = turn;
+'''
+findings = [
+    {check = "mutant-form", at = ".. mutant::"},
+]
+
+[[case]]
+name = "a mutant that kills an equiv is a finding"
+only = "mutant-form"
+append = '''
+
+.. mutant:: build/rtl/core/core_rotate.v
+   :kills: core.rotation.equiv
+
+   -    assign next = turn + 3'd1;
+   +    assign next = turn;
+'''
+findings = [
+    {check = "mutant-form", at = ".. mutant::"},
+]
+
+[[case]]
+name = "a mutant of a file that no source writes is a finding"
+only = "mutant-form"
+append = '''
+
+.. check:: test
+   :verifies: core.rotation
+
+   module tb; initial $finish; endmodule
+
+.. mutant:: build/rtl/core/other.v
+   :kills: core.rotation.test
+
+   -    assign next = turn + 3'd1;
+   +    assign next = turn;
+'''
+findings = [
+    {check = "mutant-form", at = ".. mutant::"},
+]
+
+[[case]]
+name = "lines that the file does not hold are a finding"
+only = "mutant-form"
+append = '''
+
+.. check:: test
+   :verifies: core.rotation
+
+   module tb; initial $finish; endmodule
+
+.. mutant:: build/rtl/core/core_rotate.v
+   :kills: core.rotation.test
+
+   -    assign next = turn + 3'd2;
+   +    assign next = turn;
+'''
+findings = [
+    {check = "mutant-form", at = ".. mutant::"},
+]
+
+[[case]]
+name = "lines that the file holds twice are a finding"
+only = "mutant-form"
+append = '''
+
+.. source:: build/rtl/core/twice.v
+
+   wire x;
+   wire x;
+
+.. check:: test
+   :verifies: core.rotation
+
+   module tb; initial $finish; endmodule
+
+.. mutant:: build/rtl/core/twice.v
+   :kills: core.rotation.test
+
+   -wire x;
+   +wire y;
+'''
+findings = [
+    {check = "mutant-form", at = ".. mutant::"},
+]
+
+[[case]]
+name = "a mutant of a file that is not Verilog is a finding"
+only = "mutant-form"
+append = '''
+
+.. source:: build/model/core/ref.c
+
+   int ref_next(int turn) { return turn + 1; }
+
+.. check:: test
+   :verifies: core.rotation
+
+   module tb; initial $finish; endmodule
+
+.. mutant:: build/model/core/ref.c
+   :kills: core.rotation.test
+
+   -   int ref_next(int turn) { return turn + 1; }
+   +   int ref_next(int turn) { return turn + 2; }
+'''
+findings = [
+    {check = "mutant-form", at = ".. mutant::"},
+]
+
+[[case]]
+name = "a line without - or + is a finding"
+only = "mutant-form"
+append = '''
+
+.. check:: test
+   :verifies: core.rotation
+
+   module tb; initial $finish; endmodule
+
+.. mutant:: build/rtl/core/core_rotate.v
+   :kills: core.rotation.test
+
+   -    assign next = turn + 3'd1;
+        assign next = turn;
+'''
+findings = [
+    {check = "mutant-form", at = ".. mutant::"},
+]
+
+[[case]]
+name = "a mutant without a - line is a finding"
+only = "mutant-form"
+append = '''
+
+.. check:: test
+   :verifies: core.rotation
+
+   module tb; initial $finish; endmodule
+
+.. mutant:: build/rtl/core/core_rotate.v
+   :kills: core.rotation.test
+
+   +    wire spare;
+'''
+findings = [
+    {check = "mutant-form", at = ".. mutant::"},
+]
