@@ -20,6 +20,9 @@
           packages = [
             (pkgs.python3.withPackages (ps: [ ps.sphinx ps.z3-solver ps.pytest ps.pytest-xdist ps.radon ps.textstat ]))
             pkgs.verilator
+            # Verilator compiles the same runtime and much the same C++ for each test,
+            # so ccache keeps each object and reuses it (see OBJCACHE below).
+            pkgs.ccache
             pkgs.iverilog
             # The formal tools: yosys writes a module as SMT for z3, and SymbiYosys
             # proves properties with the solver Yices.
@@ -53,6 +56,10 @@
           ];
           # The Makefile stops outside this environment.
           BCW_ENV = "1";
+          # The makefiles that Verilator writes run each compile through OBJCACHE.
+          # ccache keys each object on the compiler and the preprocessed source, so
+          # a hit gives the same object as a compile. The cache is ~/.cache/ccache.
+          OBJCACHE = "ccache";
           # textstat counts English syllables with the CMU dictionary of NLTK. This
           # pins the dictionary, so that textstat does not download it at run time.
           NLTK_DATA = "${pkgs.nltk-data.cmudict}";

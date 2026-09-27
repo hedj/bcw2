@@ -13,9 +13,11 @@ flake.lock records the release of nixpkgs that they come from. So every
 machine uses the same versions: Python 3.13, Sphinx 9.1, Verilator 5.048,
 Icarus Verilog 13.0, yosys 0.62, SymbiYosys 0.61, Yices 2.7.0, z3 4.16,
 radon 6.0.1, textstat 0.7.13 with the CMU dictionary of NLTK, nextpnr 0.10
-with ecppack of trellis for the ECP5, GCC 15.3, and TeX Live 2025. GCC
-compiles the C models and the C++ that Verilator writes, so the compiler of
-the host plays no part.
+with ecppack of trellis for the ECP5, GCC 15.3, ccache 4.13, and TeX Live
+2025. GCC compiles the C models and the C++ that Verilator writes, so the
+compiler of the host plays no part. ccache keeps each object that GCC
+compiles for Verilator in ~/.cache/ccache, so a build of the same C++
+reuses it: with a warm cache, make test takes about a third of the time.
 
 1. Install Nix. The instructions are at https://nixos.org/download.
 2. Run ./dev to open a shell in the environment.
