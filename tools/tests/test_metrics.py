@@ -1,8 +1,12 @@
 """Tests of tools/metrics.py, which counts the lines, McCabe and Halstead metrics of the code of the system with radon."""
 
+import contextlib
+import io
 import json
-import subprocess
+import os
+import runpy
 import sys
+from unittest import mock
 
 import textstat
 from radon.metrics import h_visit
@@ -14,14 +18,27 @@ PLAIN = "def f(x):\n    return x\n"
 BRANCH = "def f(x):\n    if x:\n        return 1\n    return x\n"
 
 
+def run(root, *arguments):
+    """What tools/metrics.py prints when it runs in root with the arguments.
+
+    It runs in this process, not in a new one, so that textstat reads its dictionary
+    of syllables once for each worker of pytest, not once for each test (0.46 s).
+    """
+    output, previous = io.StringIO(), os.getcwd()
+    os.chdir(root)
+    try:
+        with mock.patch.object(sys, "argv", [str(METRICS), *arguments]), contextlib.redirect_stdout(output):
+            runpy.run_path(str(METRICS), run_name="__main__")
+    finally:
+        os.chdir(previous)
+    return output.getvalue()
+
+
 def compare(root, before):
     """The rows of the table that tools/metrics.py --compare prints for root, by measure name."""
     path = root / "before.json"
     path.write_text(json.dumps(before))
-    result = subprocess.run([sys.executable, str(METRICS), "--compare", str(path)], cwd=root, capture_output=True,
-                            text=True)
-    assert result.returncode == 0, result.stderr
-    return {line.split()[0]: line for line in result.stdout.splitlines()[1:] if line.strip()}
+    return {line.split()[0]: line for line in run(root, "--compare", str(path)).splitlines()[1:] if line.strip()}
 
 
 def measure(root, files):
@@ -29,9 +46,7 @@ def measure(root, files):
     for name, text in files.items():
         (root / name).parent.mkdir(parents=True, exist_ok=True)
         (root / name).write_text(text)
-    result = subprocess.run([sys.executable, str(METRICS)], cwd=root, capture_output=True, text=True)
-    assert result.returncode == 0, result.stderr
-    return json.loads(result.stdout)
+    return json.loads(run(root))
 
 
 class MetricsTest:
