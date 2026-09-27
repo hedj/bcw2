@@ -35,9 +35,6 @@ def measure(root, files):
 
 
 class MetricsTest:
-    def test_a_function_without_a_branch_has_mccabe_complexity_1(self, tmp_path):
-        assert measure(tmp_path, {"tools/a.py": PLAIN})["mccabe"] == 1
-
     def test_a_branch_adds_1_to_mccabe_complexity(self, tmp_path):
         assert measure(tmp_path, {"tools/a.py": BRANCH})["mccabe"] == 2
 

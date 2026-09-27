@@ -1068,7 +1068,7 @@ def parameter_values(documents):
         text = chunks[anchor].options.get("value")
         try:
             if text is None:
-                raise NoValue("the PARAMETER has no value")
+                raise NoValue(f"the {chunks[anchor].label} has no value")
             names = {}
 
             def placeholder(match):
@@ -1107,11 +1107,9 @@ def parameter_values(documents):
 
 
 # implements: doc.parameter-values
-# implements: doc.target-values
 def check_parameter_values(model):
     for anchor, (chunk, reason) in model.failures.items():
-        name = "target-values" if chunk.label == "TARGET" else "parameter-values"
-        yield Finding(chunk.path, chunk.option_line("value"), name, anchor, reason,
+        yield Finding(chunk.path, chunk.option_line("value"), "parameter-values", anchor, reason,
                       "write the value as an integer, or an expression of integers, PARAMETER anchors, "
                       "+ - * // % ** and clog2, min and max, with a space on each side of a minus sign")
 

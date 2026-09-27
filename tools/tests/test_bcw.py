@@ -47,9 +47,8 @@ class GoodTest:
                                      (line(GOOD, "Rotation"), 2, "Rotation"), (line(GOOD, "Goals"), 2, "Goals")]
 
 
-# verifies: doc.labels
 class LabelsTest:
-    """doc.labels: the extension registers a directive for each label. ParseErrorTest has an unknown label."""
+    """The extension registers a directive for each label of doc.chunk."""
 
     def test_each_label_is_a_directive(self):
         assert (sorted(bcw.CHUNK_DIRECTIVES) ==

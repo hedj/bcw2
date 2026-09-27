@@ -12,6 +12,7 @@ is a table [[case]] with these keys:
     general         true: the general words are GENERAL, as findings(general=GENERAL)
     general_add     the general words are GENERAL and these words
     general_remove  the general words are GENERAL without these words
+    general_list    the general words are these words, as written in the list file
     retired         the list of retired anchors
     tools           the files of tools/, by name, whose "# implements:" comments count
     tests           the files of tools/tests/, by name, whose "# verifies:" comments count
@@ -56,6 +57,8 @@ def general(case):
         return GENERAL | set(case["general_add"])
     if "general_remove" in case:
         return GENERAL - set(case["general_remove"])
+    if "general_list" in case:
+        return set(case["general_list"])
     return None
 
 

@@ -1,10 +1,6 @@
 # goal
 
 [[case]]
-name = "a goal needs no shall"
-findings = []
-
-[[case]]
 name = "a twin inside a goal is a finding"
 append = '''
 

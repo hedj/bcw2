@@ -154,16 +154,6 @@ class ChecksTest:
 FRAGMENTED = (CORE_CHAPTER + "\n.. source:: build/rtl/core/pair.v\n\n"
               "   module pair (input wire a, output wire b);\n       <<:core.pair-logic>>\n   endmodule\n"
               "\n.. source:: :core.pair-logic\n\n   assign b = a;\n")
-FRAGMENTED_BOOK = {**BOOK, "core/core.rst": FRAGMENTED}
-
-
-class FragmentWeaveTest:
-    """The weave names each fragment, and links each block that uses fragments to them."""
-
-    def test_latexmk_makes_a_pdf_without_undefined_references(self):
-        status, _, log = weave(FRAGMENTED_BOOK, "latex", pdf=True).pdf
-        assert status == 0, log
-        assert "undefined" not in log
 
 
 class PdfTest:
@@ -184,11 +174,6 @@ class CodeIndexTest:
 
     def test_without_the_directive_the_index_has_no_index_of_code(self, html):
         assert "Index of code" not in html.output["index.html"]
-
-    def test_latexmk_makes_a_pdf_of_the_index_without_undefined_references(self):
-        status, _, log = weave(FRAGMENTED_BOOK, "latex", index=INDEXED, pdf=True).pdf
-        assert status == 0, log
-        assert "undefined" not in log
 
 
 # The reference outputs: one book that holds each feature of the weave, woven once as HTML

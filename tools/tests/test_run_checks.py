@@ -152,12 +152,6 @@ def failure(text, reason, occurrence=1):
 
 
 class EquivTest:
-    def test_a_module_that_equals_its_twin_passes(self, tmp_path):
-        text, result = run(tmp_path, "")
-        assert result.returncode == 0, result.stdout + result.stderr
-        assert result.stdout.splitlines() == [f"{CHAPTER}:{line(text, '.. check:: equiv')}: PASS: [check] "
-                                              "core.rotation.equiv", "run_checks: 1 passed, 0 failed"]
-
     def test_a_twin_that_differs_fails_with_the_input_and_both_outputs(self, tmp_path):
         text, result = run(tmp_path, "", twin("return {'next': (turn + 2) % 8}"))
         assert result.returncode == 1

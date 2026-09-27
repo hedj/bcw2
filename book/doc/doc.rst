@@ -110,17 +110,10 @@ Rules apart from explanation
 
    A :dfn:`rule` is a chunk labelled REQUIREMENT, PARAMETER or DEFINITION.
 
-.. definition:: doc.normative
-   :parent: doc.rules-apart
-
-   The :dfn:`normative text` of the book is the English of its rules. Text outside a chunk
-   states no rule.
-
 .. requirement:: doc.labels
    :parent: doc.rules-apart
 
-   No chapter shall hold a directive that docutils, Sphinx or ``tools/bcw.py`` does not
-   define.
+   No chunk shall carry an argument that its label does not take.
 
 .. requirement:: doc.overview-first
    :parent: doc.rules-apart, doc.one-engineer
@@ -303,13 +296,6 @@ One reading
 
    Every rule has one meaning, so that two readers of the rule build the same machine.
 
-.. definition:: doc.scripted
-   :parent: doc.one-reading
-
-   A :dfn:`documentation rule` is a rule in this chapter that a script checks when
-   ``make check`` runs. The author drops a rule that no script can check, or reduces it to a
-   part that a script can check.
-
 .. requirement:: doc.one-shall
    :parent: doc.one-reading, doc.rules-apart
 
@@ -432,8 +418,8 @@ Parameters
 .. requirement:: doc.parameter-values
    :parent: doc.one-source
 
-   Where a rule is a PARAMETER, the rule shall carry a parameter value that evaluates to an
-   integer.
+   Where a chunk is a PARAMETER or a TARGET, the chunk shall carry a parameter value that
+   evaluates to an integer.
 
 .. definition:: doc.constant-name
    :parent: doc.one-source
@@ -457,15 +443,6 @@ Parameters
    The tangle writes each PARAMETER as a constant in ``build/rtl/bcw_params.sv`` and in
    ``build/checks.json``, so the Verilog and the twins read one value. The weave shows the value
    where the text cites it.
-
-Targets
--------
-
-.. requirement:: doc.target-values
-   :parent: doc.one-source
-
-   Where a chunk is a TARGET, the chunk shall carry a parameter value that evaluates to an
-   integer.
 
 Fragments
 ---------

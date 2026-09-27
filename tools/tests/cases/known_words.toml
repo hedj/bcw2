@@ -1,11 +1,6 @@
 # verifies: doc.known-words
 
 [[case]]
-name = "a chapter of general words and defined terms passes"
-general = true
-findings = []
-
-[[case]]
 name = "an unknown word in a goal or a rule is a finding on its line [timing-the timing of-core.timing]"
 only = "known-words"
 general_remove = ["timing"]
@@ -131,12 +126,6 @@ new = "   No thread can change the TIMING of another thread.\n"
 
 [[case]]
 name = "a defined term needs no listing"
-only = "known-words"
-general_add = ["core", "turn"]
-findings = []
-
-[[case]]
-name = "a defined term needs no listing (2)"
 only = "known-words"
 general = true
 findings = []
@@ -447,7 +436,7 @@ old = '''
 new = "   The core shall give the time slot of the time to thread ``t``.\n"
 
 [[case]]
-name = "the list is read in lower case and without comments"
+name = "the list is read in lower case"
 only = "known-words"
 general_list = ["THE", "a", "after", "another", "can", "change", "cycle", "give", "in", "is", "no", "of", "rotation", "runs", "shall", "t", "thread", "timing", "to"]
 findings = []

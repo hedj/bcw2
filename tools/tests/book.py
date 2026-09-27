@@ -1,6 +1,6 @@
 """Helpers of the tests of tools/: a chapter that obeys every rule, and a book built from it.
 
-GOOD is a small chapter that obeys every documentation rule. A test changes
+GOOD is a small chapter that obeys every rule of book/doc/doc.rst. A test changes
 one thing in it and expects the findings of the rule that the change breaks.
 The helper line() finds a line number by its text, so that the tests do not
 depend on the layout of GOOD. Book builds a Sphinx book in a temporary folder,

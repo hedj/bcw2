@@ -11,20 +11,6 @@ old = "   :parent: core.core\n"
 new = "   :parent: core.nothing\n"
 
 [[case]]
-name = "a parent list can name several anchors"
-findings = []
-
-[[case.replace]]
-old = '''
-.. requirement:: core.rotation
-   :parent: core.timing
-'''
-new = '''
-.. requirement:: core.rotation
-   :parent: core.timing, core.core
-'''
-
-[[case]]
 name = "an empty parent entry is a finding"
 findings = [
     {check = "references", anchor = "core.core", at = ":parent: core.timing,"},

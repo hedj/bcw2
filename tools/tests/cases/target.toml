@@ -1,4 +1,4 @@
-# verifies: doc.target-values
+# verifies: doc.parameter-values
 # verifies: doc.target-parents
 # The cases also cover the rules that a TARGET shares with the other rules.
 
@@ -12,7 +12,7 @@ append = '''
    The number of threads.
 '''
 findings = [
-    {check = "target-values", anchor = "core.aim", at = ".. target:: core.aim"},
+    {check = "parameter-values", anchor = "core.aim", at = ".. target:: core.aim"},
 ]
 
 [[case]]

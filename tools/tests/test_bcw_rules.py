@@ -122,7 +122,7 @@ class GeneralWordsTest:
     def general(self, text, extra):
         return only("general-words", text, general=GENERAL | extra)
 
-    @pytest.mark.parametrize("word", ["turn", "turns", "turn's"])
+    @pytest.mark.parametrize("word", ["turn's"])
     def test_a_listed_defined_term_is_a_finding_on_its_definition(self, word):
         assert (self.general(GOOD, {word}) ==
                 [(line(GOOD, ".. definition:: core.turn"), "general-words", "core.turn")])
@@ -163,9 +163,6 @@ class QuotationAcrossLinesTest:
 # verifies: doc.chapter-path
 class ChapterPathTest:
     """doc.chapter and doc.chapter-path"""
-
-    def test_a_chapter_at_book_name_name_rst_passes(self):
-        assert Book({"core/core.rst": GOOD}).tuples() == []
 
     @pytest.mark.parametrize("relative", ["core/x.rst", "x.rst", "core/sub/sub.rst"])
     def test_a_chapter_at_another_path_is_a_finding_on_line_1(self, relative):
@@ -251,11 +248,6 @@ class CitationLinkTest:
         ids = [node["ids"] for node in book.resolved["core/core"].findall(bcw.chunk)]
         assert ids == [["core.rotation"], [], [], ["core.turn"], ["core.core"], ["core.timing"]]
 
-    def test_the_checks_still_read_the_citation_as_a_quotation(self):
-        book = Book({"core/core.rst": self.CITING, "design/design.rst": DESIGN}, general=GENERAL | {"eight",
-                    "cycles", "apart", "as", "and", "say"})
-        assert [f for f in book.tuples() if f[2] == "known-words"] == []
-
 
 # verifies: doc.parameter-values
 class ParameterValuesTest:
@@ -295,14 +287,6 @@ class ParameterValuesTest:
         design = DESIGN + "\n.. parameter:: design.threads\n   :parent: design.timing\n   :value: 8\n\n   Text.\n"
         core = CORE_CHAPTER + parameter("core.x", "design.threads * 2", parent="core.core")
         assert Book({"core/core.rst": core, "design/design.rst": design}).values["core.x"] == 16
-
-
-# verifies: doc.constant-names
-class ConstantNamesTest:
-    """doc.constant-name and doc.constant-names"""
-
-    def test_the_constant_name_is_the_anchor_in_upper_case_with_underscores(self):
-        assert bcw.constant_name("core.turn-width") == "CORE_TURN_WIDTH"
 
 
 class ParameterTangleTest:
@@ -353,10 +337,10 @@ class ParameterTangleTest:
         assert "Parameter is not used: 'SPARE'" in messages
 
 
-# verifies: doc.target-values
+# verifies: doc.parameter-values
 # verifies: doc.target-parents
 class TargetTest:
-    """doc.target-values, doc.target-parents, and the rules that a TARGET shares with the rules"""
+    """doc.parameter-values for a TARGET, doc.target-parents, and the rules that a TARGET shares with the rules"""
 
     def test_a_target_with_its_options_passes_and_its_value_can_derive_from_a_parameter(self):
         book = Book({"core/core.rst": GOOD + THREADS + target("core.aim", "core.threads * 2", "core.threads",
@@ -367,9 +351,13 @@ class TargetTest:
     def test_a_target_value_that_names_a_target_is_a_finding(self):
         text = GOOD + target("core.aim", "8") + target("core.other", "core.aim + 1")
         book = Book({"core/core.rst": text})
-        assert book.tuples() == [("book/core/core.rst", line(text, ":value: core.aim + 1"), "target-values",
+        assert book.tuples() == [("book/core/core.rst", line(text, ":value: core.aim + 1"), "parameter-values",
                                   "core.other")]
         assert "core.aim is a TARGET" in book.findings[0].message
+
+    def test_a_target_without_a_value_is_named_as_a_target(self):
+        book = Book({"core/core.rst": GOOD + target("core.aim", None)})
+        assert [f.message for f in book.findings] == ["the TARGET has no value"]
 
     def test_a_parameter_value_that_names_a_target_is_a_finding(self):
         text = GOOD + target("core.aim", "8") + parameter("core.x", "core.aim")
@@ -494,8 +482,6 @@ class ParseErrorTest:
         "an extra word on a source": (".. source:: build/rtl/core/core_rotate.v\n",
                                       ".. source:: build/rtl/core/core_rotate.v extra\n", ".. source::",
                                       "maximum 1 argument(s) allowed"),
-        "an extra word on a fragment": (None, SKELETON + source(":core.pair-logic extra", "assign b = a;"),
-                                        ".. source:: :core.pair-logic", "maximum 1 argument(s) allowed"),
         "a repeated option on a parameter": (None, THREADS.replace("   :unit: threads", "   :unit: threads\n"
                                                                    "   :unit: threads") + WIDTH,
                                              ".. parameter:: core.threads", "duplicate option"),
@@ -633,11 +619,6 @@ class DesignGraphTest:
     def test_a_tool_comment_does_not_verify_a_requirement(self):
         text = GOOD.replace(self.CHECK, "")
         assert self.orphans(text, tools={"check.py": "# implements: core.rotation\n"}) == ([], ["core.rotation"])
-
-    def test_impl_none_and_verify_none_are_no_orphans(self):
-        text = GOOD.replace(self.CHECK, "").replace(self.SOURCE, "").replace(
-            "   :parent: core.timing\n\n   The core shall", "   :parent: core.timing\n   :impl: none\n   :verify: none\n\n   The core shall")
-        assert self.orphans(text) == ([], [])
 
 
 

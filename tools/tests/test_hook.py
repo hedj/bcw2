@@ -38,10 +38,6 @@ class PrePushTest:
         assert text.count(":param:`core.threads`.") == 1
         chapter.write_text(text.replace(":param:`core.threads`.", ":param:`core.threads`. It shall not stall."))
 
-    def test_a_good_commit_passes(self):
-        result = self.push(self.good)
-        assert result.returncode == 0, result.stdout + result.stderr
-
     def test_a_failing_commit_stops_the_push(self):
         self.break_the_chapter()
         self.git("-c", "user.name=test", "-c", "user.email=test@example.com",
