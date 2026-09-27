@@ -150,8 +150,10 @@ def run_equiv(check, top, work, files):
     # Each port becomes a bit-vector that equals its bits in one state of the module. The
     # outputs are natural numbers, and the values of the twin are in two's complement.
     solver = z3.Solver()
+    # yosys writes a port of 1 bit as a Bool, which becomes a bit-vector of 1 bit here.
     solver.add(z3.parse_smt2_string(text + f"(declare-const state |{top}_s|)" + "".join(
-        f"(declare-const port_{name} (_ BitVec {size}))(assert (= port_{name} (|{top}_n {name}| state)))"
+        f"(declare-const port_{name} (_ BitVec {size}))(assert (= port_{name} "
+        + (f"(ite (|{top}_n {name}| state) #b1 #b0)" if size == "1" else f"(|{top}_n {name}| state)") + "))"
         for _, name, size in ports)))
     wide = max([width] + [term.size() + 1 for term in outputs.values()])
     module = {name: z3.ZeroExt(wide - term.size(), term) for name, term in outputs.items()}

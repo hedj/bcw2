@@ -330,6 +330,20 @@ class EquivTest:
         assert match, lines[1]
         assert lines[2] == "run_checks: 0 passed, 1 failed"
 
+    @pytest.mark.parametrize("value, differs", [("1 if turn == 7 else 0", False), ("1 if turn == 6 else 0", True)])
+    def test_a_1_bit_output_is_compared_as_a_number(self, tmp_path, value, differs):
+        chapter = twin(f"return {{'next': (turn + 1) % 8, 'last': {value}}}").replace(
+            "output wire [2:0] next);", "output wire [2:0] next, output wire last);").replace(
+            "       assign next = turn + 3'd1;\n", "       assign next = turn + 3'd1;\n       assign last = turn == 3'd7;\n")
+        text, result = run(tmp_path, "", chapter)
+        lines = result.stdout.splitlines()
+        if not differs:
+            assert lines == [f"{CHAPTER}:{line(text, '.. check:: equiv')}: PASS: [check] core.rotation.equiv",
+                             "run_checks: 1 passed, 0 failed"], result.stdout + result.stderr
+            return
+        assert lines[0] == failure(text, "the module and the twin differ"), result.stdout + result.stderr
+        assert re.fullmatch(r"    turn=([67]): module last=([01]), twin last=([01])", lines[1]), lines[1]
+
     def test_a_twin_reads_the_parameters_of_the_book(self, tmp_path):
         text, result = run(tmp_path, THREADS, twin("return {'next': (turn + 1) % CORE_THREADS}"))
         assert result.returncode == 0, result.stdout + result.stderr
