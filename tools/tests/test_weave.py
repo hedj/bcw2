@@ -140,6 +140,14 @@ class TwinPageTest:
 class UsesTest:
     """Each section starts with a line Uses: that links each chunk of another section that it needs."""
 
+    def test_an_import_from_a_chapter_outside_the_pdf_is_shown_without_a_link(self):
+        # core.rst, a copy of the core chapter at the wrong path, shares the name core with
+        # core/core.rst. The book holds core/core.rst, but Sphinx reads core.rst first, so the label
+        # of core.timing, which the section Rotation imports from the section Goals, is in core.rst,
+        # and the LaTeX leaves core.rst out.
+        book = weave({**BOOK, "core/core.rst": GOOD, "core.rst": GOOD}, "latex")
+        assert "Uses: \\sphinxcode{\\sphinxupquote{core.timing}}" in book.output["book.tex"]
+
     def test_only_a_section_that_needs_a_chunk_of_another_section_has_a_uses_line(self, core):
         uses = re.findall(r'<p class="section-uses">(.*?)</p>', core, re.S)
         # Rotation needs design.timing, the parent of core.rotation and core.core. Goals needs nothing.

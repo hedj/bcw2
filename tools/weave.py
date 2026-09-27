@@ -41,6 +41,7 @@ from pathlib import Path
 from docutils import nodes
 from docutils.statemachine import StringList
 from sphinx import addnodes
+from sphinx.errors import NoUri
 from sphinx.util.nodes import make_refnode
 from sphinx.util.docutils import SphinxDirective
 
@@ -271,7 +272,11 @@ def show_uses(app, doctree):
             if number:
                 marker += nodes.Text(", ")
             docname, labelid = labels[name]
-            marker += make_refnode(app.builder, marker["bcw_doc"], docname, labelid, nodes.literal(text=name))
+            try:
+                marker += make_refnode(app.builder, marker["bcw_doc"], docname, labelid, nodes.literal(text=name))
+            except NoUri:
+                # The label is in a chapter that the build leaves out, which doc.chapter-path reports.
+                marker += nodes.literal(text=name)
 
 
 def reshape(app, doctree):
