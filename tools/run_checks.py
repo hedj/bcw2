@@ -12,7 +12,8 @@ so that a testbench can call its functions through DPI-C. Verilator would build
 a C file as C++, whose names the DPI-C imports cannot find. A model that does
 not compile is a failure at its first chapter line.
 
-A test passes when Verilator builds the testbench and the testbench exits 0. A
+A test passes when Verilator builds the testbench and the testbench exits 0
+within its timeout option, in seconds (60 if the option is not there). A
 prove passes when SymbiYosys proves each assertion with the smtbmc engine and
 Yices, to the depth of the check.
 
@@ -97,7 +98,10 @@ def run_test(check, top, work, files, objects):
                            capture_output=True, text=True)
     if build.returncode:
         return "Verilator could not build the testbench", build.stdout + build.stderr
-    result = subprocess.run([str(work / f"V{top}")], capture_output=True, text=True)
+    try:
+        result = subprocess.run([str(work / f"V{top}")], capture_output=True, text=True, timeout=check["timeout"])
+    except subprocess.TimeoutExpired:
+        return f"the testbench did not finish in {check['timeout']} s", ""
     if result.returncode:
         return f"the testbench stopped with exit {result.returncode}", result.stdout + result.stderr
     return None

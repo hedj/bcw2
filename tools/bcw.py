@@ -269,7 +269,7 @@ class CheckDirective(CodeDirective):
     kind = "check"
     required_arguments = 1
     option_spec = {"verifies": directives.unchanged, "module": directives.unchanged, "twin": directives.unchanged,
-                   "depth": directives.unchanged}
+                   "depth": directives.unchanged, "timeout": directives.unchanged}
 
     def run(self):
         [node] = super().run()
@@ -850,6 +850,8 @@ def check_check_kinds(documents):
                 faults.append("an equiv check names its module in a module option")
             if not block.options.get("depth", "1").isdigit():
                 faults.append(f"the depth {block.options['depth']!r} is not a number of steps")
+            if not block.options.get("timeout", "1").isdigit() or block.options.get("timeout") == "0":
+                faults.append(f"the timeout {block.options['timeout']!r} is not a whole number of seconds above 0")
             for fault in faults:
                 yield Finding(document.path, block.line, "check-kinds", block.chunk.anchor if block.chunk else None,
                               fault, "give the check the kind, the options and the code that doc.check describes")
@@ -1606,6 +1608,8 @@ def design_graph(book, tools, tests):
             "unverified": sorted(chunk.anchor for chunk in unverified(book.documents, tests))}
 
 
+# A test that names no timeout stops after this many seconds of simulation.
+TIMEOUT = 60
 # A proof that names no depth looks this many steps from the reset.
 DEPTH = 20
 
@@ -1633,6 +1637,7 @@ def check_manifest(book):
         equiv = block.check == "equiv"
         verified = twins.get(names[0]) if equiv and names else None
         depth = block.options.get("depth", str(DEPTH))
+        timeout = block.options.get("timeout", str(TIMEOUT))
         manifest.append({
             "name": name, "kind": block.check, "verifies": names, "path": block.path, "line": block.line,
             "file": f"build/checks/{name}.sv" if block.text.strip() else None,
@@ -1640,7 +1645,8 @@ def check_manifest(book):
             "twin": block.options.get("twin", block.options.get("module")) if equiv else None,
             "twin_path": verified and verified.path, "twin_line": verified and verified.first,
             "twin_code": verified and verified.text,
-            "depth": int(depth) if block.check == "prove" and depth.isdigit() else None})
+            "depth": int(depth) if block.check == "prove" and depth.isdigit() else None,
+            "timeout": int(timeout) if block.check == "test" and timeout.isdigit() else None})
     return manifest
 
 

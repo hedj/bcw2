@@ -89,6 +89,13 @@ class TestbenchTest:
                             "Verilator could not build the testbench")
         assert any(entry.startswith(f"    %Error-PINNOTFOUND: {CHAPTER}:{line(text, 'core_rotate dut')}:") for entry in lines)
 
+    def test_a_testbench_that_does_not_finish_in_its_timeout_fails(self, tmp_path):
+        bench = "module tb;\n    logic clk = 0;\n    always #1 clk = ~clk;\nendmodule\n"
+        text, result = run(tmp_path, check("test", bench, "   :timeout: 2\n"))
+        assert result.returncode == 1
+        assert result.stdout.splitlines()[1] == (f"{CHAPTER}:{line(text, '.. check:: test')}: FAIL: [check] "
+                                                 "core.rotation.test: the testbench did not finish in 2 s")
+
     def test_code_without_a_module_fails(self, tmp_path):
         text, result = run(tmp_path, check("test", "initial $finish;"))
         assert result.returncode == 1
@@ -167,6 +174,22 @@ SAME = "    assign next = turn;"
 # A fault at turn 5 only, which the testbench of turn 2 cannot see.
 ONLY_AT_FIVE = "    assign next = (turn == 3'd5) ? 3'd0 : turn + 3'd1;"
 
+# A testbench that waits for the next turn of 2, with a clock that never stops.
+WAITING = """\
+module tb;
+    logic clk = 0;
+    logic [2:0] turn, next;
+    core_rotate dut (.turn(turn), .next(next));
+    always #1 clk = ~clk;
+    initial begin
+        turn = 3'd2;
+        wait (next == 3'd3);
+        $finish;
+    end
+endmodule
+"""
+
+
 # verifies: doc.mutants-fail
 class MutantTest:
     """Each mutant makes each check that its kills option names fail."""
@@ -210,6 +233,11 @@ class MutantTest:
         assert result.returncode == 1
         assert result.stdout.splitlines()[2] == (f"{self.place(text)}: FAIL: [mutant] core.rotation.test: "
                                                  "the mutant does not build")
+
+    def test_a_mutant_that_stops_the_testbench_finishing_passes(self, tmp_path):
+        text, result = run(tmp_path, check("test", WAITING, "   :timeout: 2\n") + mutant(ROTATE, PLUS_TWO))
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert result.stdout.splitlines()[2] == f"{self.place(text)}: PASS: [mutant] core.rotation.test"
 
     def test_the_mutants_of_a_check_that_fails_do_not_run(self, tmp_path):
         text, result = run(tmp_path, check("test", TESTBENCH.format(expected=4)) + mutant(ROTATE, PLUS_TWO))

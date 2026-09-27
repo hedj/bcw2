@@ -545,16 +545,17 @@ class TangleTest:
             {"name": "core.rotation.equiv", "kind": "equiv", "verifies": ["core.rotation"], "path": CHAPTER,
              "line": line(text, ".. check:: equiv"), "file": None, "module": "core_rotate", "twin": "core_rotate",
              "twin_path": CHAPTER, "twin_line": line(text, "def core_rotate"),
-             "twin_code": "def core_rotate(turn):\n    return {'next': (turn + 1) % 8}", "depth": None},
+             "twin_code": "def core_rotate(turn):\n    return {'next': (turn + 1) % 8}", "depth": None,
+             "timeout": None},
             {"name": "core.rotation.test", "kind": "test", "verifies": ["core.rotation"], "path": CHAPTER,
              "line": line(text, ".. check:: test"), "file": "build/checks/core.rotation.test.sv", "module": None,
-             "twin": None, "twin_path": None, "twin_line": None, "twin_code": None, "depth": None},
+             "twin": None, "twin_path": None, "twin_line": None, "twin_code": None, "depth": None, "timeout": 60},
             {"name": "core.rotation.prove", "kind": "prove", "verifies": ["core.rotation"], "path": CHAPTER,
              "line": line(text, ".. check:: prove"), "file": "build/checks/core.rotation.prove.sv", "module": None,
-             "twin": None, "twin_path": None, "twin_line": None, "twin_code": None, "depth": 10},
+             "twin": None, "twin_path": None, "twin_line": None, "twin_code": None, "depth": 10, "timeout": None},
             {"name": "core.rotation.test-2", "kind": "test", "verifies": ["core.rotation"], "path": CHAPTER,
              "line": line(text, "module tb2;") - 3, "file": "build/checks/core.rotation.test-2.sv", "module": None,
-             "twin": None, "twin_path": None, "twin_line": None, "twin_code": None, "depth": None}]
+             "twin": None, "twin_path": None, "twin_line": None, "twin_code": None, "depth": None, "timeout": 60}]
 
     def test_the_manifest_holds_the_constant_of_each_parameter(self):
         text = GOOD + THREADS + WIDTH
@@ -565,6 +566,12 @@ class TangleTest:
         text = GOOD + "\n.. check:: prove\n   :verifies: core.rotation\n\n   module props;\n   endmodule\n"
         checks = json.loads(Book({"core/core.rst": text}, tangle=True).files["build/checks.json"])["checks"]
         assert [check["depth"] for check in checks] == [None, 20]
+
+    def test_a_test_takes_its_timeout_or_60_seconds(self):
+        text = (GOOD + "\n.. check:: test\n   :verifies: core.rotation\n   :timeout: 5\n\n   module tb;\n   endmodule\n"
+                + "\n.. check:: test\n   :verifies: core.rotation\n\n   module tb2;\n   endmodule\n")
+        checks = json.loads(Book({"core/core.rst": text}, tangle=True).files["build/checks.json"])["checks"]
+        assert [check["timeout"] for check in checks] == [None, 5, 60]
 
     def test_without_a_root_nothing_is_tangled(self):
         assert Book({"core/core.rst": GOOD}).files == {}

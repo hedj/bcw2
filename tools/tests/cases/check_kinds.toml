@@ -119,3 +119,33 @@ append = '''
 findings = [
     {check = "check-kinds", at = ".. check:: prove"},
 ]
+
+[[case]]
+name = "a timeout that is not a whole number of seconds above 0 is a finding [soon]"
+only = "check-kinds"
+append = '''
+
+.. check:: test
+   :verifies: core.rotation
+   :timeout: soon
+
+   module tb; initial $finish; endmodule
+'''
+findings = [
+    {check = "check-kinds", at = ".. check:: test"},
+]
+
+[[case]]
+name = "a timeout that is not a whole number of seconds above 0 is a finding [0]"
+only = "check-kinds"
+append = '''
+
+.. check:: test
+   :verifies: core.rotation
+   :timeout: 0
+
+   module tb; initial $finish; endmodule
+'''
+findings = [
+    {check = "check-kinds", at = ".. check:: test"},
+]

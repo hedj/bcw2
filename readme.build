@@ -174,7 +174,9 @@ make check runs each check with tools/run_checks.py, in the chapter order.
 The first module in the code of a test or a prove is its top module. Each
 check reads build/rtl/bcw_params.sv and each Verilog file of build/rtl. A
 test passes when Verilator builds the testbench and the testbench exits 0,
-so $fatal fails it. A prove passes when SymbiYosys proves each assertion
+so $fatal fails it. A testbench that runs longer than the option :timeout:
+of its test, in seconds (60 if the option is not there), fails. The limit
+covers the run, not the build of Verilator. A prove passes when SymbiYosys proves each assertion
 with the smtbmc engine and Yices. The work of each check is in
 build/run/<name>.
 
