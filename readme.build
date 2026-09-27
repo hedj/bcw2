@@ -294,7 +294,8 @@ tools/metrics.py    Prints the lines of code, McCabe and Halstead metrics of
                     the code in tools/, without its tests. It also prints the
                     words, the Flesch-Kincaid grade and the ste_lint findings
                     of the prose of the chapters, readme.build and the
-                    Markdown files at the root. After make check, it
+                    Markdown files at the root, and the audit time of the
+                    chapters in days (design.audit-time). After make check, it
                     also prints the cognitive burden of the design graph
                     in build/design.json:
                     ./dev python3 tools/metrics.py

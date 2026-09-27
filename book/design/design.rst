@@ -131,3 +131,25 @@ Security properties
    No protection domain other than the supervisor can read a clock, or a count of cycles or
    of instructions. It relates itself to real time only by a request that suspends it for at
    least an interval that it states.
+
+Audit budget
+============
+
+.. definition:: design.audit-time
+   :parent: design.auditability
+
+   The :dfn:`audit time` of the book is the number of days that one engineer takes to check
+   all of it. The engineer checks 300 words of prose or 300 lines of code in an hour, for 4
+   hours in a day.
+
+.. target:: design.audit-budget
+   :parent: design.auditability
+   :value: 5
+   :unit: days
+
+   The audit time of the book is at most :param:`design.audit-budget`.
+
+.. rationale::
+
+   The rates come from studies of inspection. Four hours is the limit of focused work in a
+   day. An audit checks each rule, so it is slower than a reading.

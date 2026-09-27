@@ -19,9 +19,13 @@ and inline code:
 - reading_grade: the Flesch-Kincaid grade that textstat gives. The total grade is the
   grade of the prose of all the documents together, not the mean of their grades;
 - ste_violations and ste_advisory: the hard and the advisory findings of
-  tools/ste_lint.py.
+  tools/ste_lint.py;
+- audit_days: the audit time of design.audit-time, the days that one engineer takes to
+  check the chapters: their words and their lines of code (of code directives and
+  literal blocks), AUDIT_RATE of them an hour for AUDIT_HOURS hours a day.
 
-documents holds the four document measures of each document, by path.
+documents holds the measures of each document, by path: its words, its lines of code,
+its reading grade and its STE findings.
 
 The design of the system is the graph in build/design.json, which make check writes.
 An edge a -> b says that a reader needs b to understand a. The measures count the
@@ -64,7 +68,7 @@ DOCUMENTS = ["book/**/*.rst", "readme.build", "*.md"]
 FENCED = re.compile(r"^(```|~~~).*?^\1[^\n]*$", re.M | re.S)
 INLINE_CODE = re.compile(r"`[^`\n]*`")
 # The rST directives whose content is code, not prose.
-CODE_DIRECTIVES = {"source", "twin", "check", "code-block", "code", "literalinclude", "math", "raw"}
+CODE_DIRECTIVES = {"source", "twin", "check", "mutant", "code-block", "code", "literalinclude", "math", "raw"}
 DIRECTIVE = re.compile(r"\.\.\s+([\w-]+)::")
 FIELD = re.compile(r":[\w-]+:(\s|$)")
 UNDERLINE = re.compile(r"([=\-~^\"'`#*+.:_])\1{2,}")
@@ -72,6 +76,10 @@ LITERAL = re.compile(r"``[^`\n]*``")
 ROLE = re.compile(r":[\w-]+:`([^`\n]*)`")
 # The number of chunks that an adult holds in working memory (Cowan, 2001).
 WORKING_MEMORY = 4
+# The words or lines of code that an auditor checks in an hour, and the hours of audit in a day:
+# the rates of design.audit-time in book/design/design.rst.
+AUDIT_RATE = 300
+AUDIT_HOURS = 4
 
 
 def mccabe(blocks):
@@ -82,48 +90,54 @@ def mccabe(blocks):
     return sum(block.complexity + mccabe(block.closures) for block in blocks if isinstance(block, Function))
 
 
-def rst_prose(text):
-    """The prose of an rST text: without code directives, literal blocks, directive lines, fields
-    (such as directive options), comments, heading underlines and inline literals, and with the
-    text of each role."""
-    kept = []
-    skip = None  # while set, leave out the blank lines and the lines indented more than this
+def rst_parts(text):
+    """The prose of an rST text and its number of lines of code.
+
+    The prose is without code directives, literal blocks, directive lines, fields (such as
+    directive options), comments, heading underlines and inline literals, and with the text of
+    each role. A line of code is a line of a code directive or a literal block that is not blank
+    and not an option.
+    """
+    kept, code = [], 0
+    skip, in_code = None, False  # while skip is set, leave out the blank lines and the lines indented more
     for line in text.splitlines():
         indent, stripped = len(line) - len(line.lstrip()), line.strip()
         if skip is not None:
             if not stripped or indent > skip:
+                code += in_code and bool(stripped) and not FIELD.match(stripped)
                 continue
             skip = None
         directive = DIRECTIVE.match(stripped)
         if directive:
             if directive.group(1) in CODE_DIRECTIVES:
-                skip = indent
+                skip, in_code = indent, True
         elif stripped.startswith(".."):
-            skip = indent
+            skip, in_code = indent, False
         elif UNDERLINE.fullmatch(stripped) or FIELD.match(stripped):
             continue
         elif stripped.endswith("::"):
             kept.append(line[:-1])
-            skip = indent
+            skip, in_code = indent, True
         else:
             kept.append(line)
-    return ROLE.sub(r"\1", LITERAL.sub("", "\n".join(kept)))
+    return ROLE.sub(r"\1", LITERAL.sub("", "\n".join(kept))), code
 
 
-def prose(path, text):
-    """The prose of one document."""
-    if path.endswith(".md"):
-        return INLINE_CODE.sub("", FENCED.sub("", text))
-    return rst_prose(text)
+def parts(path, text):
+    """The prose of one document and its number of lines of code."""
+    if not path.endswith(".md"):
+        return rst_parts(text)
+    code = sum(1 for block in FENCED.finditer(text) for line in block.group(0).splitlines()[1:-1] if line.strip())
+    return INLINE_CODE.sub("", FENCED.sub("", text)), code
 
 
 def grade(text):
     return textstat.flesch_kincaid_grade(text) if text.split() else 0
 
 
-def document_measures(path, text):
+def document_measures(path, text, code_lines):
     findings, words = ste_lint.lint(text, path)
-    return {"words": words, "reading_grade": grade(text),
+    return {"words": words, "code_lines": code_lines, "reading_grade": grade(text),
             "ste_violations": sum(f["level"] == "advisory-free" for f in findings),
             "ste_advisory": sum(f["level"] == "advisory" for f in findings)}
 
@@ -170,7 +184,7 @@ def design_measures(graph):
 
 
 ROWS = ["lines", "mccabe", "halstead_volume", "halstead_effort", "words", "reading_grade", "ste_violations",
-        "ste_advisory"]
+        "ste_advisory", "audit_days"]
 DESIGN_ROWS = ["interactivity_mean", "interactivity_max", "overload", "propagation_cost", "live_peak", "live_mean",
                "forward_references", "vocabulary_total", "unimplemented", "unverified"]
 
@@ -215,12 +229,15 @@ def main():
         metrics["halstead_volume"] += halstead.volume
         metrics["halstead_effort"] += halstead.effort
     paths = sorted({path.as_posix() for pattern in DOCUMENTS for path in Path(".").glob(pattern)})
-    texts = {path: prose(path, Path(path).read_text()) for path in paths}
-    documents = {path: document_measures(path, text) for path, text in texts.items()}
+    split = {path: parts(path, Path(path).read_text()) for path in paths}
+    texts = {path: text for path, (text, _) in split.items()}
+    documents = {path: document_measures(path, text, code) for path, (text, code) in split.items()}
     metrics["words"] = sum(d["words"] for d in documents.values())
     metrics["reading_grade"] = grade("\n\n".join(texts.values()))
     metrics["ste_violations"] = sum(d["ste_violations"] for d in documents.values())
     metrics["ste_advisory"] = sum(d["ste_advisory"] for d in documents.values())
+    book = [d["words"] + d["code_lines"] for path, d in documents.items() if path.startswith("book/")]
+    metrics["audit_days"] = sum(book) / (AUDIT_RATE * AUDIT_HOURS)
     metrics["documents"] = documents
     graph = Path("build/design.json")
     metrics["design"] = design_measures(json.loads(graph.read_text())) if graph.exists() else None

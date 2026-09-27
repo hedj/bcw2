@@ -74,7 +74,8 @@ class MetricsTest:
         assert measure(tmp_path, {"tools/a.py": text}) == {"lines": 2, "mccabe": 1, "halstead_volume": total.volume,
                                                            "halstead_effort": total.effort, "words": 0,
                                                            "reading_grade": 0, "ste_violations": 0,
-                                                           "ste_advisory": 0, "documents": {}, "design": None}
+                                                           "ste_advisory": 0, "audit_days": 0, "documents": {},
+                                                           "design": None}
 
     def test_lines_of_code_leave_out_blank_lines_comments_and_docstrings(self, tmp_path):
         text = ('"""A module\ndocstring."""\n\nimport os\n\n\n# A comment.\ndef f(x):\n    """One line."""\n'
@@ -124,11 +125,25 @@ class DocumentsTest:
         text = "Cats run fast.\n\n```\nnot these words here\n```\n\nDogs `x y z` sleep.\n"
         metrics = measure(tmp_path, {"CLAUDE.md": text})
         assert metrics["words"] == 5
+        assert metrics["documents"]["CLAUDE.md"]["code_lines"] == 1
         assert metrics["reading_grade"] == textstat.flesch_kincaid_grade("Cats run fast.\n\n\n\nDogs  sleep.\n")
 
     def test_words_in_rst_leave_out_code_directives_literal_blocks_options_and_underlines(self, tmp_path):
         # Title, Cats run fast., Dogs sleep., Here is code:, Use and timing closure now.
         assert measure(tmp_path, {"book/a/a.rst": RST})["words"] == 14
+
+    def test_code_lines_in_rst_are_the_lines_of_code_directives_and_literal_blocks_without_options(self, tmp_path):
+        # module words here, hidden words, more hidden, x = 1
+        assert measure(tmp_path, {"book/a/a.rst": RST})["documents"]["book/a/a.rst"]["code_lines"] == 4
+
+    def test_a_mutant_is_code_not_prose(self, tmp_path):
+        text = ".. mutant:: build/a.v\n   :kills: a.b.test\n\n   -    assign a = b;\n   +    assign a = c;\n"
+        document = measure(tmp_path, {"book/a/a.rst": text})["documents"]["book/a/a.rst"]
+        assert (document["words"], document["code_lines"]) == (0, 2)
+
+    def test_the_audit_time_counts_the_words_and_code_lines_of_the_book_alone(self, tmp_path):
+        files = {"book/a/a.rst": RST, "readme.build": "Three four five.\n", "CLAUDE.md": "One two.\n"}
+        assert measure(tmp_path, files)["audit_days"] == (14 + 4) / 1200
 
     def test_readme_build_is_read_as_rst(self, tmp_path):
         text = "Build\n=====\n\nRun this::\n\n    make test\n\nDone.\n"
@@ -153,7 +168,8 @@ class DocumentsTest:
         metrics = measure(tmp_path, {"A.md": SIMPLE, "B.md": "Cats run; dogs sleep. The file was written today.\n"})
         documents = metrics["documents"]
         assert set(documents) == {"A.md", "B.md"}
-        assert documents["A.md"] == {"words": 3, "reading_grade": textstat.flesch_kincaid_grade(SIMPLE),
+        assert documents["A.md"] == {"words": 3, "code_lines": 0,
+                                     "reading_grade": textstat.flesch_kincaid_grade(SIMPLE),
                                      "ste_violations": 0, "ste_advisory": 0}
         for key in ("words", "ste_violations", "ste_advisory"):
             assert metrics[key] == sum(document[key] for document in documents.values())
@@ -244,7 +260,7 @@ class CompareTest:
     def test_each_scalar_measure_has_a_row(self, tmp_path):
         rows = compare(tmp_path, measure(tmp_path, {"tools/a.py": PLAIN}))
         assert list(rows) == ["lines", "mccabe", "halstead_volume", "halstead_effort", "words", "reading_grade",
-                              "ste_violations", "ste_advisory", "interactivity_mean", "interactivity_max", "overload",
+                              "ste_violations", "ste_advisory", "audit_days", "interactivity_mean", "interactivity_max", "overload",
                               "propagation_cost", "live_peak", "live_mean", "forward_references", "vocabulary_total",
                               "unimplemented", "unverified"]
 

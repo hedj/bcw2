@@ -21,7 +21,7 @@ The chapters are written in reStructuredText. Each GOAL and each rule is a direc
 ``twin`` directive. ``tools/bcw.py`` is the Sphinx extension that defines these directives,
 checks the rules and tangles the code. The tangle also writes the value of each PARAMETER as a
 constant, which the Verilog and the twins read. A TARGET is a figure that the finished
-hardware is measured against, so nothing in the design rests on it. A heading of level 1 has ``=`` above and below it. Level
+machine is measured against, so nothing in the design rests on it. A heading of level 1 has ``=`` above and below it. Level
 2 has ``=`` below it, level 3 has ``-`` and level 4 has ``~``.
 
 ``make weave`` builds the reader edition, as HTML and as a PDF. It moves each RATIONALE and
@@ -274,7 +274,7 @@ Targets
 
 .. rationale::
 
-   A measurement of the finished hardware decides a TARGET. No design decision can rest on a
+   A measurement of the finished machine decides a TARGET. No design decision can rest on a
    goal that nobody has met yet, so no chunk serves a TARGET and no value names one. The tangle
    writes no TARGET.
 

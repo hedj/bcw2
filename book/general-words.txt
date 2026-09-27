@@ -61,6 +61,8 @@ count
 counted
 counter
 cycle
+day
+days
 define
 definition
 digit
@@ -129,6 +131,8 @@ hexadecimal
 hold
 holder
 hostile
+hour
+hours
 how-to
 hyphen
 if
@@ -219,6 +223,7 @@ plain
 procedure
 program
 property
+prose
 put
 question
 rationale

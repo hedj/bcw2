@@ -32,6 +32,7 @@ Measure complexity with numbers, not adjectives. Run `./dev make check`, then `.
   * **Word count.**
   * **Reading level:** Flesch-Kincaid grade of all the prose together. Lower is easier.
   * **STE violations:** the hard findings of `tools/ste_lint.py`. Report its advisory findings (passive voice, compound tenses) separately.
+  * **Audit time:** the days that one engineer takes to audit `book/`, its words and its lines of code at 1,200 a day (design.audit-time). The TARGET design.audit-budget is 5 days or fewer.
 * **Design** (the graph in `build/design.json`, where an edge means that a reader needs one element to understand another):
   * **Interactivity:** the elements that each element needs. Report the mean, the maximum, and each element that needs more than 4, the span of working memory.
   * **Propagation cost:** the mean share of the elements that an edit of one element can affect.
