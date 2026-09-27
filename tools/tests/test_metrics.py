@@ -14,6 +14,16 @@ PLAIN = "def f(x):\n    return x\n"
 BRANCH = "def f(x):\n    if x:\n        return 1\n    return x\n"
 
 
+def compare(root, before):
+    """The rows of the table that tools/metrics.py --compare prints for root, by measure name."""
+    path = root / "before.json"
+    path.write_text(json.dumps(before))
+    result = subprocess.run([sys.executable, str(METRICS), "--compare", str(path)], cwd=root, capture_output=True,
+                            text=True)
+    assert result.returncode == 0, result.stderr
+    return {line.split()[0]: line for line in result.stdout.splitlines()[1:] if line.strip()}
+
+
 def measure(root, files):
     """The metrics that tools/metrics.py prints for the files, by path under root."""
     for name, text in files.items():
@@ -200,3 +210,41 @@ class DesignTest:
 
     def test_without_a_design_graph_there_is_no_design_section(self, tmp_path):
         assert measure(tmp_path, {"tools/a.py": PLAIN})["design"] is None
+
+
+class CompareTest:
+    def test_a_measure_that_rose_is_marked_worse(self, tmp_path):
+        before = measure(tmp_path, {"CLAUDE.md": "One.\n"})
+        (tmp_path / "CLAUDE.md").write_text("One two three.\n")
+        row = compare(tmp_path, before)["words"]
+        assert row.split()[1:4] == ["1", "3", "+2"]
+        assert row.split()[-1] == "worse"
+
+    def test_a_measure_that_fell_is_not_marked(self, tmp_path):
+        before = measure(tmp_path, {"tools/a.py": BRANCH})
+        (tmp_path / "tools" / "a.py").write_text(PLAIN)
+        row = compare(tmp_path, before)["mccabe"]
+        assert row.split()[1:] == ["2", "1", "-1"]
+
+    def test_an_equal_measure_is_not_marked(self, tmp_path):
+        before = measure(tmp_path, {"tools/a.py": PLAIN})
+        assert compare(tmp_path, before)["lines"].split()[1:] == ["2", "2", "+0"]
+
+    def test_each_scalar_measure_has_a_row(self, tmp_path):
+        rows = compare(tmp_path, measure(tmp_path, {"tools/a.py": PLAIN}))
+        assert list(rows) == ["lines", "mccabe", "halstead_volume", "halstead_effort", "words", "reading_grade",
+                              "ste_violations", "ste_advisory", "interactivity_mean", "interactivity_max", "overload",
+                              "propagation_cost", "live_peak", "live_mean", "forward_references", "vocabulary_total",
+                              "unimplemented", "unverified"]
+
+    def test_a_design_measure_without_a_graph_is_none(self, tmp_path):
+        rows = compare(tmp_path, measure(tmp_path, {"tools/a.py": PLAIN}))
+        assert rows["live_peak"].split()[1:] == ["none", "none"]
+
+    def test_a_design_measure_is_compared_when_both_sides_have_a_graph(self, tmp_path):
+        graph = {"nodes": [node("a", 0), node("t", 1, "DEFINITION")], "edges": [], "unimplemented": [],
+                 "unverified": ["a"]}
+        before = measure(tmp_path, {"build/design.json": json.dumps(graph)})
+        graph["unverified"] = []
+        (tmp_path / "build" / "design.json").write_text(json.dumps(graph))
+        assert compare(tmp_path, before)["unverified"].split()[1:] == ["1", "0", "-1"]

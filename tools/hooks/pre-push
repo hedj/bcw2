@@ -9,8 +9,28 @@
 # the commit pins.
 # PRE_PUSH_TARGETS sets the make targets. The hook's own test sets it to
 # "check", because make test would run that test again.
+#
+# When the remote already has a commit of the branch, the hook then prints the
+# complexity measures of the pushed commit beside those of that commit, and
+# marks each measure that got worse. The table never stops a push.
 targets=${PRE_PUSH_TARGETS:-test check}
 zero=0000000000000000000000000000000000000000
+
+# compare TREE BASE: print the measures of the commit in TREE, which make check
+# built, beside those of the commit BASE, which its own tools measure.
+compare() {
+    base=$(mktemp -d)
+    measures=$(mktemp)
+    if git worktree add --quiet --detach "$base" "$2" 2>/dev/null &&
+        (cd "$base" && ./dev make -s check >/dev/null 2>&1 && ./dev python3 tools/metrics.py >"$measures"); then
+        (cd "$1" && ./dev python3 tools/metrics.py --compare "$measures")
+    else
+        echo "pre-push: the measures of $2 are not available, so there is no comparison."
+    fi
+    git worktree remove --force "$base" 2>/dev/null
+    rm -f "$measures"
+}
+
 while read -r local_ref local_sha remote_ref remote_sha; do
     [ "$local_sha" = "$zero" ] && continue
     tree=$(mktemp -d)
@@ -19,6 +39,11 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     for target in $targets; do
         (cd "$tree" && ./dev make -s "$target") || { status=1; break; }
     done
+    if [ "$status" -eq 0 ] && [ "$remote_sha" = "$zero" ]; then
+        echo "pre-push: the remote has no commit of this branch, so there is no comparison."
+    elif [ "$status" -eq 0 ]; then
+        compare "$tree" "$remote_sha"
+    fi
     git worktree remove --force "$tree"
     if [ "$status" -ne 0 ]; then
         echo "pre-push: make $target failed on $local_sha, so the push is stopped." >&2

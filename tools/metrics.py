@@ -40,9 +40,14 @@ cognitive burden of the design:
 
 design is None when build/design.json does not exist.
 
+With --compare BEFORE.json, the tool prints a table in place of the JSON: each
+scalar measure before (from the file) and now, its change, and "worse" where it
+rose. A higher value is worse for each of these measures. The pre-push hook uses it.
+
 Run it from the root of the repository: ./dev python3 tools/metrics.py
 """
 
+import argparse
 import json
 import re
 from pathlib import Path
@@ -164,7 +169,41 @@ def design_measures(graph):
             "unverified": len(graph["unverified"])}
 
 
+ROWS = ["lines", "mccabe", "halstead_volume", "halstead_effort", "words", "reading_grade", "ste_violations",
+        "ste_advisory"]
+DESIGN_ROWS = ["interactivity_mean", "interactivity_max", "overload", "propagation_cost", "live_peak", "live_mean",
+               "forward_references", "vocabulary_total", "unimplemented", "unverified"]
+
+
+def scalars(metrics):
+    """Each scalar measure of the output of this tool, or None where it is missing."""
+    design = metrics.get("design") or {}
+    return {**{name: metrics.get(name) for name in ROWS}, **{name: design.get(name) for name in DESIGN_ROWS}}
+
+
+def shown(value, sign=""):
+    if value is None:
+        return "none"
+    return f"{value:{sign}.2f}" if isinstance(value, float) else f"{value:{sign}d}"
+
+
+def comparison(before, after):
+    """The table of each scalar measure before and after, with its change, and "worse" where it rose."""
+    old, new = scalars(before), scalars(after)
+    lines = [f"{'measure':20} {'before':>12} {'after':>12} {'change':>12}"]
+    for name in old:
+        row = f"{name:20} {shown(old[name]):>12} {shown(new[name]):>12}"
+        if old[name] is not None and new[name] is not None:
+            change = new[name] - old[name]
+            row += f" {shown(change, '+'):>12}" + ("  worse" if round(change, 6) > 0 else "")
+        lines.append(row)
+    return "\n".join(lines)
+
+
 def main():
+    parser = argparse.ArgumentParser(description="Print the complexity measures of the code and the documents.")
+    parser.add_argument("--compare", metavar="BEFORE.json", help="print a table of the change from this output")
+    arguments = parser.parse_args()
     metrics = {"lines": 0, "mccabe": 0, "halstead_volume": 0, "halstead_effort": 0}
     for path in sorted(Path("tools").rglob("*.py")):
         if path.relative_to("tools").parts[0] == "tests":
@@ -185,7 +224,10 @@ def main():
     metrics["documents"] = documents
     graph = Path("build/design.json")
     metrics["design"] = design_measures(json.loads(graph.read_text())) if graph.exists() else None
-    print(json.dumps(metrics))
+    if arguments.compare:
+        print(comparison(json.loads(Path(arguments.compare).read_text()), metrics))
+    else:
+        print(json.dumps(metrics))
 
 
 if __name__ == "__main__":

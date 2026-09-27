@@ -22,11 +22,15 @@ class PrePushTest:
         return subprocess.run(["git", "-C", str(self.clone), *args],
                               check=True, capture_output=True, text=True).stdout.strip()
 
-    def push(self, sha):
+    def push(self, sha, base=ZERO):
         return subprocess.run(
             [str(HOOK)], cwd=self.clone, capture_output=True, text=True,
-            input=f"refs/heads/x {sha} refs/heads/x {ZERO}\n",
+            input=f"refs/heads/x {sha} refs/heads/x {base}\n",
             env={**os.environ, "PRE_PUSH_TARGETS": "check"})
+
+    def commit(self, message):
+        self.git("-c", "user.name=test", "-c", "user.email=test@example.com", "commit", "--quiet", "-am", message)
+        return self.git("rev-parse", "HEAD")
 
     def break_the_chapter(self):
         chapter = self.clone / "book" / "core" / "core.rst"
@@ -60,3 +64,18 @@ class PrePushTest:
     def test_the_worktree_is_removed(self):
         self.push(self.good)
         assert len(self.git("worktree", "list").splitlines()) == 1
+
+    def test_a_push_with_a_base_reports_the_measures_and_marks_the_worse_ones(self):
+        chapter = self.clone / "readme.build"
+        chapter.write_text(chapter.read_text() + "\nThis sentence adds words.\n")
+        longer = self.commit("Add a sentence")
+        result = self.push(longer, base=self.good)
+        assert result.returncode == 0, result.stdout + result.stderr
+        rows = {line.split()[0]: line for line in result.stdout.splitlines() if line.strip()}
+        assert rows["words"].split()[-1] == "worse"
+        assert "worse" not in rows["lines"]
+
+    def test_a_new_branch_has_no_base_to_compare(self):
+        result = self.push(self.good)
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "pre-push: the remote has no commit of this branch, so there is no comparison." in result.stdout

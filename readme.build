@@ -244,6 +244,8 @@ tools/metrics.py    Prints the lines of code, McCabe and Halstead metrics of
                     also prints the cognitive burden of the design graph
                     in build/design.json:
                     ./dev python3 tools/metrics.py
+                    With --compare FILE, it prints a table of the change
+                    from FILE, an earlier output of the tool.
 tools/ste_lint.py   The linter of plain English that doc.linter uses.
 tools/conf.py       The Sphinx configuration of the book.
 tools/hooks/        The Git pre-push hook.
@@ -315,7 +317,10 @@ The pre-push hook runs make test and make check on each commit that a push
 sends. It runs them in a worktree (a second checkout of one commit), through
 the ./dev of that commit. So each commit runs in the environment that it
 pins, and edits that are not committed play no part. If either target
-fails, the hook stops the push. A push takes about 30 seconds.
+fails, the hook stops the push. When the remote already has a commit of the
+branch, the hook then prints the complexity measures of the pushed commit
+beside those of that commit, and marks each measure that got worse. The table
+never stops a push. A push takes about 35 seconds.
 
 
 Changing a tool
