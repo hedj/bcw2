@@ -937,3 +937,35 @@ class LiveSetTest:
         text = crowded(9)
         assert only("live-mean", text) == [(line(text, "Parts"), "live-mean", None)]
 
+
+def padded(text, width):
+    """text with terms + 0 and then a final + 1 or + 10, so that it is exactly width characters long."""
+    while len(text) + 4 <= width - 4:
+        text += " + 0"
+    return text + " + " + "1" * (width - len(text) - 3)
+
+
+def long_twin(lines, width=20):
+    """GOOD with a twin of core_rotate that holds the number of lines, and a first line of the width."""
+    body = ["def core_rotate(turn):"] + [f"    x{index} = turn" for index in range(lines - 2)]
+    body += ["    return {'next': (turn + 1) % 8}"]
+    body[1] = padded(body[1], width) if lines > 2 else body[1]
+    old = "      def core_rotate(turn):\n          return {'next': (turn + 1) % 8}\n"
+    assert GOOD.count(old) == 1
+    return GOOD.replace(old, "".join(f"      {line}\n" for line in body))
+
+
+# verifies: doc.twin-size
+class TwinSizeTest:
+    """doc.twin-size"""
+
+    def test_a_twin_of_45_lines_passes_and_of_46_is_a_finding_on_its_directive(self):
+        assert only("twin-size", long_twin(45)) == []
+        text = long_twin(46)
+        assert only("twin-size", text) == [(line(text, ".. twin::"), "twin-size", "core.rotation")]
+
+    def test_a_line_of_80_characters_passes_and_of_81_is_a_finding(self):
+        assert only("twin-size", long_twin(3, width=80)) == []
+        text = long_twin(3, width=81)
+        assert only("twin-size", text) == [(line(text, ".. twin::"), "twin-size", "core.rotation")]
+

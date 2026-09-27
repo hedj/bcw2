@@ -123,6 +123,20 @@ VALUED = CORE_CHAPTER.replace("eight cycles apart.", "eight cycles apart, one fo
 VALUED_BOOK = {**BOOK, "core/core.rst": VALUED}
 
 
+class TwinPageTest:
+    def test_latexmk_makes_a_pdf_with_a_twin_of_the_largest_size(self):
+        # doc.twin-size allows 45 lines of 80 characters: such a twin must fit on a page in its rule.
+        line = "    x{:02d} = turn" + " + 0" * 15 + " + 111"
+        body = ["def core_rotate(turn):"] + [line.format(index) for index in range(43)]
+        body += ["    return {'next': (turn + 1) % 8}"]
+        assert len(body) == 45 and max(map(len, body)) == 80
+        old = "      def core_rotate(turn):\n          return {'next': (turn + 1) % 8}\n"
+        chapter = CORE_CHAPTER.replace(old, "".join(f"      {text}\n" for text in body))
+        assert chapter != CORE_CHAPTER
+        status, _, log = weave({**BOOK, "core/core.rst": chapter}, "latex", pdf=True).pdf
+        assert status == 0, log[-2000:]
+
+
 class UsesTest:
     """Each section starts with a line Uses: that links each chunk of another section that it needs."""
 

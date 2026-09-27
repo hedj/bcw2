@@ -551,6 +551,11 @@ Twins and stamps
 
    Each twin shall hold only the forms of the twin language.
 
+.. requirement:: doc.twin-size
+   :parent: doc.read-is-checked
+
+   Each twin shall hold at most 45 lines, and each line at most 80 characters.
+
 .. definition:: doc.stamp
    :parent: doc.read-is-checked
 

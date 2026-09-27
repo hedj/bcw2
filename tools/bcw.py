@@ -1407,6 +1407,26 @@ def check_scoped_constants(documents):
                                   "name each constant by its scope, such as bcw_params::CORE_THREADS")
 
 
+# The largest twin that fits on a page of the PDF inside its rule, with room for the rule.
+TWIN_LINES = 45
+TWIN_WIDTH = 80
+
+
+# implements: doc.twin-size
+def check_twin_size(documents):
+    for document in documents:
+        for block in document.blocks:
+            if block.kind != "twin":
+                continue
+            lines = block.text.splitlines()
+            widest = max((len(text) for text in lines), default=0)
+            if len(lines) > TWIN_LINES or widest > TWIN_WIDTH:
+                yield Finding(document.path, block.line, "twin-size", block.chunk.anchor if block.chunk else None,
+                              f"the twin holds {len(lines)} lines, the widest of {widest} characters: at most "
+                              f"{TWIN_LINES} lines of {TWIN_WIDTH} characters fit on a page",
+                              "split the rule, or write the twin more briefly")
+
+
 # implements: doc.twin-forms
 def check_twin_forms(model):
     constants = parameter_constants(model)
@@ -1463,6 +1483,7 @@ def check(model, retired=(), tools=(), general=None, tests=()):
     findings += check_fragments_used(model)
     findings += check_fragment_cycles(model)
     findings += check_twin_forms(model)
+    findings += check_twin_size(documents)
     findings += check_scoped_constants(documents)
     findings += check_one_block(model)
     findings += check_mutants(model)

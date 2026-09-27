@@ -26,7 +26,8 @@ new = '''
       def core_rotate(turn):
           after = wrap(turn + 1)
           low = min(after, max(turn, abs(turn - 9)))
-          return {'next': (after & 7) | (turn ^ turn) | (0 if not 0 <= low < 99 else low >> 9) | (~turn & 0)}
+          zero = (turn ^ turn) | (0 if not 0 <= low < 99 else low >> 9) | (~turn & 0)
+          return {'next': (after & 7) | zero}
 '''
 
 [[case]]

@@ -273,6 +273,13 @@ of any other function. Each integer is exact: the translation gives each
 value enough bits that no value overflows, as in Python. A twin that needs
 more than 256 bits fails its equiv check.
 
+A twin holds at most 45 lines, of at most 80 characters (doc.twin-size). The
+PDF prints a twin inside the box of its rule, and a box cannot run onto a
+second page: a twin of 52 such lines still built, and one of 60 did not.
+The limit leaves room for the English of the rule. Split a rule whose twin
+is longer, as the core chapter splits the compressed instructions into one
+rule for each quadrant.
+
 
 The tools
 ---------

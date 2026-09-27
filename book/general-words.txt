@@ -31,6 +31,7 @@ before
 belong
 below
 between
+bit
 bits
 block
 book
@@ -45,6 +46,7 @@ carries
 carry
 case
 change
+characters
 check
 clock
 closure
@@ -89,9 +91,12 @@ evaluate
 event
 every
 exactly
+expand
+expands
 explanation
 exponent
 expression
+extension
 fact
 fail
 failing
@@ -128,6 +133,7 @@ how-to
 hyphen
 if
 ignore
+illegal
 implementation
 in
 index
@@ -159,6 +165,7 @@ list
 literal
 lower
 lower-case
+lowest
 machine
 make
 makes
@@ -226,6 +233,7 @@ register
 relates
 request
 requirement
+reserves
 resource
 restructuredtext
 rests
