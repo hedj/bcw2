@@ -9,6 +9,8 @@ import contextlib
 import hashlib
 import io
 
+import pytest
+
 import bcw
 from book import ENGLISH, GENERAL, GOOD, Book, deprecations, findings, line
 
@@ -54,6 +56,15 @@ class LabelsTest:
         assert (sorted(bcw.CHUNK_DIRECTIVES) ==
                 ["definition", "discussion", "goal", "open", "parameter", "rationale", "requirement",
                  "target"])
+
+
+class LanguageTest:
+    """The language that the weave highlights a code block in."""
+
+    @pytest.mark.parametrize("target, language", [("build/model/core/ref.c", "c"), ("build/model/core/ref.h", "c"),
+                                                  ("build/rtl/core/x.v", "verilog"), ("build/x.txt", "none")])
+    def test_the_language_follows_the_file_name(self, target, language):
+        assert bcw.language(target, "source") == language
 
 
 # verifies: doc.anchors

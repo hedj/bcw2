@@ -96,6 +96,65 @@ class TestbenchTest:
                                                  "core.rotation.test: the code declares no module")
 
 
+def model(code, path="build/model/core/ref.c"):
+    """A source directive that tangles a C reference model to path."""
+    body = "".join(f"   {text}\n" if text else "\n" for text in code.splitlines())
+    return f"\n.. source:: {path}\n\n{body}"
+
+
+# The next turn in C, with the number of threads as an argument, as the testbench passes it.
+REF_NEXT = """\
+#include <stdint.h>
+uint32_t ref_next(uint32_t turn, uint32_t threads)
+{{
+    return (turn + {step}) % threads;
+}}
+"""
+
+MODEL_BENCH = """\
+module tb;
+    import "DPI-C" function int unsigned ref_next(input int unsigned turn, input int unsigned threads);
+    logic [2:0] turn, next;
+    core_rotate dut (.turn(turn), .next(next));
+    initial begin
+        for (int t = 0; t < 8; t++) begin
+            turn = 3'(t);
+            #1;
+            if (32'(next) != ref_next(t, bcw_params::CORE_THREADS)) $fatal(1, "turn %0d", t);
+        end
+        $finish;
+    end
+endmodule
+"""
+
+
+class ModelTest:
+    """A test calls the C models of build/model through DPI-C."""
+
+    def test_a_testbench_calls_a_model_with_the_value_of_a_parameter(self, tmp_path):
+        text, result = run(tmp_path, THREADS + model(REF_NEXT.format(step=1)) + check("test", MODEL_BENCH))
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert result.stdout.splitlines()[-1] == "run_checks: 2 passed, 0 failed"
+
+    def test_a_wrong_model_fails_the_testbench(self, tmp_path):
+        text, result = run(tmp_path, THREADS + model(REF_NEXT.format(step=2)) + check("test", MODEL_BENCH))
+        assert result.returncode == 1
+        assert result.stdout.splitlines()[1] == (f"{CHAPTER}:{line(text, '.. check:: test')}: FAIL: [check] "
+                                                 "core.rotation.test: the testbench stopped with exit 1")
+
+    @pytest.mark.parametrize("fault, needle", [("    return turn +;", "return turn +;"),
+                                               ("    int unused;", "int unused;")])
+    def test_a_model_that_does_not_compile_fails_at_its_chapter_line(self, tmp_path, fault, needle):
+        code = REF_NEXT.format(step=1).replace("{\n", "{\n" + fault + "\n")
+        text, result = run(tmp_path, THREADS + model(code))
+        assert result.returncode == 1
+        lines = result.stdout.splitlines()
+        assert (f"{CHAPTER}:{line(text, '#include <stdint.h>')}: FAIL: [model] build/model/core/ref.c: "
+                "the C compiler could not build the model") in lines
+        assert any(entry.startswith(f"    {CHAPTER}:{line(text, needle)}:") for entry in lines)
+        assert lines[-1] == "run_checks: 1 passed, 1 failed"
+
+
 class ProofTest:
     def test_a_property_that_holds_passes(self, tmp_path):
         text, result = run(tmp_path, check("prove", PROPERTIES.format(property="next != turn")))

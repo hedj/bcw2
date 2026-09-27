@@ -183,7 +183,9 @@ class CodeIndexTest:
 GOLDEN = Path(__file__).resolve().parent / "golden"
 TESTED = ("\n.. check:: test\n   :verifies: core.rotation\n\n   module tb;\n       initial $finish;\n   endmodule\n"
           "\n.. check:: equiv\n   :verifies: core.rotation\n   :module: core_rotate\n   :twin: core_next\n")
-GOLDEN_BOOK = {**BOOK, "core/core.rst": TARGETED + FRAGMENTED[len(CORE_CHAPTER):] + TESTED}
+MODEL = ("\n.. source:: build/model/core/ref.c\n\n   #include <stdint.h>\n"
+         "   uint32_t ref_next(uint32_t turn, uint32_t threads) { return (turn + 1) % threads; }\n")
+GOLDEN_BOOK = {**BOOK, "core/core.rst": TARGETED + FRAGMENTED[len(CORE_CHAPTER):] + TESTED + MODEL}
 PAGES = ["index.html", "guide/guide.html", "design/design.html", "core/core.html"]
 
 

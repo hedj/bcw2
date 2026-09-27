@@ -13,7 +13,9 @@ flake.lock records the release of nixpkgs that they come from. So every
 machine uses the same versions: Python 3.13, Sphinx 9.1, Verilator 5.048,
 Icarus Verilog 13.0, yosys 0.62, SymbiYosys 0.61, Yices 2.7.0, z3 4.16,
 radon 6.0.1, textstat 0.7.13 with the CMU dictionary of NLTK, nextpnr 0.10
-with ecppack of trellis for the ECP5, and TeX Live 2025.
+with ecppack of trellis for the ECP5, GCC 15.3, and TeX Live 2025. GCC
+compiles the C models and the C++ that Verilator writes, so the compiler of
+the host plays no part.
 
 1. Install Nix. The instructions are at https://nixos.org/download.
 2. Run ./dev to open a shell in the environment.
@@ -188,6 +190,23 @@ for one input, the runner prints that input and both outputs:
 
 An equiv fails for a module that holds state (a register or a memory).
 Prove such a module with a prove check.
+
+A C reference model is a source directive that names a C file in
+build/model, such as build/model/core/ref.c. Before the checks, the runner
+compiles each C file of build/model with cc -std=c11 -Wall -Wextra -Werror
+-O2 into build/run/model, and links each model into each test. A testbench
+calls the functions of a model through DPI-C, with an import "DPI-C" function
+declaration.
+
+A model reads no constant of the book. The testbench passes the value of each
+PARAMETER that the model needs as an argument, such as
+bcw_params::CORE_THREADS, so bcw_params.sv stays the one source of each value.
+A model that does not compile, or that gives a warning, fails at its first
+chapter line:
+
+    book/core/core.rst:72: FAIL: [model] build/model/core/ref.c: the C compiler could not build the model
+        build/model/core/ref.c: In function ‘ref_next’:
+        book/core/core.rst:75:9: error: unused variable ‘unused’ [-Werror=unused-variable]
 
 The runner prints each result at the chapter line of its check directive.
 After a failure come the lines of the tool that tell why, with each location

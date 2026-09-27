@@ -248,6 +248,8 @@ def language(target, kind):
         return "python"
     if (target or "").endswith((".v", ".sv")):
         return "verilog"
+    if (target or "").endswith((".c", ".h")):
+        return "c"
     return "none"
 
 

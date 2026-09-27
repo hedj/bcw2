@@ -14,7 +14,9 @@
         let
           pkgs = nixpkgs.legacyPackages.${system};
         in
-        pkgs.mkShellNoCC {
+        # mkShell, not mkShellNoCC, so that the C compiler of nixpkgs builds the C
+        # models and the C++ of Verilator, and not the compiler of the host.
+        pkgs.mkShell {
           packages = [
             (pkgs.python3.withPackages (ps: [ ps.sphinx ps.z3-solver ps.pytest ps.pytest-xdist ps.radon ps.textstat ]))
             pkgs.verilator

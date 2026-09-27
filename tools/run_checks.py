@@ -6,6 +6,12 @@ order. The top module of a test or a prove is the first module in its code, and
 the top module of an equiv is its module option. Each check reads
 build/rtl/bcw_params.sv and each Verilog file of build/rtl.
 
+Before the checks, the runner compiles each C reference model of build/model
+with the C compiler, into build/run/model, and links each model into each test,
+so that a testbench can call its functions through DPI-C. Verilator would build
+a C file as C++, whose names the DPI-C imports cannot find. A model that does
+not compile is a failure at its first chapter line.
+
 A test passes when Verilator builds the testbench and the testbench exits 0. A
 prove passes when SymbiYosys proves each assertion with the smtbmc engine and
 Yices, to the depth of the check.
@@ -26,6 +32,7 @@ to its chapter line by tools/linemap.py:
 It exits 1 if a check fails. The work of each check is in build/run/<name>.
 """
 
+import functools
 import json
 import re
 import subprocess
@@ -44,6 +51,9 @@ PROOF_PREFIX = re.compile(r"^SBY\s+[\d:]+\s+\[[^\]]*\]\s+")
 # The comments of yosys write_smt2 that name each port, and that mark a register or a memory.
 PORT = re.compile(r"^; yosys-smt2-(input|output) (\S+) (\d+)$", re.MULTILINE)
 STATE = re.compile(r"^; yosys-smt2-(register|memory) ", re.MULTILINE)
+MODELS = Path("build/model")
+OBJECTS = Path("build/run/model")
+COMPILE = ["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O2", "-c"]
 
 
 def sources():
@@ -56,11 +66,26 @@ def constants():
     return json.loads(Path("build/checks.json").read_text())["constants"]
 
 
-def run_test(check, top, work):
+def compile_models():
+    """The object of each C model that compiles, and (path, output) of each that does not."""
+    objects, failures = [], []
+    for source in sorted(MODELS.rglob("*.c")):
+        target = OBJECTS / source.relative_to(MODELS).with_suffix(".o")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        result = subprocess.run([*COMPILE, str(source), "-o", str(target)], capture_output=True, text=True)
+        if result.returncode:
+            failures.append((source.as_posix(), result.stdout + result.stderr))
+        else:
+            objects.append(str(target.resolve()))
+    return objects, failures
+
+
+def run_test(check, top, work, objects):
     """None if the testbench passes, or (reason, output)."""
     work.mkdir(parents=True, exist_ok=True)
     build = subprocess.run(["verilator", "--binary", "--quiet", "-j", "0", "--top-module", top,
-                            "--Mdir", str(work), *sources(), check["file"]], capture_output=True, text=True)
+                            "--Mdir", str(work), *sources(), check["file"], *objects],
+                           capture_output=True, text=True)
     if build.returncode:
         return "Verilator could not build the testbench", build.stdout + build.stderr
     result = subprocess.run([str(work / f"V{top}")], capture_output=True, text=True)
@@ -133,12 +158,19 @@ def run_equiv(check, top, work):
         for name in outputs if number(module[name]) != number(values[name], signed=True))
 
 
-RUNNERS = {"test": run_test, "prove": run_prove, "equiv": run_equiv}
+RUNNERS = {"prove": run_prove, "equiv": run_equiv}
 
 
 def main():
     checks = json.loads(Path("build/checks.json").read_text())["checks"]
-    passed = failed = 0
+    objects, failures = compile_models()
+    runners = {**RUNNERS, "test": functools.partial(run_test, objects=objects)}
+    passed, failed = 0, len(failures)
+    for path, output in failures:
+        chapter, line = linemap.lookup(path, 1) or (path, 1)
+        print(f"{chapter}:{line}: FAIL: [model] {path}: the C compiler could not build the model")
+        for text in output.splitlines():
+            print("    " + linemap.rewrite(text))
     for check in checks:
         place = f"{check['path']}:{check['line']}"
         if check["kind"] == "equiv":
@@ -149,7 +181,7 @@ def main():
         if top is None:
             failure = "the code declares no module", ""
         else:
-            failure = RUNNERS[check["kind"]](check, top, Path("build/run") / check["name"])
+            failure = runners[check["kind"]](check, top, Path("build/run") / check["name"])
         if failure is None:
             print(f"{place}: PASS: [check] {check['name']}")
             passed += 1
