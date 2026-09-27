@@ -296,6 +296,9 @@ One reading
 
    Every rule has one meaning, so that two readers of the rule build the same machine.
 
+Sentences
+---------
+
 .. requirement:: doc.one-shall
    :parent: doc.one-reading, doc.rules-apart
 
@@ -325,6 +328,9 @@ One reading
 
    Where a chunk carries an anchor, the chunk shall have no finding of level
    ``advisory-free`` from ``tools/ste_lint.py``.
+
+Words
+-----
 
 .. requirement:: doc.vocabulary
    :parent: doc.one-reading
@@ -379,6 +385,38 @@ One reading
    EARS gives each REQUIREMENT a fixed form with a defined actor. The linter keeps rules short
    and plain, and a ``never`` option keeps one word for each meaning. A quotation keeps a full
    stop from splitting a sentence.
+
+Live set
+========
+
+.. definition:: doc.dependency
+   :parent: doc.one-engineer
+
+   A :dfn:`dependency` of a chunk is a chunk that it names in its ``parent`` option, in a
+   citation or in its ``value`` option, or whose defined term it uses.
+
+.. definition:: doc.live-set
+   :parent: doc.one-engineer
+
+   The :dfn:`live set` of a chunk holds each earlier chunk of its section that is a
+   dependency of it or of a later chunk of the section, and each chunk of another section that
+   is a dependency of it or of a later chunk of its section.
+
+.. requirement:: doc.live-peak
+   :parent: doc.one-engineer
+
+   Each live set shall hold at most 8 chunks.
+
+.. requirement:: doc.live-mean
+   :parent: doc.one-engineer
+
+   The live set shall have a mean size below 5 across the chunks of the book.
+
+.. rationale::
+
+   A section is a black box. Its reader holds its own chunks and the chunks that it imports,
+   and nothing else. Working memory holds about four chunks, so the mean stays near four and
+   the peak at twice that.
 
 One source
 ==========

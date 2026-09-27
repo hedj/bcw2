@@ -32,8 +32,9 @@ cognitive burden of the design:
 - overload and overloaded: the elements that need more than WORKING_MEMORY elements;
 - propagation_cost: the mean share of the elements that depend on an element, directly
   or through others, which a reader re-reads to change it safely;
-- live_peak and live_mean: at each position of the reading order, the elements read
-  before it that an element at or after it still needs;
+- live_peak and live_mean: the largest and the mean live set of the elements, which
+  tools/bcw.py gives each node (doc.live-set): what a reader holds at an element, with
+  each section of the book as a black box;
 - forward_references: the needs of an element that the reading order puts later;
 - vocabulary and vocabulary_total: the defined terms that each chapter uses;
 - unimplemented and unverified: the REQUIREMENTs that nothing implements or verifies.
@@ -150,8 +151,7 @@ def design_measures(graph):
             terms.setdefault(chapter[source], set()).add(target)
     count = len(position)
     interactivity = [len(targets) for targets in needs.values()]
-    live = [sum(position[anchor] < place and any(position[other] >= place for other in dependants[anchor])
-                for anchor in position) for place in sorted(position.values())]
+    live = [node["live"] for node in graph["nodes"]]
     return {"elements": count,
             "interactivity_mean": sum(interactivity) / count if count else 0,
             "interactivity_max": max(interactivity, default=0),

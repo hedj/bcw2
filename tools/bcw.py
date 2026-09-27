@@ -631,6 +631,38 @@ def check_overview_first(document):
 ARGUMENT = {"RATIONALE", "DISCUSSION"}
 
 
+# The largest live set of a chunk, and the mean of the book that must stay below LIVE_MEAN.
+LIVE_PEAK = 8
+LIVE_MEAN = 5
+
+
+# implements: doc.live-peak
+def check_live_peak(book, live):
+    first = reading(book)
+    for anchor, held in live.items():
+        if len(held) > LIVE_PEAK:
+            chunk = first[anchor][1]
+            yield Finding(chunk.path, chunk.line, "live-peak", anchor,
+                          f"the live set holds {len(held)} chunks, more than {LIVE_PEAK}: {', '.join(held)}",
+                          "split the section, put each chunk nearer its use, or use fewer chunks of other sections")
+
+
+# implements: doc.live-mean
+def check_live_mean(book, live):
+    if not live:
+        return
+    mean = sum(len(held) for held in live.values()) / len(live)
+    if mean < LIVE_MEAN:
+        return
+    first, _, members = sections(book)
+    means = {key: sum(len(live[anchor]) for anchor in anchors) / len(anchors) for key, anchors in members.items()}
+    (path, title), worst = max(means.items(), key=lambda item: item[1])
+    yield Finding(path, title if title is not None else first[members[(path, title)][0]][1].line, "live-mean", None,
+                  f"the mean live set of the book is {mean:.2f}, not below {LIVE_MEAN}, and this section has the "
+                  f"largest mean, {worst:.2f}",
+                  "split this section, put each chunk nearer its use, or use fewer chunks of other sections")
+
+
 # implements: doc.argument-budget
 def check_argument_budget(document):
     sections = {}
@@ -1435,6 +1467,9 @@ def check(model, retired=(), tools=(), general=None, tests=()):
     findings += check_one_block(model)
     findings += check_mutants(model)
     findings += check_mutant_form(model)
+    live = live_sets(model)
+    findings += check_live_peak(model, live)
+    findings += check_live_mean(model, live)
     if general is not None:
         findings += check_known_words(documents, general)
         findings += check_general_words(documents, general)
@@ -1576,6 +1611,79 @@ def tangle(app, exception):
                                   comments(app.config.bcw_tests, VERIFIES)), indent=1) + "\n")
 
 
+def reading(book):
+    """(Document, Chunk) of the first chunk of each anchor, in the reading order: the chapter order, then the
+    order in each chapter."""
+    first = {}
+    for document in book.ordered:
+        for chunk in document.chunks:
+            if chunk.anchor:
+                first.setdefault(chunk.anchor, (document, chunk))
+    return first
+
+
+# implements: doc.dependency
+def needs(book, first):
+    """Each (a, b, kind) where the chunk a needs the chunk b: b is a parent of a, a citation in its prose, an
+    anchor in its value, or a defined term in its prose."""
+    terms = term_words(book.documents)
+    defines = {tuple(chunk.term.split()): anchor for anchor, (_, chunk) in first.items() if chunk.term}
+    edges = set()
+    for anchor, (document, chunk) in first.items():
+        numbers = {number for number, _ in chunk.lines}
+        words = [match.group(0).lower() for _, text in chunk.prose for match in WORD.finditer(text)]
+        found = [(name, "parent") for name in parents(chunk)]
+        found += [(match.group(0), "value") for match in ANCHOR.finditer(chunk.options.get("value", ""))]
+        found += [(name, "citation") for number, name, _ in document.citations if number in numbers]
+        found += [(defines[term], "term") for index in range(len(words))
+                  if (term := term_at(words, index, terms)) in defines]
+        edges |= {(anchor, name, kind) for name, kind in found if name in first and name != anchor}
+    return edges
+
+
+def sections(book):
+    """(first, the anchors that each anchor needs, the anchors of each section in the reading order).
+
+    A section is (the path of its chapter, the title line of the innermost section of level 2 to 4).
+    """
+    first = reading(book)
+    wanted = {anchor: set() for anchor in first}
+    for anchor, name, _ in needs(book, first):
+        wanted[anchor].add(name)
+    members = {}
+    for anchor, (_, chunk) in first.items():
+        members.setdefault((chunk.path, chunk.section), []).append(anchor)
+    return first, wanted, members
+
+
+# implements: doc.live-set
+def live_sets(book):
+    """The anchors that a reader holds at each anchored chunk, by anchor, in the reading order: each earlier
+    chunk of its section that it or a later chunk of the section needs, and each chunk of another section
+    that it or a later chunk of the section needs. A section hides every other chunk."""
+    first, wanted, members = sections(book)
+    position = {anchor: index for index, anchor in enumerate(first)}
+    result = {}
+    for key, anchors in members.items():
+        last = {}
+        for index, anchor in enumerate(anchors):
+            for name in wanted[anchor]:
+                last[name] = index
+        for index, anchor in enumerate(anchors):
+            own = [name for name in anchors[:index] if last.get(name, -1) >= index]
+            imported = [name for name in last if name not in anchors and last[name] >= index]
+            result[anchor] = sorted(own + imported, key=position.get)
+    return result
+
+
+def imports(book):
+    """The chunks of other sections that each section needs, in the reading order, by section."""
+    first, wanted, members = sections(book)
+    position = {anchor: index for index, anchor in enumerate(first)}
+    return {key: sorted({name for anchor in anchors for name in wanted[anchor]} - set(anchors), key=position.get)
+            for key, anchors in members.items()}
+
+
 def design_graph(book, tools, tests):
     """The design graph that build/design.json holds, for tools/metrics.py.
 
@@ -1585,25 +1693,12 @@ def design_graph(book, tools, tests):
     value, or a defined term in its prose. unimplemented and unverified list the
     REQUIREMENTs that doc.implemented and doc.verified report.
     """
-    placed = [(document, chunk) for document in book.ordered for chunk in document.chunks if chunk.anchor]
-    first = {}
-    for document, chunk in placed:
-        first.setdefault(chunk.anchor, (document, chunk))
-    terms = term_words(book.documents)
-    defines = {tuple(chunk.term.split()): anchor for anchor, (_, chunk) in first.items() if chunk.term}
-    edges = set()
-    for anchor, (document, chunk) in first.items():
-        numbers = {number for number, _ in chunk.lines}
-        words = [match.group(0).lower() for _, text in chunk.prose for match in WORD.finditer(text)]
-        needs = [(name, "parent") for name in parents(chunk)]
-        needs += [(match.group(0), "value") for match in ANCHOR.finditer(chunk.options.get("value", ""))]
-        needs += [(name, "citation") for number, name, _ in document.citations if number in numbers]
-        needs += [(defines[term], "term") for index in range(len(words))
-                  if (term := term_at(words, index, terms)) in defines]
-        edges |= {(anchor, name, kind) for name, kind in needs if name in first and name != anchor}
-    return {"nodes": [{"anchor": anchor, "label": chunk.label, "chapter": document.name, "position": position}
+    first = reading(book)
+    live = live_sets(book)
+    return {"nodes": [{"anchor": anchor, "label": chunk.label, "chapter": document.name, "position": position,
+                       "section": chunk.section, "live": len(live[anchor])}
                       for position, (anchor, (document, chunk)) in enumerate(first.items())],
-            "edges": [list(edge) for edge in sorted(edges)],
+            "edges": [list(edge) for edge in sorted(needs(book, first))],
             "unimplemented": sorted(chunk.anchor for chunk in unimplemented(book.documents, tools)),
             "unverified": sorted(chunk.anchor for chunk in unverified(book.documents, tests))}
 

@@ -166,8 +166,8 @@ class DocumentsTest:
         assert metrics["words"] == 6
 
 
-def node(anchor, position, label="REQUIREMENT", chapter="core"):
-    return {"anchor": anchor, "label": label, "chapter": chapter, "position": position}
+def node(anchor, position, label="REQUIREMENT", chapter="core", live=0):
+    return {"anchor": anchor, "label": label, "chapter": chapter, "position": position, "live": live}
 
 
 def design(tmp_path, nodes, edges, unimplemented=(), unverified=()):
@@ -196,11 +196,10 @@ class DesignTest:
         result = design(tmp_path, nodes, [["b", "a", "parent"], ["c", "b", "parent"]])
         assert result["propagation_cost"] == (2 + 1 + 0) / 3 / 3
 
-    def test_the_live_set_holds_what_was_read_and_is_still_needed(self, tmp_path):
-        # t is read first and needed last: it is live at positions 1 and 2.
-        nodes = [node("t", 0, "DEFINITION"), node("x", 1), node("y", 2)]
+    def test_the_live_peak_and_mean_are_those_of_the_live_sets_that_bcw_gives(self, tmp_path):
+        nodes = [node("t", 0, "DEFINITION", live=0), node("x", 1, live=2), node("y", 2, live=1)]
         result = design(tmp_path, nodes, [["y", "t", "term"]])
-        assert (result["live_peak"], result["live_mean"]) == (1, 2 / 3)
+        assert (result["live_peak"], result["live_mean"]) == (2, 1)
 
     def test_a_need_of_a_later_element_is_a_forward_reference(self, tmp_path):
         nodes = [node("a", 0), node("b", 1), node("c", 2)]

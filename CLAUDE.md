@@ -35,7 +35,7 @@ Measure complexity with numbers, not adjectives. Run `./dev make check`, then `.
 * **Design** (the graph in `build/design.json`, where an edge means that a reader needs one element to understand another):
   * **Interactivity:** the elements that each element needs. Report the mean, the maximum, and each element that needs more than 4, the span of working memory.
   * **Propagation cost:** the mean share of the elements that an edit of one element can affect.
-  * **Live set:** the peak and mean number of elements that a reader holds in mind along the reading order, and the forward references.
+  * **Live set:** the peak and mean number of elements that a reader holds at each element, and the forward references. Each section is a black box: its reader holds its own elements and those it uses from other sections (doc.live-set). `make check` keeps the peak at 8 or below and the mean below 5.
   * **Vocabulary:** the defined terms that each chapter uses.
   * **Orphans:** the REQUIREMENTs that nothing implements or verifies. Do not lower the other measures by dropping links.
 * **No worse:** An edit that claims to simplify must not increase any of these measures for the whole system. If one measure gets worse, report the edit as a trade-off, with every measure before and after.

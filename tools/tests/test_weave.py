@@ -123,6 +123,17 @@ VALUED = CORE_CHAPTER.replace("eight cycles apart.", "eight cycles apart, one fo
 VALUED_BOOK = {**BOOK, "core/core.rst": VALUED}
 
 
+class UsesTest:
+    """Each section starts with a line Uses: that links each chunk of another section that it needs."""
+
+    def test_only_a_section_that_needs_a_chunk_of_another_section_has_a_uses_line(self, core):
+        uses = re.findall(r'<p class="section-uses">(.*?)</p>', core, re.S)
+        # Rotation needs design.timing, the parent of core.rotation and core.core. Goals needs nothing.
+        assert len(uses) == 1
+        assert uses[0].startswith("Uses: ")
+        assert re.findall(r'href="([^"]*)"', uses[0]) == ["../design/design.html#design.timing"]
+
+
 class ValueTest:
     """The weave shows the value of each PARAMETER where the text cites it, and on its first line."""
 

@@ -29,6 +29,9 @@ and checks nothing itself. It orders and reshapes what bcw.py reads:
   and each PARAMETER and TARGET shows its value on its first line.
 - The directive code-index lists each file and each fragment, with a link to
   the block that defines it and to each block that uses it.
+- Each section of level 2 to 4 starts with a line Uses: that links each chunk
+  of another section that the section needs (doc.live-set): the interface of
+  the section, which its reader holds while reading it.
 """
 
 import html
@@ -38,6 +41,7 @@ from pathlib import Path
 from docutils import nodes
 from docutils.statemachine import StringList
 from sphinx import addnodes
+from sphinx.util.nodes import make_refnode
 from sphinx.util.docutils import SphinxDirective
 
 import bcw
@@ -235,12 +239,48 @@ def link_checks(doctree, document):
             swap(block, proof)
 
 
+def mark_sections(doctree, document, docname):
+    """Put an empty line Uses: under the title of each section of level 2 to 4, which show_uses fills.
+
+    The chunks that a section needs can be in chapters that Sphinx has not read yet, so
+    the line waits for doctree-resolved. It keeps the key of its section in bcw.py: the
+    path of the chapter and the title line.
+    """
+    for section in list(doctree.findall(nodes.section)):
+        depth, parent = 1, section.parent
+        while parent is not None:
+            depth += isinstance(parent, nodes.section)
+            parent = parent.parent
+        if 2 <= depth <= 4 and section.line is not None:
+            marker = nodes.paragraph(classes=["section-uses"])
+            marker["bcw_section"], marker["bcw_doc"] = [document.path, section.line - 1], docname
+            section.insert(1, marker)
+
+
+def show_uses(app, doctree):
+    """Fill each line Uses: with a link to each chunk of another section that the section needs, or remove it."""
+    imports = bcw.imports(bcw.model(app.env))
+    labels = app.env.domains.standard_domain.anonlabels
+    for marker in [node for node in doctree.findall(nodes.paragraph) if "section-uses" in node["classes"]]:
+        names = [name for name in imports.get(tuple(marker["bcw_section"]), []) if name in labels]
+        if not names:
+            marker.parent.remove(marker)
+            continue
+        marker += nodes.Text("Uses: ")
+        for number, name in enumerate(names):
+            if number:
+                marker += nodes.Text(", ")
+            docname, labelid = labels[name]
+            marker += make_refnode(app.builder, marker["bcw_doc"], docname, labelid, nodes.literal(text=name))
+
+
 def reshape(app, doctree):
     """Make each chunk a container, link the uses of fragments, and move each argument to the Explanation section."""
     docname = app.env.docname
     if docname == app.config.root_doc:
         return
     document = app.env.bcw_documents[docname]
+    mark_sections(doctree, document, docname)
     link_uses(doctree, document)
     link_checks(doctree, document)
     chunks = {chunk.line: chunk for chunk in document.chunks}
@@ -360,6 +400,7 @@ def show_values(env, doctree):
 
 def weave(app, doctree, docname):
     show_values(app.env, doctree)
+    show_uses(app, doctree)
     if app.builder.format == "html":
         weave_html(doctree)
     elif app.builder.format == "latex":

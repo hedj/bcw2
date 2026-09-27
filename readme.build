@@ -65,11 +65,17 @@ make check    Makes sure that the book obeys the rules of
               Verilator and reads it with yosys. Then it runs each check
               directive with tools/run_checks.py. It passes only when it
               reports 0 findings (breaks of a rule) and no check fails.
+              Among the rules, doc.live-peak and doc.live-mean bound what
+              a reader holds at each chunk: its section's own chunks that
+              are still needed, and the chunks of other sections that the
+              section needs. build/design.json holds each live set size.
 make weave    Builds the reader edition: build/html/index.html and
               build/latex/bcw2.pdf. It ends with an index of code, which
               links each file and each fragment to the block that defines
-              it and to each block that uses it. It reports findings but
-              does not stop on them.
+              it and to each block that uses it. Each section starts
+              with a line Uses:, which links each chunk of another section
+              that the section needs. It reports findings but does not
+              stop on them.
 make test     Runs the tests of the tools, in tools/tests, with pytest on
               each core of the machine.
 make tangle   Writes the code of the book into build/: the Verilog into

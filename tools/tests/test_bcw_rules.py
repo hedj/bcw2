@@ -584,11 +584,16 @@ class DesignGraphTest:
         return json.loads(Book({"core/core.rst": text}, tangle=True).files["build/design.json"])
 
     def test_the_nodes_are_the_anchored_chunks_in_the_reading_order(self):
+        rotation, goals = line(GOOD, "Rotation"), line(GOOD, "Goals")
+        # Each node carries the title line of its section and the size of its live set.
         assert self.design(GOOD)["nodes"] == [
-            {"anchor": "core.rotation", "label": "REQUIREMENT", "chapter": "core", "position": 0},
-            {"anchor": "core.turn", "label": "DEFINITION", "chapter": "core", "position": 1},
-            {"anchor": "core.core", "label": "DEFINITION", "chapter": "core", "position": 2},
-            {"anchor": "core.timing", "label": "GOAL", "chapter": "core", "position": 3}]
+            {"anchor": "core.rotation", "label": "REQUIREMENT", "chapter": "core", "position": 0, "section": rotation,
+             "live": 1},
+            {"anchor": "core.turn", "label": "DEFINITION", "chapter": "core", "position": 1, "section": rotation,
+             "live": 1},
+            {"anchor": "core.core", "label": "DEFINITION", "chapter": "core", "position": 2, "section": rotation,
+             "live": 2},
+            {"anchor": "core.timing", "label": "GOAL", "chapter": "core", "position": 3, "section": goals, "live": 0}]
 
     def test_a_chunk_needs_its_parents_and_the_defined_terms_that_it_uses_but_not_its_own(self):
         assert self.design(GOOD)["edges"] == [
@@ -869,3 +874,66 @@ class ModelTest:
         assert model.values == {"core.threads": 8, "core.turn-width": 3}
         assert model.units == {"core.threads": "threads", "core.turn-width": "bits", "core.bad": "bits"}
         assert list(model.failures) == ["core.bad"]
+
+
+def parts(body):
+    """A chapter of one goal, core.aim, and then body."""
+    return chapter("Core", body="\nGoals\n=====\n\n.. goal:: core.aim\n\n   The core is fast.\n" + body)
+
+
+def definition(anchor, term, parent="core.aim"):
+    return f"\n.. definition:: {anchor}\n   :parent: {parent}\n\n   A :dfn:`{term}` is a part.\n"
+
+
+# Parts: alpha is read first and needed by beta, beta is needed by gamma, and each needs core.aim.
+# More: m1 needs m2, which comes later, and m2 needs core.alpha of Parts.
+SECTIONS = parts("\nParts\n=====\n" + definition("core.alpha", "alpha") + definition("core.beta", "beta", "core.alpha")
+                 + "\n.. requirement:: core.gamma\n   :parent: core.aim\n\n   The core shall hold a beta.\n"
+                 + "\nMore\n====\n" + definition("core.m1", "mone", "core.m2") + definition("core.m2", "mtwo", "core.alpha"))
+# Nine words that no other chunk uses, one for each DEFINITION of a crowded section.
+WORDS = ["apple", "berry", "cherry", "date", "elder", "fig", "grape", "hazel", "iris"]
+
+
+def crowded(count):
+    """A section of count DEFINITIONs of core.aim and a REQUIREMENT that uses each of their terms."""
+    return parts("\nParts\n=====\n" + "".join(definition(f"core.{word}", word) for word in WORDS[:count])
+                 + f"\n.. requirement:: core.all\n   :parent: core.aim\n\n   The core shall hold "
+                 + " and ".join(WORDS[:count]) + ".\n")
+
+
+# verifies: doc.live-peak
+# verifies: doc.live-mean
+class LiveSetTest:
+    """doc.need, doc.live-set, doc.live-peak and doc.live-mean"""
+
+    def live(self, text):
+        graph = json.loads(Book({"core/core.rst": text}, tangle=True).files["build/design.json"])
+        return {node["anchor"]: node["live"] for node in graph["nodes"]}
+
+    def test_a_chunk_of_the_section_counts_until_its_last_use_in_the_section(self):
+        live = self.live(SECTIONS)
+        # core.alpha is live at core.beta, which needs it, and not at core.gamma, which does not.
+        assert (live["core.alpha"], live["core.beta"], live["core.gamma"]) == (1, 2, 2)
+
+    def test_a_chunk_of_another_section_counts_from_the_start_of_the_section(self):
+        # core.alpha of Parts is live at core.m1, before core.m2 needs it.
+        assert self.live(SECTIONS)["core.m1"] == 1
+
+    def test_a_chunk_of_another_section_that_the_section_does_not_need_is_hidden(self):
+        # core.beta, core.gamma and core.aim are in the reading before core.m2, but More does not need them.
+        assert self.live(SECTIONS)["core.m2"] == 1
+
+    def test_a_live_set_of_8_passes_and_of_9_is_a_finding_that_names_the_chunks(self):
+        assert only("live-peak", crowded(7)) == []
+        text = crowded(8)
+        [finding] = [f for f in Book({"core/core.rst": text}).findings if f.check == "live-peak"]
+        assert (finding.check, finding.line, finding.anchor) == ("live-peak", line(text, ".. requirement:: core.all"),
+                                                                 "core.all")
+        assert "9 chunks" in finding.message and "core.aim" in finding.message and "core.hazel" in finding.message
+
+    def test_a_book_mean_of_5_or_more_is_one_finding_at_the_heading_of_the_worst_section(self):
+        # With 8 DEFINITIONs the mean is (0 + 1 + 2 + ... + 8 + 9) / 10 = 4.5, and with 9 it is 55 / 11 = 5.
+        assert only("live-mean", crowded(8)) == []
+        text = crowded(9)
+        assert only("live-mean", text) == [(line(text, "Parts"), "live-mean", None)]
+

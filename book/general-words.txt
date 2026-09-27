@@ -29,6 +29,7 @@ base
 be
 before
 belong
+below
 between
 bits
 block
@@ -146,6 +147,7 @@ kind
 label
 labelled
 last
+later
 learns
 least
 less
@@ -160,6 +162,7 @@ lower-case
 machine
 make
 makes
+mean
 meaning
 means
 measure
@@ -246,6 +249,7 @@ shall
 short
 side
 sign
+size
 small
 so
 space
