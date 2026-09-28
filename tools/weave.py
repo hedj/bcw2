@@ -342,21 +342,24 @@ def weave_html(doctree):
              nodes.raw("", "</details>", format="html"))
 
 
+def titled(block, setup=""):
+    """Make the label of a block the title of its frame, with no space between them, so that it reads
+    as the header of the code."""
+    box = captioned_literal_block()
+    swap(block, box)
+    box += [nodes.caption(text=summary(block)), block]
+    wrap(box, nodes.raw("", rf"\begingroup{setup}\def\sphinxbelowcaptionspace{{0pt}}", format="latex"),
+         nodes.raw("", r"\endgroup", format="latex"))
+
+
 def weave_latex_chapter(root):
     # LaTeX labels the ids of a target, but not the ids of a container.
     for box in list(root.findall(nodes.container)):
         if box["ids"]:
             box.insert(0, nodes.target(ids=box["ids"]))
             box["ids"] = []
-    # The label of each block is the title of its frame, with no space between them, so that it reads
-    # as the header of the code.
     for block in code_blocks(root, "twin") + code_blocks(root, "check") + code_blocks(root, "mutant"):
-        box = captioned_literal_block()
-        swap(block, box)
-        box += [nodes.caption(text=summary(block)), block]
-        wrap(box, nodes.raw("", r"\begingroup\fvset{fontsize=\small}\def\sphinxbelowcaptionspace{0pt}",
-                            format="latex"),
-             nodes.raw("", r"\endgroup", format="latex"))
+        titled(block, r"\fvset{fontsize=\small}")
     sources = code_blocks(root, "source")
     if not sources:
         return
@@ -365,12 +368,13 @@ def weave_latex_chapter(root):
         item = nodes.container(classes=["implementation"])
         target = nodes.target()
         new_id(root, target, "source")
-        item += [target, nodes.rubric(text=summary(block))]
+        item += target
         pointer = nodes.paragraph()
         pointer += [nodes.Text(summary(block).split(":")[0] + ": "),
                     nodes.reference("", block["target"], refid=target["ids"][0])]
         swap(block, pointer)
         item += block
+        titled(block)
         implementation += item
 
 
@@ -460,7 +464,7 @@ TITLE = (r"\makeatletter\renewcommand*\sphinxSetupCaptionForVerbatim[1]{\needspa
          r"\def\sphinxVerbatimTitle{\spx@verb@boxes@fcolorbox@setup\fboxsep=3pt\noindent"
          r"\hskip-\dimexpr\spx@boxes@border@left+\spx@boxes@padding@left\relax\rlap{\colorbox{bcwtitle}"
          r"{\makebox[\dimexpr\linewidth+\spx@boxes@border@left+\spx@boxes@padding@left+\spx@boxes@padding@right"
-         r"+\spx@boxes@border@right-2\fboxsep][l]{\small\strut #1}}}}}\makeatother")
+         r"+\spx@boxes@border@right-2\fboxsep][l]{\small\strut\sphinxLiteralBlockLabel #1}}}}}\makeatother")
 
 
 def chunk_boxes():

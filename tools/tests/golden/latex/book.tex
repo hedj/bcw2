@@ -60,7 +60,7 @@
 
 \newenvironment{bcwchunk}[2]{\def\FrameCommand{{\color{#1}\vrule width 3pt}\fboxsep=6pt\colorbox{#2}}\MakeFramed{\advance\hsize-\width\FrameRestore}}{\endMakeFramed}
 \definecolor{bcwtitle}{HTML}{E0E0E0}
-\makeatletter\renewcommand*\sphinxSetupCaptionForVerbatim[1]{\needspace{\sphinxliteralblockneedspace}\def\sphinxVerbatimTitle{\spx@verb@boxes@fcolorbox@setup\fboxsep=3pt\noindent\hskip-\dimexpr\spx@boxes@border@left+\spx@boxes@padding@left\relax\rlap{\colorbox{bcwtitle}{\makebox[\dimexpr\linewidth+\spx@boxes@border@left+\spx@boxes@padding@left+\spx@boxes@padding@right+\spx@boxes@border@right-2\fboxsep][l]{\small\strut #1}}}}}\makeatother
+\makeatletter\renewcommand*\sphinxSetupCaptionForVerbatim[1]{\needspace{\sphinxliteralblockneedspace}\def\sphinxVerbatimTitle{\spx@verb@boxes@fcolorbox@setup\fboxsep=3pt\noindent\hskip-\dimexpr\spx@boxes@border@left+\spx@boxes@padding@left\relax\rlap{\colorbox{bcwtitle}{\makebox[\dimexpr\linewidth+\spx@boxes@border@left+\spx@boxes@padding@left+\spx@boxes@padding@right+\spx@boxes@border@right-2\fboxsep][l]{\small\strut\sphinxLiteralBlockLabel #1}}}}}\makeatother
 \definecolor{bcwbargoal}{HTML}{7B3FA0}
 \definecolor{bcwbackgoal}{HTML}{F7F7F7}
 \newenvironment{sphinxclassgoal}{\begin{bcwchunk}{bcwbargoal}{bcwbackgoal}}{\end{bcwchunk}}
@@ -363,8 +363,9 @@ The aim is {\hyperref[\detokenize{core/core:core.aim}]{\sphinxcrossref{\DUrole{p
 
 \section{Implementation}
 \label{\detokenize{core/core:implementation-1}}
-\begin{sphinxuseclass}{implementation}\phantomsection\label{\detokenize{core/core:source-1}}\subsubsection*{Verilog: build/rtl/core/core\_rotate.v}
-
+\begin{sphinxuseclass}{implementation}\phantomsection\label{\detokenize{core/core:source-1}}
+\begingroup\def\sphinxbelowcaptionspace{0pt}
+\sphinxSetupCaptionForVerbatim{Verilog: build/rtl/core/core\_rotate.v}
 \def\sphinxLiteralBlockLabel{\label{\detokenize{core/core:file-build/rtl/core/core_rotate.v}}}
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
 \PYG{k}{module}\PYG{+w}{ }\PYG{n}{core\PYGZus{}rotate}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{input}\PYG{+w}{ }\PYG{k+kt}{wire}\PYG{+w}{ }\PYG{p}{[}\PYG{l+m+mh}{2}\PYG{o}{:}\PYG{l+m+mh}{0}\PYG{p}{]}\PYG{+w}{ }\PYG{n}{turn}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{output}\PYG{+w}{ }\PYG{k+kt}{wire}\PYG{+w}{ }\PYG{p}{[}\PYG{l+m+mh}{2}\PYG{o}{:}\PYG{l+m+mh}{0}\PYG{p}{]}\PYG{+w}{ }\PYG{n}{next}\PYG{p}{)}\PYG{p}{;}
@@ -372,9 +373,12 @@ The aim is {\hyperref[\detokenize{core/core:core.aim}]{\sphinxcrossref{\DUrole{p
 \PYG{k}{endmodule}
 \end{sphinxVerbatim}
 
-\end{sphinxuseclass}
-\begin{sphinxuseclass}{implementation}\phantomsection\label{\detokenize{core/core:source-2}}\subsubsection*{Verilog: build/rtl/core/pair.v}
+\endgroup
 
+\end{sphinxuseclass}
+\begin{sphinxuseclass}{implementation}\phantomsection\label{\detokenize{core/core:source-2}}
+\begingroup\def\sphinxbelowcaptionspace{0pt}
+\sphinxSetupCaptionForVerbatim{Verilog: build/rtl/core/pair.v}
 \def\sphinxLiteralBlockLabel{\label{\detokenize{core/core:file-build/rtl/core/pair.v}}}
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
 \PYG{k}{module}\PYG{+w}{ }\PYG{n}{pair}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{input}\PYG{+w}{ }\PYG{k+kt}{wire}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{output}\PYG{+w}{ }\PYG{k+kt}{wire}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{)}\PYG{p}{;}
@@ -382,22 +386,30 @@ The aim is {\hyperref[\detokenize{core/core:core.aim}]{\sphinxcrossref{\DUrole{p
 \PYG{k}{endmodule}
 \end{sphinxVerbatim}
 
-\end{sphinxuseclass}
-\begin{sphinxuseclass}{implementation}\phantomsection\label{\detokenize{core/core:source-3}}\subsubsection*{Fragment: :core.pair\sphinxhyphen{}logic}
+\endgroup
 
+\end{sphinxuseclass}
+\begin{sphinxuseclass}{implementation}\phantomsection\label{\detokenize{core/core:source-3}}
+\begingroup\def\sphinxbelowcaptionspace{0pt}
+\sphinxSetupCaptionForVerbatim{Fragment: :core.pair\sphinxhyphen{}logic}
 \def\sphinxLiteralBlockLabel{\label{\detokenize{core/core:fragment-core.pair-logic}}}
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
 assign b = a;
 \end{sphinxVerbatim}
 
-\end{sphinxuseclass}
-\begin{sphinxuseclass}{implementation}\phantomsection\label{\detokenize{core/core:source-4}}\subsubsection*{Source: build/model/core/ref.c}
+\endgroup
 
+\end{sphinxuseclass}
+\begin{sphinxuseclass}{implementation}\phantomsection\label{\detokenize{core/core:source-4}}
+\begingroup\def\sphinxbelowcaptionspace{0pt}
+\sphinxSetupCaptionForVerbatim{Source: build/model/core/ref.c}
 \def\sphinxLiteralBlockLabel{\label{\detokenize{core/core:file-build/model/core/ref.c}}}
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
 \PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}stdint.h\PYGZgt{}}
 \PYG{k+kt}{uint32\PYGZus{}t}\PYG{+w}{ }\PYG{n+nf}{ref\PYGZus{}next}\PYG{p}{(}\PYG{k+kt}{uint32\PYGZus{}t}\PYG{+w}{ }\PYG{n}{turn}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{uint32\PYGZus{}t}\PYG{+w}{ }\PYG{n}{threads}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{turn}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZpc{}}\PYG{+w}{ }\PYG{n}{threads}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
 \end{sphinxVerbatim}
+
+\endgroup
 
 \end{sphinxuseclass}\subsubsection*{Index of code}
 \begin{itemize}
