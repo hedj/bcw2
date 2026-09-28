@@ -995,7 +995,8 @@ Pipeline
    endmodule
 
 .. source:: build/rtl/core/core.v
-   :implements: core.depth, core.step, core.suspend, core.div-wait, core.port-write, core.reset
+   :implements: core.depth, core.step, core.suspend, core.div-wait, core.port-write, core.reset,
+                core.reset-quiet
 
    module core (input wire clk, rst_n, output wire [bcw_params::CORE_TURN_WIDTH-1:0] turn,
                 output wire [31:0] fetch_addr, input wire [31:0] fetch_word,
@@ -1075,7 +1076,7 @@ Pipeline
        core_mul_part part (.f3(m1_f3[1:0]), .a(m1_a), .b(m1_b), .ll, .lh, .hl, .hh);
        core_store place (.size(m1_f3[1:0]), .lo(m1_addr[1:0]), .data(m1_b), .be(data_be), .wdata(data_wdata));
        assign data_addr = m1_addr;
-       assign data_we = m1_v && m1_store && m1_cause == NONE;
+       assign data_we = rst_n && m1_v && m1_store && m1_cause == NONE;
        logic m2_v, m2_we, m2_load, m2_mul, m2_div; logic [1:0] m2_cause; logic [TW-1:0] m2_t;
        logic [4:0] m2_rd; logic [2:0] m2_f3; logic [31:0] m2_pc, m2_word, m2_a, m2_b, m2_addr, m2_res, m2_next;
        logic [35:0] m2_ll, m2_lh, m2_hl, m2_hh;
@@ -1091,7 +1092,7 @@ Pipeline
        core_load extract (.f3(w_f3), .lo(w_addr[1:0]), .word(w_data), .y(loaded));
        wire retire = w_v && w_cause == NONE;
        wire resume = waiting[rot_next] && div_done;
-       assign w_we = retire && w_we_r || resume;
+       assign w_we = rst_n && (retire && w_we_r || resume);
        assign w_wa = resume ? {rot_next, div_rd} : {w_t, w_rd};
        assign w_wd = resume ? div_result : w_load ? loaded : w_res;
 
@@ -1140,7 +1141,7 @@ Pipeline
    endmodule
 
 .. check:: prove
-   :verifies: core.depth, core.step, core.suspend
+   :verifies: core.depth, core.step, core.suspend, core.reset-quiet
    :depth: 10
 
    module core_props (input wire clk, input wire [31:0] fetch_word, data_rdata, port_pc,
@@ -1160,6 +1161,8 @@ Pipeline
        logic [20:0] turns;
        always_ff @(posedge clk) turns <= {turns[17:0], turn};
        wire step = rst_n && commit && !commit_resume;
+       // core.reset-quiet: in reset, the state of the stages is still that of power-up.
+       always_comb if (!rst_n) assert (!data_we && !commit_we);
        always_comb if (step) assert (commit_thread == turns[20:18]);
 
        // Each commit equals one step of the instruction from its word, its program counter, its two
@@ -1198,6 +1201,12 @@ Pipeline
 
    -    wire [31:0] next = e_jal || e_branch && taken ? e_pc + e_imm : e_jalr ? {sum[31:1], 1'b0} : link;
    +    wire [31:0] next = e_jal || e_branch ? e_pc + e_imm : e_jalr ? {sum[31:1], 1'b0} : link;
+
+.. mutant:: build/rtl/core/core.v
+   :kills: core.depth.prove
+
+   -    assign w_we = rst_n && (retire && w_we_r || resume);
+   +    assign w_we = retire && w_we_r || resume;
 
 .. rationale::
 
@@ -1249,6 +1258,11 @@ Thread control
 
    When the core leaves reset, the core shall run thread 0 from address 0, and hold each other
    thread suspended.
+
+.. requirement:: core.reset-quiet
+   :parent: design.auditability
+
+   While the core is in reset, the core shall write no register and no memory.
 
 .. check:: test
    :verifies: core.registers, core.step, core.suspend, core.div-wait, core.port-write, core.reset
