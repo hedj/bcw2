@@ -14,6 +14,9 @@ root_doc = "index"
 extensions = ["bcw", "weave"]
 latex_documents = [(root_doc, "bcw2.tex", project, author, "manual")]
 latex_engine = "pdflatex"
+# The margins of 0.5 in hold the running header and footer too, or they would reach the edge.
+latex_elements = {"geometry": r"\usepackage[includeheadfoot]{geometry}",
+                  "sphinxsetup": "hmargin=0.5in, vmargin=0.5in"}
 # Each finding already names its check, so Sphinx does not add its type.
 show_warning_types = False
 
