@@ -1068,12 +1068,12 @@ Pipeline
                 input wire [bcw_params::CORE_TURN_WIDTH-1:0] port_rd_thread, output wire [2:0] port_rd_hold,
                 output wire [31:0] port_rd_pc, output wire port_rd_run, output wire [1:0] port_rd_cause,
                 output wire [bcw_params::CORE_CONTEXT_WIDTH-1:0] port_rd_index, output wire port_err,
-                output wire [bcw_params::CORE_CONTEXT_WIDTH-1:0] read_index_a, read_index_b,
-                output wire commit, commit_resume, commit_we, output wire [1:0] commit_cause,
-                output wire [bcw_params::CORE_TURN_WIDTH-1:0] commit_thread, output wire [4:0] commit_rd,
-                output wire [bcw_params::CORE_CONTEXT_WIDTH-1:0] commit_index,
+                output wire [bcw_params::CORE_CONTEXT_WIDTH+4:0] ra, rb, wa, output wire we,
+                output wire [31:0] wd, input wire [31:0] a, b,
+                output wire commit, commit_resume, output wire [1:0] commit_cause,
+                output wire [bcw_params::CORE_TURN_WIDTH-1:0] commit_thread,
                 output wire [31:0] commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load,
-                output wire [31:0] commit_next, commit_value);
+                output wire [31:0] commit_next);
        localparam int T = bcw_params::CORE_THREADS, TW = bcw_params::CORE_TURN_WIDTH;
        localparam int CW = bcw_params::CORE_CONTEXT_WIDTH;
        localparam logic [1:0] NONE = 2'd0, ECALL = 2'd1, ILLEGAL = 2'd2, MISALIGNED = 2'd3;
@@ -1104,13 +1104,8 @@ Pipeline
        core_decode decode (.insn(d_insn), .lui, .auipc, .jal, .jalr, .branch, .load, .store, .opimm, .op,
                            .mul, .div, .ecall, .illegal, .alt);
        core_imm immediate (.insn(d_insn), .imm(d_imm));
-       wire [31:0] a, b, w_wd;
-       wire [CW+4:0] w_wa;
-       wire w_we;
-       wire [CW+4:0] ra = {index[d_t], d_insn[19:15]}, rb = {index[d_t], d_insn[24:20]};
-       core_regfile regs (.clk, .ra, .rb, .we(w_we), .wa(w_wa), .wd(w_wd), .a, .b);
-       // The index of each read of the registers, for the proofs.
-       assign {read_index_a, read_index_b} = {ra[CW+4:5], rb[CW+4:5]};
+       assign ra = {index[d_t], d_insn[19:15]};
+       assign rb = {index[d_t], d_insn[24:20]};
        logic r_v, r_wide, r_alt; logic [10:0] r_class; logic [1:0] r_cause; logic [TW-1:0] r_t;
        logic [31:0] r_pc, r_imm, r_word; logic [14:7] r_insn;
 
@@ -1161,15 +1156,15 @@ Pipeline
        core_load extract (.f3(w_f3), .lo(w_addr[1:0]), .word(w_data), .y(loaded));
        wire retire = w_v && w_cause == NONE;
        wire resume = hold[rot_next] == 3'd1;
-       assign w_we = rst_n && (retire && w_we_r || resume);
-       assign w_wa = resume ? {index[rot_next], div_rd} : {index[w_t], w_rd};
-       assign w_wd = resume ? div_result : w_load ? loaded : w_res;
+       assign we = rst_n && (retire && w_we_r || resume);
+       assign wa = resume ? {index[rot_next], div_rd} : {index[w_t], w_rd};
+       assign wd = resume ? div_result : w_load ? loaded : w_res;
 
        // Each change of the state of a thread, for the proofs and the tests.
-       assign {commit, commit_resume, commit_we, commit_cause, commit_thread, commit_index, commit_rd}
-           = {w_v || resume, resume, w_we, resume ? NONE : w_cause, resume ? rot_next : w_t, w_wa};
-       assign {commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next, commit_value}
-           = {w_pc, w_word, w_a, w_b, w_addr, w_data, w_next, w_wd};
+       assign {commit, commit_resume, commit_cause, commit_thread}
+           = {w_v || resume, resume, resume ? NONE : w_cause, resume ? rot_next : w_t};
+       assign {commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next}
+           = {w_pc, w_word, w_a, w_b, w_addr, w_data, w_next};
 
        // The port writes a thread only while it is suspended, with no divide and no port write pending.
        logic q_we, q_run; logic [TW-1:0] q_thread; logic [31:0] q_pc; logic [CW-1:0] q_index;
@@ -1215,20 +1210,21 @@ Pipeline
               core.div-wait, core.reset-quiet
    :depth: 10
 
-   module core_props (input wire clk, input wire [31:0] fetch_word, data_rdata, port_pc,
+   module core_props (input wire clk, input wire [31:0] fetch_word, data_rdata, port_pc, a, b,
                       input wire [2:0] port_thread, input wire [3:0] port_index, input wire port_we, port_run);
        logic rst_n = 1'b0;
        always_ff @(posedge clk) rst_n <= 1'b1;
        wire [2:0] turn, commit_thread;
        wire [31:0] fetch_addr, data_addr, data_wdata, port_rd_pc;
        wire [3:0] data_be;
-       wire data_we, port_rd_run, port_err, commit, commit_resume, commit_we;
+       wire data_we, port_rd_run, port_err, commit, commit_resume, we;
        wire [1:0] port_rd_cause, commit_cause;
-       wire [3:0] port_rd_index, commit_index, read_index_a, read_index_b;
+       wire [3:0] port_rd_index;
+       wire [8:0] ra, rb, wa;
        wire [2:0] port_rd_hold;
-       wire [4:0] commit_rd;
-       wire [31:0] commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next, commit_value;
-       // The port reads any one thread, which the proof watches.
+       wire [31:0] wd, commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next;
+       // The registers are outside the core, so that their reads and writes are ports. The port reads
+       // any one thread, which the proof watches.
        (* anyconst *) logic [2:0] watched;
        wire [2:0] port_rd_thread = watched;
        core dut (.*);
@@ -1238,15 +1234,15 @@ Pipeline
        always_ff @(posedge clk) turns <= {turns[17:0], turn};
        wire step = rst_n && commit && !commit_resume;
        // core.reset-quiet: in reset, the state of the stages is still that of power-up.
-       always_comb if (!rst_n) assert (!data_we && !commit_we);
+       always_comb if (!rst_n) assert (!data_we && !we);
        always_comb if (step) assert (commit_thread == turns[20:18]);
        // core.own-context: a write goes to the context of the index of its thread, and so do the
        // reads, in the stage D, 2 cycles after the turn of the thread.
-       always_comb if (commit_we && commit_thread == watched) assert (commit_index == port_rd_index);
+       always_comb if (we && commit_thread == watched) assert (wa[8:5] == port_rd_index);
        logic [3:0] age = 4'd0;
        always_ff @(posedge clk) if (age != 4'd8) age <= age + 4'd1;
        always_comb if (age >= 4'd2 && turns[5:3] == watched)
-           assert (read_index_a == port_rd_index && read_index_b == port_rd_index);
+           assert (ra[8:5] == port_rd_index && rb[8:5] == port_rd_index);
 
        // Each commit equals one step of the instruction from its word, its program counter, its two
        // registers and its loaded word, by the units that the equiv checks prove.
@@ -1266,16 +1262,16 @@ Pipeline
        core_load extract (.f3, .lo(addr[1:0]), .word(commit_load), .y(loaded));
        wire [1:0] cause = ecall ? 2'd1 : bad || illegal ? 2'd2 : (load || store) && fault ? 2'd3 : 2'd0;
        wire [31:0] next = jal || branch && taken ? commit_pc + imm : jalr ? {addr[31:1], 1'b0} : link;
-       wire we = lui || auipc || jal || jalr || load || opimm || op || mul;
+       wire writes = lui || auipc || jal || jalr || load || opimm || op || mul;
        wire [31:0] value = lui ? imm : auipc ? commit_pc + imm : jal || jalr ? link : load ? loaded
                          : mul ? product : alu_y;
        wire done = step && cause == 2'd0;
        always_comb if (step) assert (commit_cause == cause);
-       always_comb if (done) assert (commit_next == next && commit_we == we);
-       always_comb if (done && we) assert (commit_rd == insn[11:7]);
+       always_comb if (done) assert (commit_next == next && we == writes);
+       always_comb if (done && writes) assert (wa[4:0] == insn[11:7]);
        // The solver cannot relate the multiply after the registers of the pipeline to a multiply
        // here. The equiv of core.mul proves the units, and the test runs them in the pipeline.
-       always_comb if (done && we && !mul) assert (commit_value == value);
+       always_comb if (done && writes && !mul) assert (wd == value);
        always_comb if (done && (load || store)) assert (commit_addr == addr);
 
        // core.own-state, core.issue: a model that names only the turn, the writes of the port to the
@@ -1308,6 +1304,25 @@ Pipeline
            assert ({port_rd_pc, port_rd_run, port_rd_hold, port_rd_cause, port_rd_index} == model);
        always_comb if (age == 4'd8) assert ((mine && !commit_resume) == started[6]);
        always_comb if (rst_n) assert ((mine && commit_resume) == (slot && port_rd_hold == 3'd1));
+
+       // core.step: each commit carries the program counter of its turn, the word that arrived for it,
+       // the addresses of its reads, the registers that came back, the address of its access and its
+       // loaded word, each from the cycle of its stage.
+       logic [31:0] pc_at, word_at, a_at, b_at, addr_at, load_at;
+       logic [8:0] ra_at, rb_at;
+       always_ff @(posedge clk) begin
+           if (turn == watched) pc_at <= port_rd_pc;
+           if (started[0]) word_at <= fetch_word;
+           if (started[1]) {ra_at, rb_at} <= {ra, rb};
+           if (started[2]) {a_at, b_at} <= {a, b};
+           if (started[4]) addr_at <= data_addr;
+           if (started[5]) load_at <= data_rdata;
+       end
+       always_comb if (rst_n && turn == watched) assert (fetch_addr == port_rd_pc);
+       always_comb if (age == 4'd8 && started[6])
+           assert ({commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load} ==
+                   {pc_at, word_at, a_at, b_at, addr_at, load_at}
+                   && ra_at[4:0] == insn[19:15] && rb_at[4:0] == insn[24:20]);
    endmodule
 
 .. mutant:: build/rtl/core/core.v
@@ -1319,20 +1334,26 @@ Pipeline
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
 
-   -    assign w_we = rst_n && (retire && w_we_r || resume);
-   +    assign w_we = retire && w_we_r || resume;
+   -    assign we = rst_n && (retire && w_we_r || resume);
+   +    assign we = retire && w_we_r || resume;
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
 
-   -    assign w_wa = resume ? {index[rot_next], div_rd} : {index[w_t], w_rd};
-   +    assign w_wa = resume ? {index[rot_next], div_rd} : {index[rot], w_rd};
+   -    assign wa = resume ? {index[rot_next], div_rd} : {index[w_t], w_rd};
+   +    assign wa = resume ? {index[rot_next], div_rd} : {index[rot], w_rd};
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
 
-   -    wire [CW+4:0] ra = {index[d_t], d_insn[19:15]}, rb = {index[d_t], d_insn[24:20]};
-   +    wire [CW+4:0] ra = {index[x_t], d_insn[19:15]}, rb = {index[d_t], d_insn[24:20]};
+   -    assign ra = {index[d_t], d_insn[19:15]};
+   +    assign ra = {index[x_t], d_insn[19:15]};
+
+.. mutant:: build/rtl/core/core.v
+   :kills: core.depth.prove
+
+   -            <= {rst_n && r_v, r_t, r_pc, r_word, r_insn, r_imm, r_wide, r_alt, r_class, r_cause, a, b};
+   +            <= {rst_n && r_v, r_t, r_pc, r_word, r_insn, r_imm, r_wide, r_alt, r_class, r_cause, b, a};
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
@@ -1481,12 +1502,12 @@ Thread control
        logic port_rd_run, port_err;
        logic [1:0] port_rd_cause;
        wire [2:0] turn, commit_thread;
-       wire commit, commit_resume, commit_we;
+       wire commit, commit_resume, we;
        wire [1:0] commit_cause;
-       wire [4:0] commit_rd;
-       wire [3:0] commit_index, read_index_a, read_index_b;
-       wire [31:0] commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next, commit_value;
+       wire [8:0] ra, rb, wa;
+       wire [31:0] wd, a, b, commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next;
        core dut (.*);
+       core_regfile regs (.*);
 
        logic [7:0] mem [65536];
        always @(posedge clk) begin
