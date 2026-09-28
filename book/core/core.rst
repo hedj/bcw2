@@ -1124,7 +1124,10 @@ Pipeline
        core_misaligned align (.size(f3[1:0]), .lo(sum[1:0]), .fault);
        wire [31:0] next = e_jal || e_branch && taken ? e_pc + e_imm : e_jalr ? {sum[31:1], 1'b0} : link;
        wire [1:0] e_stop = e_cause != NONE ? e_cause : (e_load || e_store) && fault ? MISALIGNED : NONE;
-       wire [31:0] e_res = e_lui ? e_imm : e_auipc ? e_pc + e_imm : e_jal || e_jalr ? link : alu_y;
+       // The choice between the ALU and the other results waits for M1, which has time to spare: after
+       // the ALU, it held the critical path.
+       wire [31:0] e_other = e_lui ? e_imm : e_auipc ? e_pc + e_imm : link;
+       wire e_pick = e_class[10:7] != 4'd0;
        wire e_we = e_class[10:7] != 4'd0 || e_load || e_opimm || e_class[2] || e_mul;
        wire [31:0] div_result;
        wire [4:0] div_rd;
@@ -1132,9 +1135,10 @@ Pipeline
                         .a(e_a), .b(e_b), .req_rd(e_insn[11:7]), .thread(rot_next),
                         .result(div_result), .rd(div_rd));
        logic m1_v, m1_we, m1_load, m1_store, m1_mul, m1_div; logic [1:0] m1_cause; logic [TW-1:0] m1_t;
-       logic [4:0] m1_rd; logic [2:0] m1_f3; logic [31:0] m1_pc, m1_word, m1_a, m1_b, m1_addr, m1_res, m1_next;
+       logic [4:0] m1_rd; logic [2:0] m1_f3; logic [31:0] m1_pc, m1_word, m1_a, m1_b, m1_addr, m1_res, m1_next, m1_other;
+       logic m1_pick;
 
-       // M1: send the address of the data, and form the partial products.
+       // M1: send the address of the data, form the partial products, and choose the result.
        wire [35:0] ll, lh, hl, hh;
        core_mul_part part (.f3(m1_f3[1:0]), .a(m1_a), .b(m1_b), .ll, .lh, .hl, .hh);
        core_store place (.size(m1_f3[1:0]), .lo(m1_addr[1:0]), .data(m1_b), .be(data_be), .wdata(data_wdata));
@@ -1185,10 +1189,12 @@ Pipeline
            {e_v, e_t, e_pc, e_word, e_insn, e_imm, e_wide, e_alt, e_class, e_cause, e_a, e_b}
                <= {rst_n && r_v, r_t, r_pc, r_word, r_insn, r_imm, r_wide, r_alt, r_class, r_cause, a, b};
            {m1_v, m1_t, m1_pc, m1_word, m1_a, m1_b, m1_cause, m1_rd, m1_f3, m1_addr, m1_res, m1_next}
-               <= {rst_n && e_v, e_t, e_pc, e_word, e_a, e_b, e_stop, e_insn[11:7], f3, sum, e_res, next};
+               <= {rst_n && e_v, e_t, e_pc, e_word, e_a, e_b, e_stop, e_insn[11:7], f3, sum, alu_y, next};
+           {m1_other, m1_pick} <= {e_other, e_pick};
            {m1_we, m1_load, m1_store, m1_mul, m1_div} <= {e_we, e_load, e_store, e_mul, e_div};
            {m2_v, m2_t, m2_pc, m2_word, m2_a, m2_b, m2_cause, m2_rd, m2_f3, m2_addr, m2_res, m2_next}
-               <= {rst_n && m1_v, m1_t, m1_pc, m1_word, m1_a, m1_b, m1_cause, m1_rd, m1_f3, m1_addr, m1_res, m1_next};
+               <= {rst_n && m1_v, m1_t, m1_pc, m1_word, m1_a, m1_b, m1_cause, m1_rd, m1_f3, m1_addr,
+                   m1_pick ? m1_other : m1_res, m1_next};
            {m2_we, m2_load, m2_mul, m2_div, m2_ll, m2_lh, m2_hl, m2_hh} <= {m1_we, m1_load, m1_mul, m1_div, ll, lh, hl, hh};
            {w_v, w_t, w_pc, w_word, w_a, w_b, w_cause, w_rd, w_f3, w_addr, w_next, w_data}
                <= {rst_n && m2_v, m2_t, m2_pc, m2_word, m2_a, m2_b, m2_cause, m2_rd, m2_f3, m2_addr, m2_next, data_rdata};
