@@ -17,6 +17,7 @@ Work as a sceptical scientist and a careful engineer. Treat complexity and uncle
 * Prefer built-in and standard tools to custom code or new dependencies.
 * Avoid hidden state and side effects. Make each operation safe to run twice.
 * Validate inputs at boundaries, and fail safely with clear errors.
+* Before you prove a property, ask whether a different structure or interface of the implementation can make the property trivially true. For example, a thread that can reach state only through its own index cannot write the state of another thread. Prefer that change to a harder proof.
 * Choose clear names. Keep functions and sections short, at one level of abstraction. Use guard clauses, not deep nesting.
 * Write a comment only to explain why, never what.
 
