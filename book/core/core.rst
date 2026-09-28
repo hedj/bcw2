@@ -39,7 +39,7 @@ Rotation
    :value: clog2(core.threads)
    :unit: bits
 
-   The width of the index of a thread.
+   The width of the number of a thread.
 
 .. parameter:: core.clock
    :parent: core.core
@@ -925,19 +925,47 @@ Divide
 Registers
 =========
 
+.. definition:: core.context
+   :parent: core.core
+
+   A :dfn:`context` is a set of 32 registers of 32 bits.
+
+.. definition:: core.index
+   :parent: core.context
+
+   The :dfn:`index` of a thread is the number of the context that holds its registers.
+
+.. parameter:: core.contexts
+   :parent: core.context
+   :value: 16
+
+   The number of contexts that the core holds.
+
+.. parameter:: core.context-width
+   :parent: core.contexts
+   :value: clog2(core.contexts)
+   :unit: bits
+
+   The width of an index.
+
 .. requirement:: core.registers
    :parent: design.economy
 
-   The core shall give each thread 32 registers of 32 bits, and read register 0 as zero.
+   The core shall hold :param:`core.contexts` contexts, and read register 0 as zero.
+
+.. requirement:: core.register-write
+   :parent: design.timing-invariant
+
+   When the core writes a register, the core shall change no other register.
 
 .. source:: build/rtl/core/core_regfile.v
-   :implements: core.registers
+   :implements: core.registers, core.register-write
 
    module core_regfile (input wire clk,
-                        input wire [bcw_params::CORE_TURN_WIDTH+4:0] ra, rb, wa,
+                        input wire [bcw_params::CORE_CONTEXT_WIDTH+4:0] ra, rb, wa,
                         input wire we, input wire [31:0] wd, output wire [31:0] a, b);
-       logic [31:0] bank_a [2 ** (bcw_params::CORE_TURN_WIDTH + 5)];
-       logic [31:0] bank_b [2 ** (bcw_params::CORE_TURN_WIDTH + 5)];
+       logic [31:0] bank_a [2 ** (bcw_params::CORE_CONTEXT_WIDTH + 5)];
+       logic [31:0] bank_b [2 ** (bcw_params::CORE_CONTEXT_WIDTH + 5)];
        logic [31:0] read_a, read_b;
        logic zero_a, zero_b;
        always_ff @(posedge clk) begin
@@ -953,6 +981,35 @@ Registers
        assign a = zero_a ? 32'd0 : read_a;
        assign b = zero_b ? 32'd0 : read_b;
    endmodule
+
+.. check:: prove
+   :verifies: core.registers, core.register-write
+
+   module core_regfile_props (input wire clk, we, input wire [8:0] wa, input wire [31:0] wd);
+       // Any one register, which both ports read in every cycle.
+       (* anyconst *) logic [8:0] slot;
+       wire [31:0] a, b;
+       core_regfile dut (.clk, .ra(slot), .rb(slot), .we, .wa, .wd, .a, .b);
+       logic [31:0] held, shown;
+       logic known = 1'b0, seen = 1'b0;
+       always_ff @(posedge clk) begin
+           if (we && wa == slot) {held, known} <= {wd, 1'b1};
+           {shown, seen} <= {held, known};
+       end
+       wire [31:0] want = slot[4:0] == 5'd0 ? 32'd0 : shown;
+       always_comb if (seen) assert (a == want && b == want);
+   endmodule
+
+.. mutant:: build/rtl/core/core_regfile.v
+   :kills: core.registers.prove
+
+   -            bank_b[wa] <= wd;
+   +            bank_b[rb] <= wd;
+
+.. requirement:: core.own-context
+   :parent: design.timing-invariant
+
+   The core shall reach the registers of a thread only through its index.
 
 .. rationale::
 
@@ -996,26 +1053,30 @@ Pipeline
 
 .. source:: build/rtl/core/core.v
    :implements: core.depth, core.step, core.suspend, core.div-wait, core.port-write, core.reset,
-                core.reset-quiet
+                core.reset-quiet, core.own-context
 
    module core (input wire clk, rst_n, output wire [bcw_params::CORE_TURN_WIDTH-1:0] turn,
                 output wire [31:0] fetch_addr, input wire [31:0] fetch_word,
                 output wire [31:0] data_addr, output wire [3:0] data_be, output wire data_we,
                 output wire [31:0] data_wdata, input wire [31:0] data_rdata,
                 input wire [bcw_params::CORE_TURN_WIDTH-1:0] port_thread, input wire port_we, port_run,
-                input wire [31:0] port_pc, output wire [31:0] port_rd_pc, output wire port_rd_run,
-                output wire [1:0] port_rd_cause, output wire port_err,
+                input wire [31:0] port_pc, input wire [bcw_params::CORE_CONTEXT_WIDTH-1:0] port_index,
+                output wire [31:0] port_rd_pc, output wire port_rd_run, output wire [1:0] port_rd_cause,
+                output wire [bcw_params::CORE_CONTEXT_WIDTH-1:0] port_rd_index, output wire port_err,
                 output wire commit, commit_resume, commit_we, output wire [1:0] commit_cause,
                 output wire [bcw_params::CORE_TURN_WIDTH-1:0] commit_thread, output wire [4:0] commit_rd,
+                output wire [bcw_params::CORE_CONTEXT_WIDTH-1:0] commit_index,
                 output wire [31:0] commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load,
                 output wire [31:0] commit_next, commit_value);
        localparam int T = bcw_params::CORE_THREADS, TW = bcw_params::CORE_TURN_WIDTH;
+       localparam int CW = bcw_params::CORE_CONTEXT_WIDTH;
        localparam logic [1:0] NONE = 2'd0, ECALL = 2'd1, ILLEGAL = 2'd2, MISALIGNED = 2'd3;
 
        // The state of each thread, which only the stage W, the divider and the port write.
-       logic [31:0] pc [T];
-       logic run [T], waiting [T];
-       logic [1:0] cause [T];
+       wire [T-1:0][31:0] pc;
+       wire [T-1:0] run, waiting;
+       wire [T-1:0][1:0] cause;
+       wire [T-1:0][CW-1:0] index;
        logic [TW-1:0] rot, rot_next;
        core_rotate rotate (.turn(rot), .next(rot_next));
        assign turn = rot;
@@ -1037,10 +1098,10 @@ Pipeline
                            .mul, .div, .ecall, .illegal, .alt);
        core_imm immediate (.insn(d_insn), .imm(d_imm));
        wire [31:0] a, b, w_wd;
-       wire [TW+4:0] w_wa;
+       wire [CW+4:0] w_wa;
        wire w_we;
-       core_regfile regs (.clk, .ra({d_t, d_insn[19:15]}), .rb({d_t, d_insn[24:20]}), .we(w_we), .wa(w_wa),
-                          .wd(w_wd), .a, .b);
+       core_regfile regs (.clk, .ra({index[d_t], d_insn[19:15]}), .rb({index[d_t], d_insn[24:20]}), .we(w_we),
+                          .wa(w_wa), .wd(w_wd), .a, .b);
        logic r_v, r_wide, r_alt; logic [10:0] r_class; logic [1:0] r_cause; logic [TW-1:0] r_t;
        logic [31:0] r_pc, r_imm, r_word; logic [14:7] r_insn;
 
@@ -1093,23 +1154,25 @@ Pipeline
        wire retire = w_v && w_cause == NONE;
        wire resume = waiting[rot_next] && div_done;
        assign w_we = rst_n && (retire && w_we_r || resume);
-       assign w_wa = resume ? {rot_next, div_rd} : {w_t, w_rd};
+       assign w_wa = resume ? {index[rot_next], div_rd} : {index[w_t], w_rd};
        assign w_wd = resume ? div_result : w_load ? loaded : w_res;
 
        // Each change of the state of a thread, for the proofs and the tests.
-       assign {commit, commit_resume, commit_we, commit_cause, commit_thread, commit_rd}
-           = {w_v || resume, resume, w_we, resume ? NONE : w_cause, resume ? rot_next : w_t, w_wa[4:0]};
+       assign {commit, commit_resume, commit_we, commit_cause, commit_thread, commit_index, commit_rd}
+           = {w_v || resume, resume, w_we, resume ? NONE : w_cause, resume ? rot_next : w_t, w_wa};
        assign {commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next, commit_value}
            = {w_pc, w_word, w_a, w_b, w_addr, w_data, w_next, w_wd};
 
        // The port writes a thread only while it is suspended, with no divide and no port write pending.
-       logic q_we, q_run; logic [TW-1:0] q_thread; logic [31:0] q_pc;
+       logic q_we, q_run; logic [TW-1:0] q_thread; logic [31:0] q_pc; logic [CW-1:0] q_index;
        assign port_err = port_we && (run[port_thread] || waiting[port_thread] || q_we && q_thread == port_thread);
-       assign {port_rd_pc, port_rd_run, port_rd_cause} = {pc[port_thread], run[port_thread], cause[port_thread]};
+       assign {port_rd_pc, port_rd_run, port_rd_cause, port_rd_index}
+           = {pc[port_thread], run[port_thread], cause[port_thread], index[port_thread]};
 
        always_ff @(posedge clk) begin
            rot <= rst_n ? rot_next : '0;
-           {q_we, q_thread, q_pc, q_run} <= {rst_n && port_we && !port_err, port_thread, port_pc, port_run};
+           {q_we, q_thread, q_pc, q_run, q_index}
+               <= {rst_n && port_we && !port_err, port_thread, port_pc, port_run, port_index};
            {x_v, x_t, x_pc} <= {rst_n && run[rot] && !waiting[rot], rot, pc[rot]};
            {d_v, d_t, d_pc, d_insn, d_word, d_bad, d_wide} <= {rst_n && x_v, x_t, x_pc, x_insn, fetch_word, x_bad, x_wide};
            {r_v, r_t, r_pc, r_word, r_insn, r_imm, r_wide, r_alt} <= {rst_n && d_v, d_t, d_pc, d_word, d_insn[14:7],
@@ -1129,23 +1192,21 @@ Pipeline
            {w_we_r, w_load, w_div, w_res} <= {m2_we, m2_load, m2_div, m2_mul ? product : m2_res};
        end
 
-       always_ff @(posedge clk)
-           if (!rst_n)
-               for (int t = 0; t < T; t++) {pc[t], run[t], waiting[t], cause[t]} <= {32'd0, t == 0, 1'b0, NONE};
-           else begin
-               if (retire) {pc[w_t], waiting[w_t]} <= {w_next, w_div};
-               else if (w_v) {run[w_t], cause[w_t]} <= {1'b0, w_cause};
-               if (resume) waiting[rot_next] <= 1'b0;
-               if (q_we) {pc[q_thread], run[q_thread]} <= {q_pc, q_run};
-           end
+       for (genvar t = 0; t < T; t++) begin : threads
+           core_thread #(.ID(t)) thread (.clk, .rst_n, .retire(retire && w_t == t), .stop(w_v && w_t == t),
+                                         .resume(resume && rot_next == t), .div(w_div), .next(w_next),
+                                         .why(w_cause), .set(q_we && q_thread == t), .set_run(q_run),
+                                         .set_pc(q_pc), .set_index(q_index), .pc(pc[t]), .run(run[t]),
+                                         .waiting(waiting[t]), .cause(cause[t]), .index(index[t]));
+       end
    endmodule
 
 .. check:: prove
-   :verifies: core.depth, core.step, core.suspend, core.reset-quiet
+   :verifies: core.depth, core.own-context, core.step, core.suspend, core.reset-quiet
    :depth: 10
 
    module core_props (input wire clk, input wire [31:0] fetch_word, data_rdata, port_pc,
-                      input wire [2:0] port_thread, input wire port_we, port_run);
+                      input wire [2:0] port_thread, input wire [3:0] port_index, input wire port_we, port_run);
        logic rst_n = 1'b0;
        always_ff @(posedge clk) rst_n <= 1'b1;
        wire [2:0] turn, commit_thread;
@@ -1153,6 +1214,7 @@ Pipeline
        wire [3:0] data_be;
        wire data_we, port_rd_run, port_err, commit, commit_resume, commit_we;
        wire [1:0] port_rd_cause, commit_cause;
+       wire [3:0] port_rd_index, commit_index;
        wire [4:0] commit_rd;
        wire [31:0] commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next, commit_value;
        core dut (.*);
@@ -1164,6 +1226,8 @@ Pipeline
        // core.reset-quiet: in reset, the state of the stages is still that of power-up.
        always_comb if (!rst_n) assert (!data_we && !commit_we);
        always_comb if (step) assert (commit_thread == turns[20:18]);
+       // core.own-context: a write goes to the context of the index of its thread.
+       always_comb if (commit_we && port_thread == commit_thread) assert (commit_index == port_rd_index);
 
        // Each commit equals one step of the instruction from its word, its program counter, its two
        // registers and its loaded word, by the units that the equiv checks prove.
@@ -1208,6 +1272,12 @@ Pipeline
    -    assign w_we = rst_n && (retire && w_we_r || resume);
    +    assign w_we = retire && w_we_r || resume;
 
+.. mutant:: build/rtl/core/core.v
+   :kills: core.depth.prove
+
+   -    assign w_wa = resume ? {index[rot_next], div_rd} : {index[w_t], w_rd};
+   +    assign w_wa = resume ? {index[rot_next], div_rd} : {index[rot], w_rd};
+
 .. rationale::
 
    With as many stages as threads, an instruction finishes before the next instruction of its
@@ -1244,8 +1314,62 @@ Thread control
 .. definition:: core.port
    :parent: core.core
 
-   The :dfn:`port` of the core reads the program counter, the cause and the run state of a
-   thread, and writes the program counter and the run state.
+   The :dfn:`port` of the core reads the program counter, the cause, the run state and the index
+   of a thread, and writes the program counter, the run state and the index.
+
+.. requirement:: core.index-write
+   :parent: design.timing-invariant
+
+   The port shall be the only part that writes an index.
+
+.. source:: build/rtl/core/core_thread.v
+   :implements: core.index-write
+
+   module core_thread #(parameter int ID = 0) (input wire clk, rst_n, retire, stop, resume, div,
+                   input wire [31:0] next, input wire [1:0] why, input wire set, set_run,
+                   input wire [31:0] set_pc, input wire [bcw_params::CORE_CONTEXT_WIDTH-1:0] set_index,
+                   output logic [31:0] pc, output logic run, waiting, output logic [1:0] cause,
+                   output logic [bcw_params::CORE_CONTEXT_WIDTH-1:0] index);
+       always_ff @(posedge clk)
+           if (!rst_n)
+               {pc, run, waiting, cause, index} <= {32'd0, ID == 0, 1'b0, 2'd0,
+                                                   bcw_params::CORE_CONTEXT_WIDTH'(ID)};
+           else begin
+               if (retire) {pc, waiting} <= {next, div};
+               else if (stop) {run, cause} <= {1'b0, why};
+               if (resume) waiting <= 1'b0;
+               if (set) {pc, run, index} <= {set_pc, set_run, set_index};
+           end
+   endmodule
+
+.. check:: prove
+   :verifies: core.index-write
+
+   module core_thread_props (input wire clk, rst_n, retire, stop, resume, div, set, set_run,
+                             input wire [31:0] next, set_pc, input wire [1:0] why,
+                             input wire [3:0] set_index);
+       wire [31:0] pc;
+       wire run, waiting;
+       wire [1:0] cause;
+       wire [3:0] index;
+       core_thread #(.ID(5)) dut (.*);
+       logic started = 1'b0, was_reset, was_set;
+       logic [3:0] was_index, last;
+       always_ff @(posedge clk)
+           {started, was_reset, was_set, was_index, last} <= {1'b1, !rst_n, set, set_index, index};
+       always_comb if (started) assert (index == (was_reset ? 4'd5 : was_set ? was_index : last));
+   endmodule
+
+.. mutant:: build/rtl/core/core_thread.v
+   :kills: core.index-write.prove
+
+   -            if (retire) {pc, waiting} <= {next, div};
+   +            if (retire) {pc, waiting, index} <= {next, div, set_index};
+
+.. rationale::
+
+   Only the port writes an index, and a thread reaches the registers only through its index. So
+   no thread can write the registers of another.
 
 .. requirement:: core.port-write
    :parent: design.auditability
@@ -1265,7 +1389,8 @@ Thread control
    While the core is in reset, the core shall write no register and no memory.
 
 .. check:: test
-   :verifies: core.registers, core.step, core.suspend, core.div-wait, core.port-write, core.reset
+   :verifies: core.registers, core.own-context, core.step, core.suspend, core.div-wait, core.port-write,
+              core.reset
 
    module tb_core;
        logic clk = 0, rst_n = 0;
@@ -1275,12 +1400,14 @@ Thread control
        logic [2:0] port_thread = 0;
        logic port_we = 0, port_run = 0;
        logic [31:0] port_pc = 0, port_rd_pc;
+       logic [3:0] port_index = 0, port_rd_index;
        logic port_rd_run, port_err;
        logic [1:0] port_rd_cause;
        wire [2:0] turn, commit_thread;
        wire commit, commit_resume, commit_we;
        wire [1:0] commit_cause;
        wire [4:0] commit_rd;
+       wire [3:0] commit_index;
        wire [31:0] commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next, commit_value;
        core dut (.*);
 
@@ -1415,9 +1542,9 @@ Thread control
            endcase
        endfunction
 
-       task automatic start(input [2:0] t, input [31:0] pc);
+       task automatic start(input [2:0] t, input [3:0] index, input [31:0] pc);
            @(negedge clk);
-           {port_thread, port_pc, port_run, port_we} = {t, pc, 1'b1, 1'b1};
+           {port_thread, port_index, port_pc, port_run, port_we} = {t, index, pc, 1'b1, 1'b1};
            #1;
            if (port_err) begin $display("FAIL: the port refused to start thread %0d", t); fails++; end
            @(negedge clk);
@@ -1434,7 +1561,7 @@ Thread control
            end
        endtask
 
-       int ecall0, ecall1;
+       int ecall0, ecall1, ecall4, ecall5;
        initial begin
            foreach (mem[i]) mem[i] = 0;
            program0(); ecall0 = at - 4;
@@ -1442,23 +1569,32 @@ Thread control
            // Thread 2 meets an illegal instruction; thread 3 a misaligned load.
            at = 32'h6000; put(32'hffffffff);
            at = 32'h6100; put(enc_i(12'd2, 5'd0, 3'd2, 5'd3, 7'd3));
+           // Thread 4 sets a register in context 9; then thread 5 reads it there.
+           at = 32'h6200; li(5'd5, 32'd42); put(ECALL); ecall4 = at - 4;
+           at = 32'h6300; out = 32'hc000; keep(5'd5, 32'd42); put(ECALL); ecall5 = at - 4;
            repeat (4) @(negedge clk);
            rst_n = 1;
-           start(3'd1, 32'h2000); start(3'd2, 32'h6000); start(3'd3, 32'h6100);
+           start(3'd1, 4'd1, 32'h2000); start(3'd2, 4'd2, 32'h6000); start(3'd3, 4'd3, 32'h6100);
+           start(3'd4, 4'd9, 32'h6200);
            // A second write to a thread while the first is pending is refused.
-           @(negedge clk); {port_thread, port_pc, port_run, port_we} = {3'd4, 32'h6100, 1'b0, 1'b1};
-           @(negedge clk); {port_thread, port_pc, port_run, port_we} = {3'd4, 32'h6000, 1'b1, 1'b1};
+           @(negedge clk); {port_thread, port_pc, port_run, port_we} = {3'd6, 32'h6100, 1'b0, 1'b1};
+           @(negedge clk); {port_thread, port_pc, port_run, port_we} = {3'd6, 32'h6000, 1'b1, 1'b1};
            #1 if (!port_err) begin $display("FAIL: the port wrote a thread with a write pending"); fails++; end
            @(negedge clk); port_we = 0;
            // A write to a running thread is refused.
            @(negedge clk); {port_thread, port_pc, port_run, port_we} = {3'd1, 32'd0, 1'b0, 1'b1};
            #1 if (!port_err) begin $display("FAIL: the port wrote a running thread"); fails++; end
            @(negedge clk); port_we = 0;
+           repeat (100) @(negedge clk);
+           start(3'd5, 4'd9, 32'h6300);
            repeat (400000) @(negedge clk);
            expect_stop(3'd0, 2'd1, 32'(ecall0));
            expect_stop(3'd1, 2'd1, 32'(ecall1));
            expect_stop(3'd2, 2'd2, 32'h6000);
            expect_stop(3'd3, 2'd3, 32'h6100);
+           expect_stop(3'd4, 2'd1, 32'(ecall4));
+           expect_stop(3'd5, 2'd1, 32'(ecall5));
+           if (port_rd_index != 4'd9) begin $display("FAIL: thread 5 has index %0d", port_rd_index); fails++; end
            foreach (want[a]) if (word_at(a) != want[a]) begin
                if (fails < 20) $display("FAIL: word %h is %h, want %h", a, word_at(a), want[a]);
                fails++;
@@ -1481,8 +1617,8 @@ Thread control
    -    assign port_err = port_we && (run[port_thread] || waiting[port_thread] || q_we && q_thread == port_thread);
    +    assign port_err = port_we && (run[port_thread] || waiting[port_thread]);
 
-.. mutant:: build/rtl/core/core.v
+.. mutant:: build/rtl/core/core_thread.v
    :kills: core.registers.test
 
-   -            for (int t = 0; t < T; t++) {pc[t], run[t], waiting[t], cause[t]} <= {32'd0, t == 0, 1'b0, NONE};
-   +            for (int t = 0; t < T; t++) {pc[t], run[t], waiting[t], cause[t]} <= {32'd0, 1'b1, 1'b0, NONE};
+   -            {pc, run, waiting, cause, index} <= {32'd0, ID == 0, 1'b0, 2'd0,
+   +            {pc, run, waiting, cause, index} <= {32'd0, 1'b1, 1'b0, 2'd0,

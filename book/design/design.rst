@@ -82,7 +82,7 @@ Terms
 .. definition:: design.handle
    :parent: design.auditability
 
-   A :dfn:`handle` is an index that names a resource that its holder does not own. It means an
+   A :dfn:`handle` is a number that names a resource that its holder does not own. It means an
    entry in the table of its holder, and nothing else.
 
 .. definition:: design.region
