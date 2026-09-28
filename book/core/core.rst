@@ -43,7 +43,7 @@ Rotation
 
 .. parameter:: core.clock
    :parent: core.core
-   :value: 80 * 10 ** 6
+   :value: 85 * 10 ** 6
    :unit: Hz
 
    The number of cycles in a second.
