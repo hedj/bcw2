@@ -59,6 +59,8 @@
 
 
 \newenvironment{bcwchunk}[2]{\def\FrameCommand{{\color{#1}\vrule width 3pt}\fboxsep=6pt\colorbox{#2}}\MakeFramed{\advance\hsize-\width\FrameRestore}}{\endMakeFramed}
+\definecolor{bcwtitle}{HTML}{E0E0E0}
+\makeatletter\renewcommand*\sphinxSetupCaptionForVerbatim[1]{\needspace{\sphinxliteralblockneedspace}\def\sphinxVerbatimTitle{\spx@verb@boxes@fcolorbox@setup\fboxsep=3pt\noindent\hskip-\dimexpr\spx@boxes@border@left+\spx@boxes@padding@left\relax\rlap{\colorbox{bcwtitle}{\makebox[\dimexpr\linewidth+\spx@boxes@border@left+\spx@boxes@padding@left+\spx@boxes@padding@right+\spx@boxes@border@right-2\fboxsep][l]{\small\strut #1}}}}}\makeatother
 \definecolor{bcwbargoal}{HTML}{7B3FA0}
 \definecolor{bcwbackgoal}{HTML}{F7F7F7}
 \newenvironment{sphinxclassgoal}{\begin{bcwchunk}{bcwbargoal}{bcwbackgoal}}{\end{bcwchunk}}
@@ -172,11 +174,8 @@ Uses: {\hyperref[\detokenize{design/design:design.timing}]{\sphinxcrossref{\sphi
 The core shall give the turn after
 thread \sphinxstyleemphasis{t} to thread \sphinxstyleemphasis{t} + 1.
 
-\sphinxAtStartPar
-\sphinxstyleemphasis{Formal twin}
-
-\begingroup\fvset{fontsize=\small}
-
+\begingroup\fvset{fontsize=\small}\def\sphinxbelowcaptionspace{0pt}
+\sphinxSetupCaptionForVerbatim{Formal twin}
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
 \PYG{k}{def}\PYG{+w}{ }\PYG{n+nf}{core\PYGZus{}rotate}\PYG{p}{(}\PYG{n}{turn}\PYG{p}{)}\PYG{p}{:}
     \PYG{k}{return} \PYG{p}{\PYGZob{}}\PYG{l+s+s1}{\PYGZsq{}}\PYG{l+s+s1}{next}\PYG{l+s+s1}{\PYGZsq{}}\PYG{p}{:} \PYG{p}{(}\PYG{n}{turn} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{)} \PYG{o}{\PYGZpc{}} \PYG{l+m+mi}{8}\PYG{p}{\PYGZcb{}}
@@ -314,11 +313,8 @@ Uses: {\hyperref[\detokenize{core/core:fragment-core.pair-logic}]{\sphinxcrossre
 \sphinxAtStartPar
 Fragment: {\hyperref[\detokenize{core/core:source-3}]{\sphinxcrossref{:core.pair\sphinxhyphen{}logic}}}
 
-\sphinxAtStartPar
-\sphinxstyleemphasis{Check (test)}
-
-\begingroup\fvset{fontsize=\small}
-
+\begingroup\fvset{fontsize=\small}\def\sphinxbelowcaptionspace{0pt}
+\sphinxSetupCaptionForVerbatim{Check (test)}
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
 \PYG{k}{module}\PYG{+w}{ }\PYG{n}{tb}\PYG{p}{;}
 \PYG{+w}{    }\PYG{k}{initial}\PYG{+w}{ }\PYG{n+nb}{\PYGZdl{}finish}\PYG{p}{;}
@@ -330,11 +326,8 @@ Fragment: {\hyperref[\detokenize{core/core:source-3}]{\sphinxcrossref{:core.pair
 \sphinxAtStartPar
 Verifies: {\hyperref[\detokenize{core/core:core.rotation}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{core.rotation}}}}}
 
-\sphinxAtStartPar
-\sphinxstyleemphasis{Mutant of build/rtl/core/core\_rotate.v, which core.rotation.test must catch}
-
-\begingroup\fvset{fontsize=\small}
-
+\begingroup\fvset{fontsize=\small}\def\sphinxbelowcaptionspace{0pt}
+\sphinxSetupCaptionForVerbatim{Mutant of build/rtl/core/core\_rotate.v, which core.rotation.test must catch}
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
 \PYG{g+gd}{\PYGZhy{}    assign next = turn + 3\PYGZsq{}d1;}
 \PYG{g+gi}{+    assign next = turn;}

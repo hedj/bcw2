@@ -44,8 +44,16 @@ details {
     margin: 0.5em 0;
 }
 
+/* The label of a block of code is the header of its box. The PDF takes its
+   background for the title of each block of code. */
 details > summary {
     cursor: pointer;
     font-size: 0.9em;
-    color: #555555;
+    background: #e0e0e0;
+    padding: 0.2em 0.6em;
+}
+
+details > div[class*="highlight-"],
+details > div[class*="highlight-"] pre {
+    margin-top: 0;
 }

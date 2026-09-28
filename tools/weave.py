@@ -41,6 +41,7 @@ from pathlib import Path
 from docutils import nodes
 from docutils.statemachine import StringList
 from sphinx import addnodes
+from sphinx.builders.latex.nodes import captioned_literal_block
 from sphinx.errors import NoUri
 from sphinx.util.nodes import make_refnode
 from sphinx.util.docutils import SphinxDirective
@@ -347,10 +348,14 @@ def weave_latex_chapter(root):
         if box["ids"]:
             box.insert(0, nodes.target(ids=box["ids"]))
             box["ids"] = []
+    # The label of each block is the title of its frame, with no space between them, so that it reads
+    # as the header of the code.
     for block in code_blocks(root, "twin") + code_blocks(root, "check") + code_blocks(root, "mutant"):
-        label = nodes.paragraph("", "", nodes.emphasis(text=summary(block)))
-        block.parent.insert(block.parent.index(block), label)
-        wrap(block, nodes.raw("", r"\begingroup\fvset{fontsize=\small}", format="latex"),
+        box = captioned_literal_block()
+        swap(block, box)
+        box += [nodes.caption(text=summary(block)), block]
+        wrap(box, nodes.raw("", r"\begingroup\fvset{fontsize=\small}\def\sphinxbelowcaptionspace{0pt}",
+                            format="latex"),
              nodes.raw("", r"\endgroup", format="latex"))
     sources = code_blocks(root, "source")
     if not sources:
@@ -449,11 +454,22 @@ def colours(css):
     return result
 
 
+# The title of a block of code: a bar across the top of its frame, in place of a numbered caption.
+# The frame of Sphinx reaches past the text by its border and padding, so the bar does too.
+TITLE = (r"\makeatletter\renewcommand*\sphinxSetupCaptionForVerbatim[1]{\needspace{\sphinxliteralblockneedspace}"
+         r"\def\sphinxVerbatimTitle{\spx@verb@boxes@fcolorbox@setup\fboxsep=3pt\noindent"
+         r"\hskip-\dimexpr\spx@boxes@border@left+\spx@boxes@padding@left\relax\rlap{\colorbox{bcwtitle}"
+         r"{\makebox[\dimexpr\linewidth+\spx@boxes@border@left+\spx@boxes@padding@left+\spx@boxes@padding@right"
+         r"+\spx@boxes@border@right-2\fboxsep][l]{\small\strut #1}}}}}\makeatother")
+
+
 def chunk_boxes():
-    """The LaTeX that gives the chunks of each label their box. Sphinx applies the
-    environment sphinxclass<name> to a container with the class <name>."""
-    lines = [BOX]
-    for label, (bar, background) in colours((STATIC / "weave.css").read_text()).items():
+    """The LaTeX that gives the chunks of each label their box, and each block of code its title.
+    Sphinx applies the environment sphinxclass<name> to a container with the class <name>."""
+    css = (STATIC / "weave.css").read_text()
+    title = re.search(r"details > summary\s*\{[^}]*background:\s*" + HEX, css).group(1).upper()
+    lines = [BOX, rf"\definecolor{{bcwtitle}}{{HTML}}{{{title}}}", TITLE]
+    for label, (bar, background) in colours(css).items():
         lines += [rf"\definecolor{{bcwbar{label}}}{{HTML}}{{{bar}}}",
                   rf"\definecolor{{bcwback{label}}}{{HTML}}{{{background}}}",
                   rf"\newenvironment{{sphinxclass{label}}}{{\begin{{bcwchunk}}{{bcwbar{label}}}{{bcwback{label}}}}}"
