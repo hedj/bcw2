@@ -1063,6 +1063,7 @@ Pipeline
                 input wire [31:0] port_pc, input wire [bcw_params::CORE_CONTEXT_WIDTH-1:0] port_index,
                 output wire [31:0] port_rd_pc, output wire port_rd_run, output wire [1:0] port_rd_cause,
                 output wire [bcw_params::CORE_CONTEXT_WIDTH-1:0] port_rd_index, output wire port_err,
+                output wire [bcw_params::CORE_CONTEXT_WIDTH-1:0] read_index_a, read_index_b,
                 output wire commit, commit_resume, commit_we, output wire [1:0] commit_cause,
                 output wire [bcw_params::CORE_TURN_WIDTH-1:0] commit_thread, output wire [4:0] commit_rd,
                 output wire [bcw_params::CORE_CONTEXT_WIDTH-1:0] commit_index,
@@ -1100,8 +1101,10 @@ Pipeline
        wire [31:0] a, b, w_wd;
        wire [CW+4:0] w_wa;
        wire w_we;
-       core_regfile regs (.clk, .ra({index[d_t], d_insn[19:15]}), .rb({index[d_t], d_insn[24:20]}), .we(w_we),
-                          .wa(w_wa), .wd(w_wd), .a, .b);
+       wire [CW+4:0] ra = {index[d_t], d_insn[19:15]}, rb = {index[d_t], d_insn[24:20]};
+       core_regfile regs (.clk, .ra, .rb, .we(w_we), .wa(w_wa), .wd(w_wd), .a, .b);
+       // The index of each read of the registers, for the proofs.
+       assign {read_index_a, read_index_b} = {ra[CW+4:5], rb[CW+4:5]};
        logic r_v, r_wide, r_alt; logic [10:0] r_class; logic [1:0] r_cause; logic [TW-1:0] r_t;
        logic [31:0] r_pc, r_imm, r_word; logic [14:7] r_insn;
 
@@ -1214,7 +1217,7 @@ Pipeline
        wire [3:0] data_be;
        wire data_we, port_rd_run, port_err, commit, commit_resume, commit_we;
        wire [1:0] port_rd_cause, commit_cause;
-       wire [3:0] port_rd_index, commit_index;
+       wire [3:0] port_rd_index, commit_index, read_index_a, read_index_b;
        wire [4:0] commit_rd;
        wire [31:0] commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next, commit_value;
        core dut (.*);
@@ -1226,8 +1229,13 @@ Pipeline
        // core.reset-quiet: in reset, the state of the stages is still that of power-up.
        always_comb if (!rst_n) assert (!data_we && !commit_we);
        always_comb if (step) assert (commit_thread == turns[20:18]);
-       // core.own-context: a write goes to the context of the index of its thread.
+       // core.own-context: a write goes to the context of the index of its thread, and so do the
+       // reads, in the stage D, 2 cycles after the turn of the thread.
        always_comb if (commit_we && port_thread == commit_thread) assert (commit_index == port_rd_index);
+       logic [1:0] age = 2'd0;
+       always_ff @(posedge clk) if (!age[1]) age <= age + 2'd1;
+       always_comb if (age[1] && port_thread == turns[5:3])
+           assert (read_index_a == port_rd_index && read_index_b == port_rd_index);
 
        // Each commit equals one step of the instruction from its word, its program counter, its two
        // registers and its loaded word, by the units that the equiv checks prove.
@@ -1277,6 +1285,12 @@ Pipeline
 
    -    assign w_wa = resume ? {index[rot_next], div_rd} : {index[w_t], w_rd};
    +    assign w_wa = resume ? {index[rot_next], div_rd} : {index[rot], w_rd};
+
+.. mutant:: build/rtl/core/core.v
+   :kills: core.depth.prove
+
+   -    wire [CW+4:0] ra = {index[d_t], d_insn[19:15]}, rb = {index[d_t], d_insn[24:20]};
+   +    wire [CW+4:0] ra = {index[x_t], d_insn[19:15]}, rb = {index[d_t], d_insn[24:20]};
 
 .. rationale::
 
@@ -1407,7 +1421,7 @@ Thread control
        wire commit, commit_resume, commit_we;
        wire [1:0] commit_cause;
        wire [4:0] commit_rd;
-       wire [3:0] commit_index;
+       wire [3:0] commit_index, read_index_a, read_index_b;
        wire [31:0] commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next, commit_value;
        core dut (.*);
 
