@@ -18,7 +18,8 @@ prove passes when SymbiYosys proves each assertion with the smtbmc engine and
 Yices, to the depth of the check, and the proof means something: SymbiYosys
 reaches the condition of each assertion within that depth (a cover of its
 enable), and each assertion of the harness fails when the instance dut is a cut
-point, whose outputs are free. An assertion whose condition never holds passes
+point, whose outputs are free. That run leaves out the assertions of the other
+modules, which hold for their own inputs whatever dut does. An assertion whose condition never holds passes
 by default, and one that holds for any dut does not test the design.
 
 An equiv passes when z3 proves that the module equals its twin. yosys writes
@@ -153,7 +154,8 @@ def run_meaning(check, top, work, files):
         return "the condition of an assertion never holds", "\n".join(lines) or proof_lines(cover)
     harness = {place for place in REACHED.findall(cover.stdout) if place.startswith(str(Path(check["file"]).absolute()))}
     havoc = symbiyosys(check, top, work.with_name(work.name + ".havoc"), files, "bmc",
-                       engine="smtbmc --keep-going yices", steps=f"cutpoint {top}/dut\n")
+                       engine="smtbmc --keep-going yices",
+                       steps=f"cutpoint {top}/dut\nchformal -assert -remove =A:top %n\n")
     held = sorted(harness - set(FAILED.findall(havoc.stdout)))
     if held:
         return "an assertion holds whatever dut does", "\n".join(f"{place}: holds with a free dut" for place in held)

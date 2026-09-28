@@ -978,28 +978,27 @@ Registers
        end
        assign a = zero_a ? 32'd0 : read_a;
        assign b = zero_b ? 32'd0 : read_b;
-   endmodule
-
-.. check:: prove
-   :verifies: core.registers, core.register-write
-
-   module core_regfile_props (input wire clk, we, input wire [8:0] wa, input wire [31:0] wd);
-       // Any one register, which both ports read in every cycle.
-       (* anyconst *) logic [8:0] slot;
-       wire [31:0] a, b;
-       core_regfile dut (.clk, .ra(slot), .rb(slot), .we, .wa, .wd, .a, .b);
-       logic [31:0] held, shown;
-       logic known = 1'b0, seen = 1'b0;
+   `ifdef FORMAL
+       // A proof sees only the ports, and the memory hides what it holds, so the file states its own
+       // invariant: it follows any one register, which both banks hold and each read gives.
+       (* anyconst *) logic [bcw_params::CORE_CONTEXT_WIDTH+4:0] f_reg;
+       logic [bcw_params::CORE_CONTEXT_WIDTH+4:0] f_ra, f_rb;
+       logic [31:0] f_value, f_was;
+       logic f_known = 1'b0, f_knew = 1'b0, f_read = 1'b0;
        always_ff @(posedge clk) begin
-           if (we && wa == slot) {held, known} <= {wd, 1'b1};
-           {shown, seen} <= {held, known};
+           if (we && wa == f_reg) {f_value, f_known} <= {wd, 1'b1};
+           {f_was, f_knew, f_ra, f_rb, f_read} <= {f_value, f_known, ra, rb, 1'b1};
        end
-       wire [31:0] want = slot[4:0] == 5'd0 ? 32'd0 : shown;
-       always_comb if (seen) assert (a == want && b == want);
+       wire [31:0] f_want = f_reg[4:0] == 5'd0 ? 32'd0 : f_was;
+       wire f_valid = f_read && (f_knew || f_reg[4:0] == 5'd0);
+       always_comb if (f_known) assert (bank_a[f_reg] == f_value && bank_b[f_reg] == f_value);
+       always_comb if (f_valid && f_ra == f_reg) assert (a == f_want);
+       always_comb if (f_valid && f_rb == f_reg) assert (b == f_want);
+   `endif
    endmodule
 
 .. mutant:: build/rtl/core/core_regfile.v
-   :kills: core.registers.prove
+   :kills: core.depth.prove
 
    -            bank_b[wa] <= wd;
    +            bank_b[rb] <= wd;
@@ -1207,10 +1206,10 @@ Pipeline
 
 .. check:: prove
    :verifies: core.depth, core.issue, core.own-state, core.own-context, core.step, core.suspend,
-              core.div-wait, core.reset-quiet
+              core.div-wait, core.registers, core.register-write, core.reset-quiet
    :depth: 10
 
-   module core_props (input wire clk, input wire [31:0] fetch_word, data_rdata, port_pc, a, b,
+   module core_props (input wire clk, input wire [31:0] fetch_word, data_rdata, port_pc,
                       input wire [2:0] port_thread, input wire [3:0] port_index, input wire port_we, port_run);
        logic rst_n = 1'b0;
        always_ff @(posedge clk) rst_n <= 1'b1;
@@ -1222,12 +1221,14 @@ Pipeline
        wire [3:0] port_rd_index;
        wire [8:0] ra, rb, wa;
        wire [2:0] port_rd_hold;
-       wire [31:0] wd, commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next;
-       // The registers are outside the core, so that their reads and writes are ports. The port reads
+       wire [31:0] wd, a, b, commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next;
+       // The registers are outside the core, so that their reads and writes are ports, and the proof
+       // holds the core with the real registers, whose own invariant it checks there. The port reads
        // any one thread, which the proof watches.
        (* anyconst *) logic [2:0] watched;
        wire [2:0] port_rd_thread = watched;
        core dut (.*);
+       core_regfile regs (.*);
 
        // core.depth: an instruction commits 7 cycles after the turn of its thread, so before its next turn.
        logic [20:0] turns;
