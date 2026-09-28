@@ -39,7 +39,7 @@ tangle:
 check:
 	$(SPHINX) -W --keep-going 2>&1 | $(RELATIVE)
 	@for f in $$(find build/rtl -name '*.v' | sort); do \
-	    verilator --lint-only --quiet-stats -Wall build/rtl/bcw_params.sv "$$f" 2>&1 | $(MAP) || exit 1; \
+	    verilator --lint-only --quiet-stats -Wall -y "$$(dirname "$$f")" build/rtl/bcw_params.sv "$$f" 2>&1 | $(MAP) || exit 1; \
 	    yosys -q -p "read_verilog -sv build/rtl/bcw_params.sv $$f" 2>&1 | $(MAP) || exit 1; \
 	done
 	$(PY) tools/run_checks.py

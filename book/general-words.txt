@@ -2,7 +2,9 @@
 # The rule doc.known-words in book/doc/doc.rst reads this list.
 a
 about
+access
 across
+address
 addresses
 after
 all
@@ -36,9 +38,12 @@ bits
 block
 book
 bound
+branch
 build
 burden
 by
+byte
+bytes
 can
 cannot
 capital
@@ -48,6 +53,7 @@ case
 change
 characters
 check
+class
 clock
 closure
 code
@@ -55,6 +61,8 @@ come
 comment
 compare
 completely
+compute
+condition
 copies
 copy
 count
@@ -63,6 +71,7 @@ counter
 cycle
 day
 days
+decode
 define
 definition
 digit
@@ -98,6 +107,7 @@ expands
 explanation
 exponent
 expression
+extend
 extension
 fact
 fail
@@ -113,6 +123,7 @@ follow
 for
 form
 formal
+format
 found
 from
 full
@@ -121,6 +132,7 @@ further
 generated
 give
 goal
+half
 hardware
 harm
 has
@@ -138,6 +150,7 @@ hyphen
 if
 ignore
 illegal
+immediate
 implementation
 in
 index
@@ -160,6 +173,7 @@ last
 later
 learns
 least
+leave
 less
 letter
 level
@@ -167,6 +181,7 @@ light
 line
 list
 literal
+load
 lower
 lower-case
 lowest
@@ -186,6 +201,8 @@ modulo
 more
 most
 much
+multiple
+multiply
 name
 needs
 next
@@ -199,7 +216,10 @@ on
 once
 one
 only
+opcode
 open
+operand
+operands
 operate
 operating
 operator
@@ -221,6 +241,7 @@ physics
 place
 plain
 procedure
+product
 program
 property
 prose
@@ -234,6 +255,7 @@ reading
 real
 record
 reduce
+refuse
 register
 relates
 request
@@ -253,6 +275,8 @@ satisfy
 script
 second
 security
+select
+selects
 send
 sentence
 serve
@@ -274,6 +298,7 @@ stated
 statement
 stay
 stop
+store
 stream
 structural
 structure

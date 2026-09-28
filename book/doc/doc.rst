@@ -205,7 +205,9 @@ Trace
    A :dfn:`check directive` is a ``check`` directive. Its argument is its kind, and its
    ``verifies`` option names the REQUIREMENTs that it checks. A ``test`` holds a testbench, and
    a ``prove`` holds properties. An ``equiv`` holds no code, and its ``module`` option names a
-   module that the check compares with a function of the twin.
+   module that the check compares with a function of the twin: the function that its ``twin``
+   option names, or else the function with the name of the module. Where these are two
+   functions, the check first compares the two functions as integers.
 
 .. requirement:: doc.check-kinds
    :parent: doc.traceable

@@ -482,6 +482,38 @@ class EquivTest:
         text, result = run(tmp_path, extra, chapter)
         assert (result.returncode == 0) == passes, result.stdout + result.stderr
 
+    # An 8-bit multiply from the partial products of its 4-bit halves.
+    MUL8 = ("input wire [7:0] a, b, output wire [15:0] y",
+            "assign y = 16'(a[3:0]) * b[3:0] + ((16'(a[3:0]) * b[7:4]) << 4) + ((16'(a[7:4]) * b[3:0]) << 4)\n"
+            "                  + ((16'(a[7:4]) * b[7:4]) << 8);")
+    RULE = "def mul8(a, b):\n    return {'y': a * b}\n"
+    SPLIT = ("def mul8_split(a, b):\n    al = a & 15\n    ah = a >> 4\n    bl = b & 15\n    bh = b >> 4\n"
+             "    return {'y': al * bl + ((al * bh) << 4) + ((ah * bl) << 4) + ((ah * bh) << 8)}\n")
+
+    def split_check(self, twin_text):
+        extra, chapter = self.module("mul8", *self.MUL8, twin_text)
+        return extra.replace("   :module: mul8\n", "   :module: mul8\n   :twin: mul8_split\n"), chapter
+
+    def test_a_twin_in_steps_is_proved_equal_to_the_rule_then_to_the_module(self, tmp_path):
+        text, result = run(tmp_path, *self.split_check(self.RULE + self.SPLIT))
+        assert result.returncode == 0, result.stdout + result.stderr
+
+    def test_steps_that_differ_from_the_rule_fail_with_the_inputs(self, tmp_path):
+        text, result = run(tmp_path, *self.split_check(self.RULE + self.SPLIT.replace("((ah * bh) << 8)",
+                                                                                      "((ah * bh) << 7)")))
+        assert result.returncode == 1
+        lines = result.stdout.splitlines()
+        assert lines[1] == failure(text, "the twin functions mul8_split and mul8 differ", 2)
+        match = re.fullmatch(r"    a=(\d+), b=(\d+): mul8 y=(\d+), mul8_split y=(\d+)", lines[2])
+        assert match, lines[2]
+        a, b, rule, steps = map(int, match.groups())
+        assert (rule, steps) == (a * b, a * b - ((a >> 4) * (b >> 4) << 7))
+
+    def test_steps_without_the_rule_fail(self, tmp_path):
+        text, result = run(tmp_path, *self.split_check(self.SPLIT))
+        assert result.returncode == 1
+        assert result.stdout.splitlines()[1] == failure(text, "the twin cannot be translated", 2)
+
     def test_a_requirement_without_a_twin_fails(self, tmp_path):
         start, end = GOOD.index("   .. twin::"), GOOD.index(TWIN) + len(TWIN) + 1
         text, result = run(tmp_path, "", GOOD[:start] + GOOD[end:])

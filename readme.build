@@ -192,7 +192,15 @@ An equiv passes when z3 proves that the module equals its twin for every
 value of the input ports. yosys writes the module as SMT. tools/twin.py
 translates the function of the twin to z3 terms. The function takes an
 argument for each input port, with the name of the port, in any order, and
-returns a dict with a value for each output port. If an output of the module differs from the value of the twin
+returns a dict with a value for each output port.
+
+A module that computes its outputs in steps, such as a multiply from its
+partial products, has a twin function for the steps too, which the twin
+option of the check names. z3 cannot relate the steps to the rule over
+bit-vectors, but it can over the integers. So the runner first proves the
+function of the steps equal to the function with the name of the module over
+the integers, then the module equal to the function of the steps over
+bit-vectors. If an output of the module differs from the value of the twin
 for one input, the runner prints that input and both outputs:
 
     book/core/core.rst:82: FAIL: [check] core.rotation.equiv: the module and the twin differ

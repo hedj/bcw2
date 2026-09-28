@@ -359,3 +359,385 @@ Instruction set
 
    A stock instruction set adds no concept and brings a toolchain that works. The ``C``
    extension makes code smaller, which eases the pressure on the memory pool.
+
+Decode
+======
+
+.. requirement:: core.decode
+   :parent: design.economy
+
+   The core shall decode each instruction as the class that ``RV32IM`` gives it, or as an
+   illegal instruction where ``RV32IM`` gives it no class.
+
+   .. twin::
+      :stamp: 0ac485f6
+
+      def core_decode(insn):
+          code = insn & 127
+          f3 = (insn >> 12) & 7
+          f7 = insn >> 25
+          shift = f3 == 1 or f3 == 5
+          base = f7 == 0 or (f7 == 32 and (f3 == 0 or f3 == 5))
+          imm = code == 19 and (not shift or f7 == 0 or (f3 == 5 and f7 == 32))
+          reg = code == 51 and base
+          muldiv = code == 51 and f7 == 1
+          lui = code == 55
+          auipc = code == 23
+          jal = code == 111
+          jalr = code == 103 and f3 == 0
+          branch = code == 99 and f3 != 2 and f3 != 3
+          load = code == 3 and (f3 <= 2 or f3 == 4 or f3 == 5)
+          store = code == 35 and f3 <= 2
+          fence = code == 15 and f3 == 0
+          ecall = insn == 115
+          legal = (lui or auipc or jal or jalr or branch or load or store or imm
+                   or reg or muldiv or fence or ecall)
+          return {'lui': 1 if lui else 0, 'auipc': 1 if auipc else 0,
+                  'jal': 1 if jal else 0, 'jalr': 1 if jalr else 0,
+                  'branch': 1 if branch else 0, 'load': 1 if load else 0,
+                  'store': 1 if store else 0, 'opimm': 1 if imm else 0,
+                  'op': 1 if reg else 0, 'mul': 1 if muldiv and f3 < 4 else 0,
+                  'div': 1 if muldiv and f3 >= 4 else 0,
+                  'ecall': 1 if ecall else 0, 'illegal': 0 if legal else 1,
+                  'alt': 1 if (reg or (imm and f3 == 5)) and f7 == 32 else 0}
+
+.. source:: build/rtl/core/core_decode.v
+   :implements: core.decode
+
+   module core_decode (input wire [31:0] insn,
+                       output wire lui, auipc, jal, jalr, branch, load, store, opimm, op, mul, div,
+                       output wire ecall, illegal, alt);
+       wire [6:0] code = insn[6:0], f7 = insn[31:25];
+       wire [2:0] f3 = insn[14:12];
+       wire shift = f3 == 3'd1 || f3 == 3'd5;
+       wire base = f7 == 7'd0 || (f7 == 7'd32 && (f3 == 3'd0 || f3 == 3'd5));
+       wire fence = code == 7'd15 && f3 == 3'd0;
+       assign lui = code == 7'd55;
+       assign auipc = code == 7'd23;
+       assign jal = code == 7'd111;
+       assign jalr = code == 7'd103 && f3 == 3'd0;
+       assign branch = code == 7'd99 && f3 != 3'd2 && f3 != 3'd3;
+       assign load = code == 7'd3 && f3 != 3'd3 && f3 < 3'd6;
+       assign store = code == 7'd35 && f3 < 3'd3;
+       assign opimm = code == 7'd19 && (!shift || f7 == 7'd0 || (f3 == 3'd5 && f7 == 7'd32));
+       assign op = code == 7'd51 && base;
+       assign mul = code == 7'd51 && f7 == 7'd1 && !f3[2];
+       assign div = code == 7'd51 && f7 == 7'd1 && f3[2];
+       assign ecall = insn == 32'h73;
+       assign illegal = !(lui || auipc || jal || jalr || branch || load || store || opimm || op || mul
+                          || div || fence || ecall);
+       assign alt = (op || opimm && f3 == 3'd5) && f7 == 7'd32;
+   endmodule
+
+.. check:: equiv
+   :verifies: core.decode
+   :module: core_decode
+
+.. requirement:: core.immediate
+   :parent: design.economy
+
+   The core shall take the immediate of an instruction from the bits that the format of its
+   opcode defines.
+
+   .. twin::
+      :stamp: 1fb99d2b
+
+      def extend(value, sign):
+          return value | (4294967296 - sign * 2) if value >= sign else value
+      def core_imm(insn):
+          code = insn & 127
+          top = insn >> 31
+          i = insn >> 20
+          s = ((insn >> 25) << 5) | ((insn >> 7) & 31)
+          b = ((top << 12) | (((insn >> 7) & 1) << 11) | (((insn >> 25) & 63) << 5)
+               | (((insn >> 8) & 15) << 1))
+          u = (insn >> 12) << 12
+          j = ((top << 20) | (((insn >> 12) & 255) << 12) | (((insn >> 20) & 1) << 11)
+               | (((insn >> 21) & 1023) << 1))
+          imm = (extend(i, 2048) if code == 3 or code == 19 or code == 103
+                 else extend(s, 2048) if code == 35
+                 else extend(b, 4096) if code == 99
+                 else u if code == 23 or code == 55
+                 else extend(j, 1048576) if code == 111 else 0)
+          return {'imm': imm}
+
+.. source:: build/rtl/core/core_imm.v
+   :implements: core.immediate
+
+   module core_imm (input wire [31:0] insn, output reg [31:0] imm);
+       always @* case (insn[6:0])
+           7'd3, 7'd19, 7'd103: imm = {{20{insn[31]}}, insn[31:20]};
+           7'd35: imm = {{20{insn[31]}}, insn[31:25], insn[11:7]};
+           7'd99: imm = {{19{insn[31]}}, insn[31], insn[7], insn[30:25], insn[11:8], 1'b0};
+           7'd23, 7'd55: imm = {insn[31:12], 12'd0};
+           7'd111: imm = {{11{insn[31]}}, insn[31], insn[19:12], insn[20], insn[30:21], 1'b0};
+           default: imm = 32'd0;
+       endcase
+   endmodule
+
+.. check:: equiv
+   :verifies: core.immediate
+   :module: core_imm
+
+.. rationale::
+
+   The decoder checks every field, not the opcode alone. An encoding outside ``RV32IM`` then
+   suspends its thread, and never runs as another instruction.
+
+Arithmetic
+==========
+
+.. requirement:: core.alu
+   :parent: design.economy
+
+   The core shall compute the result of each register and immediate operation of ``RV32I`` as
+   ``RV32I`` defines, from the ``f3`` field, the ``alt`` bit of its class and its two operands.
+
+   .. twin::
+      :stamp: 4fea14ab
+
+      def signed(v):
+          return v - 4294967296 if v >= 2147483648 else v
+      def left(v, n):
+          v1 = v << 1 if n & 1 != 0 else v
+          v2 = v1 << 2 if n & 2 != 0 else v1
+          v4 = v2 << 4 if n & 4 != 0 else v2
+          v8 = v4 << 8 if n & 8 != 0 else v4
+          return v8 << 16 if n & 16 != 0 else v8
+      def right(v, n):
+          v1 = v >> 1 if n & 1 != 0 else v
+          v2 = v1 >> 2 if n & 2 != 0 else v1
+          v4 = v2 >> 4 if n & 4 != 0 else v2
+          v8 = v4 >> 8 if n & 8 != 0 else v4
+          return v8 >> 16 if n & 16 != 0 else v8
+      def core_alu(f3, alt, a, b):
+          n = b & 31
+          y = ((a - b if alt == 1 else a + b) if f3 == 0
+               else left(a, n) if f3 == 1
+               else (1 if signed(a) < signed(b) else 0) if f3 == 2
+               else (1 if a < b else 0) if f3 == 3
+               else a ^ b if f3 == 4
+               else right(signed(a) if alt == 1 else a, n) if f3 == 5
+               else a | b if f3 == 6 else a & b)
+          return {'y': y & 4294967295}
+
+.. source:: build/rtl/core/core_alu.v
+   :implements: core.alu
+
+   module core_alu (input wire [2:0] f3, input wire alt, input wire [31:0] a, b,
+                    output reg [31:0] y);
+       always @* case (f3)
+           3'd0: y = alt ? a - b : a + b;
+           3'd1: y = a << b[4:0];
+           3'd2: y = {31'd0, $signed(a) < $signed(b)};
+           3'd3: y = {31'd0, a < b};
+           3'd4: y = a ^ b;
+           3'd5: y = alt ? $unsigned($signed(a) >>> b[4:0]) : a >> b[4:0];
+           3'd6: y = a | b;
+           default: y = a & b;
+       endcase
+   endmodule
+
+.. check:: equiv
+   :verifies: core.alu
+   :module: core_alu
+
+.. requirement:: core.branch
+   :parent: design.economy
+
+   Where an instruction is a branch, the core shall take it when the condition of its ``f3``
+   field holds for its two operands, as ``RV32I`` defines.
+
+   .. twin::
+      :stamp: 540f147e
+
+      def signed(v):
+          return v - 4294967296 if v >= 2147483648 else v
+      def core_branch(f3, a, b):
+          kind = f3 >> 1
+          holds = (a == b if kind <= 1 else signed(a) < signed(b) if kind == 2
+                   else a < b)
+          return {'taken': (1 if holds else 0) ^ (f3 & 1)}
+
+.. source:: build/rtl/core/core_branch.v
+   :implements: core.branch
+
+   module core_branch (input wire [2:0] f3, input wire [31:0] a, b, output wire taken);
+       wire less = f3[1] ? a < b : $signed(a) < $signed(b);
+       assign taken = (f3[2] ? less : a == b) ^ f3[0];
+   endmodule
+
+.. check:: equiv
+   :verifies: core.branch
+   :module: core_branch
+
+.. rationale::
+
+   Each operation is one expression of Verilog, and the tools map it to the logic of the chip.
+   A shifter or a compare built by hand would be faster, and harder to read.
+
+Multiply
+========
+
+.. requirement:: core.mul
+   :parent: design.economy
+
+   Where an instruction is a multiply, the core shall give the half of the product of its two
+   operands that ``RV32M`` defines for its ``f3`` field.
+
+   .. twin::
+      :stamp: 58a00296
+
+      def core_mul(f3, a, b):
+          x = a - 4294967296 if f3 != 3 and a >= 2147483648 else a
+          z = b - 4294967296 if f3 < 2 and b >= 2147483648 else b
+          p = x * z
+          return {'y': p & 4294967295 if f3 == 0 else (p >> 32) & 4294967295}
+      def core_mul_split(f3, a, b):
+          al = a & 65535
+          bl = b & 65535
+          ah = (a >> 16) - 65536 if f3 != 3 and a >= 2147483648 else a >> 16
+          bh = (b >> 16) - 65536 if f3 < 2 and b >= 2147483648 else b >> 16
+          p = al * bl + ((al * bh) << 16) + ((ah * bl) << 16) + ((ah * bh) << 32)
+          return {'y': p & 4294967295 if f3 == 0 else (p >> 32) & 4294967295}
+
+.. source:: build/rtl/core/core_mul_part.v
+   :implements: core.mul
+
+   module core_mul_part (input wire [1:0] f3, input wire [31:0] a, b,
+                         output wire [35:0] ll, lh, hl, hh);
+       wire [17:0] ah = {{2{f3 != 2'd3 && a[31]}}, a[31:16]};
+       wire [17:0] bh = {{2{!f3[1] && b[31]}}, b[31:16]};
+       assign ll = a[15:0] * b[15:0];
+       assign lh = $signed({2'b0, a[15:0]}) * $signed(bh);
+       assign hl = $signed(ah) * $signed({2'b0, b[15:0]});
+       assign hh = $signed(ah) * $signed(bh);
+   endmodule
+
+.. source:: build/rtl/core/core_mul_sum.v
+   :implements: core.mul
+
+   module core_mul_sum (input wire [1:0] f3, input wire [35:0] ll, lh, hl, hh,
+                        output wire [31:0] y);
+       wire [63:0] p = {28'd0, ll} + ({{28{lh[35]}}, lh} << 16) + ({{28{hl[35]}}, hl} << 16)
+                     + ({{28{hh[35]}}, hh} << 32);
+       assign y = f3 == 2'd0 ? p[31:0] : p[63:32];
+   endmodule
+
+.. source:: build/rtl/core/core_mul.v
+   :implements: core.mul
+
+   module core_mul (input wire [1:0] f3, input wire [31:0] a, b, output wire [31:0] y);
+       wire [35:0] ll, lh, hl, hh;
+       core_mul_part part (.f3, .a, .b, .ll, .lh, .hl, .hh);
+       core_mul_sum sum (.f3, .ll, .lh, .hl, .hh, .y);
+   endmodule
+
+.. check:: equiv
+   :verifies: core.mul
+   :module: core_mul
+   :twin: core_mul_split
+
+.. rationale::
+
+   The pipeline puts a register between the partial products and their sum, so each half
+   fits in a cycle. ``core_mul_split`` states those steps, and the check proves them equal to
+   the product.
+
+Memory access
+=============
+
+.. requirement:: core.load
+   :parent: design.economy
+
+   Where an instruction is a load, the core shall take the bytes that its ``f3`` field selects
+   from the word at its address, and extend the value as ``RV32I`` defines.
+
+   .. twin::
+      :stamp: 3ad13599
+
+      def core_load(f3, lo, word):
+          s = (word >> 8 if lo == 1 else word >> 16 if lo == 2
+               else word >> 24 if lo == 3 else word)
+          size = f3 & 3
+          byte = s & 255
+          half = s & 65535
+          y = ((byte | 4294967040 if f3 < 4 and byte >= 128 else byte) if size == 0
+               else (half | 4294901760 if f3 < 4 and half >= 32768 else half)
+               if size == 1 else s)
+          return {'y': y}
+
+.. source:: build/rtl/core/core_load.v
+   :implements: core.load
+
+   module core_load (input wire [2:0] f3, input wire [1:0] lo, input wire [31:0] word,
+                     output wire [31:0] y);
+       wire [31:0] s = word >> {lo, 3'd0};
+       assign y = f3[1:0] == 2'd0 ? {{24{!f3[2] && s[7]}}, s[7:0]}
+                : f3[1:0] == 2'd1 ? {{16{!f3[2] && s[15]}}, s[15:0]} : s;
+   endmodule
+
+.. check:: equiv
+   :verifies: core.load
+   :module: core_load
+
+.. requirement:: core.store
+   :parent: design.economy
+
+   Where an instruction is a store, the core shall write the bytes that its ``f3`` field
+   selects to the word at its address, and leave its other bytes.
+
+   .. twin::
+      :stamp: f30bb71e
+
+      def core_store(size, lo, data):
+          byte = data & 255
+          half = data & 65535
+          be = ((1 if lo == 0 else 2 if lo == 1 else 4 if lo == 2 else 8) if size == 0
+                else (3 if lo == 0 else 6 if lo == 1 else 12 if lo == 2 else 8)
+                if size == 1 else 15)
+          wdata = (byte * 16843009 if size == 0 else half * 65537 if size == 1
+                   else data)
+          return {'be': be, 'wdata': wdata}
+
+.. source:: build/rtl/core/core_store.v
+   :implements: core.store
+
+   module core_store (input wire [1:0] size, input wire [1:0] lo, input wire [31:0] data,
+                      output wire [3:0] be, output wire [31:0] wdata);
+       assign be = size == 2'd0 ? 4'b0001 << lo : size == 2'd1 ? 4'b0011 << lo : 4'b1111;
+       assign wdata = size == 2'd0 ? {4{data[7:0]}} : size == 2'd1 ? {2{data[15:0]}} : data;
+   endmodule
+
+.. check:: equiv
+   :verifies: core.store
+   :module: core_store
+
+.. requirement:: core.misaligned
+   :parent: design.economy
+
+   Where the address of a load or a store is not a multiple of the size of its access, the
+   core shall refuse the access.
+
+   .. twin::
+      :stamp: 9310d59b
+
+      def core_misaligned(size, lo):
+          span = 1 if size == 0 else 2 if size == 1 else 4 if size == 2 else 8
+          return {'fault': 0 if lo & (span - 1) == 0 else 1}
+
+.. source:: build/rtl/core/core_misaligned.v
+   :implements: core.misaligned
+
+   module core_misaligned (input wire [1:0] size, input wire [1:0] lo, output wire fault);
+       assign fault = (size[1] && lo != 2'd0) || (size[0] && lo[0]);
+   endmodule
+
+.. check:: equiv
+   :verifies: core.misaligned
+   :module: core_misaligned
+
+.. rationale::
+
+   ``RV32I`` lets a core refuse an access that is not aligned. The supervisor can do the
+   access for the thread, so the hardware needs no second cycle and no second port.

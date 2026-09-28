@@ -87,3 +87,31 @@ def test_errors_name_their_line(text, line, message):
     with pytest.raises(twin.TwinError) as error:
         twin.translate(text, "f", inputs, {})
     assert (error.value.line, str(error.value)) == (line, message)
+
+
+# Each expression has an integer form: no | or ^, and & only with a mask 2^k - 1.
+INTEGER_EXPRESSIONS = [
+    "x + y", "x - y", "x * y", "-x", "x ** 3", "(x - y) ** 2", "x // 3", "x % 3", "(x - y) // 3", "(x - y) % 3",
+    "(x - 20) // 7", "x << 2", "(x - y) >> 1", "x >> 3", "~x", "(x - y) & 15", "((x - y) * (x - y)) & 7",
+    "min(x, y)", "max(x - y, 2)", "abs(x - y)", "0 if x == y else 1", "x if x < y <= 9 else y", "x % LIMIT",
+]
+
+
+@pytest.mark.parametrize("expression", INTEGER_EXPRESSIONS)
+def test_each_integer_form_equals_python_on_every_input(expression):
+    inputs = {"x": z3.BitVec("x", 4), "y": z3.BitVec("y", 4)}
+    outputs, bounds = twin.integers(source(expression), "f", inputs, CONSTANTS)
+    namespace = dict(CONSTANTS)
+    exec(source(expression), namespace)
+    for x, y in itertools.product(range(16), repeat=2):
+        pairs = [(z3.Int("x"), z3.IntVal(x)), (z3.Int("y"), z3.IntVal(y))]
+        assert z3.simplify(z3.substitute(outputs["r"], *pairs)).as_long() == namespace["f"](x, y)["r"], (x, y)
+    assert [str(bound) for bound in bounds] == ["And(x >= 0, x < 16)", "And(y >= 0, y < 16)"]
+
+
+@pytest.mark.parametrize("expression", ["x & y", "x & 5", "x | y", "x ^ 3"])
+def test_a_bit_operation_without_an_integer_form_is_an_error(expression):
+    inputs = {"x": z3.BitVec("x", 4), "y": z3.BitVec("y", 4)}
+    with pytest.raises(twin.TwinError) as error:
+        twin.integers(source(expression), "f", inputs, CONSTANTS)
+    assert str(error.value) == f"{expression!r} has no integer form: & needs a mask 2^k - 1"

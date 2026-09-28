@@ -67,6 +67,11 @@ class Truth:
         self.build = functools.cache(build)
 
 
+def constant(number, width):
+    """The term of a number at a width, or as an exact integer at width None."""
+    return z3.IntVal(number) if width is None else z3.BitVecVal(number, width)
+
+
 def not_allowed(node):
     return TwinError(node.lineno, f"{ast.unparse(node)!r} is not in the twin language")
 
@@ -89,12 +94,12 @@ def functions(text):
     return {statement.name: statement for statement in tree.body}
 
 
-def translate(text, function, inputs, constants):
-    """(width, outputs) of the function of a twin, with its arguments bound to the input terms.
+def walked(text, function, inputs, constants):
+    """(walk, result, node) of the function of a twin, with its arguments bound by name to the inputs.
 
-    inputs maps each argument, by name, to a z3 bit-vector, and constants maps each PARAMETER
-    constant to its integer. outputs is the dict of terms that the function returns, or
-    its one term, at the width.
+    inputs maps each argument to a z3 bit-vector. The width of each input bounds its
+    integer: 0 up to 2^n - 1. Each value builds its term at a width, or, at width None, as
+    an exact integer of z3.
     """
     defined = functions(text)
     if function not in defined:
@@ -105,15 +110,44 @@ def translate(text, function, inputs, constants):
         raise TwinError(node.lineno, f"the function {function} takes {', '.join(names)}, "
                                      f"but the inputs are {', '.join(inputs)}")
     walk = Walk(defined, constants)
-    result = walk.call(node, [walk.integer(0, 2 ** inputs[name].size() - 1, False,
-                                           lambda width, term=inputs[name]: z3.ZeroExt(width - term.size(), term))
-                              for name in names], ())
+    arguments = [walk.integer(0, 2 ** inputs[name].size() - 1, False,
+                              lambda width, term=inputs[name]: z3.Int(str(term)) if width is None
+                              else z3.ZeroExt(width - term.size(), term)) for name in names]
+    return walk, walk.call(node, arguments, ()), node
+
+
+def translate(text, function, inputs, constants):
+    """(width, outputs) of the function of a twin, with its arguments bound to the input terms.
+
+    inputs maps each argument, by name, to a z3 bit-vector, and constants maps each PARAMETER
+    constant to its integer. outputs is the dict of terms that the function returns, or
+    its one term, at the width.
+    """
+    walk, result, node = walked(text, function, inputs, constants)
     width = max(value.bits() for value in walk.integers)
     if width > LIMIT:
         raise TwinError(node.lineno, f"the twin needs {width} bits, more than {LIMIT}")
     if isinstance(result, dict):
         return width, {name: value.build(width) for name, value in result.items()}
     return width, result.build(width)
+
+
+def integers(text, function, inputs, constants):
+    """(outputs, bounds) of the function of a twin as exact integers of z3.
+
+    Each input becomes an integer of the same name, and bounds holds its interval: 0 up to
+    2^n - 1 for an input of n bits. z3 is slow on the integer of a bit-vector (bv2int).
+
+    z3 proves identities of polynomials over the integers that it cannot prove over
+    bit-vectors, such as a product equal to the sum of its partial products. An integer
+    of z3 has no bits, so & takes only a mask of the form 2^k - 1, and | and ^ have no
+    integer form.
+    """
+    _, result, _ = walked(text, function, inputs, constants)
+    bounds = [z3.And(0 <= z3.Int(str(term)), z3.Int(str(term)) < 2 ** term.size()) for term in inputs.values()]
+    if isinstance(result, dict):
+        return {name: value.build(None) for name, value in result.items()}, bounds
+    return result.build(None), bounds
 
 
 def errors(text, constants):
@@ -152,7 +186,7 @@ class Walk:
         return value
 
     def literal(self, number):
-        return self.integer(number, number, True, lambda width: z3.BitVecVal(number, width))
+        return self.integer(number, number, True, lambda width: constant(number, width))
 
     def call(self, function, arguments, stack):
         """The value that a function of the twin returns: a dict of integers, or one value."""
@@ -219,7 +253,8 @@ class Walk:
                 return self.integer(-operand.high, -operand.low, operand.constant, lambda width: -operand.build(width))
             if isinstance(node.op, ast.Invert):
                 return self.integer(-operand.high - 1, -operand.low - 1, operand.constant,
-                                    lambda width: ~operand.build(width))
+                                    lambda width: -operand.build(width) - 1 if width is None
+                                    else ~operand.build(width))
             return operand
         if isinstance(node, ast.Compare):
             if not all(type(op) in COMPARISONS for op in node.ops):
@@ -257,7 +292,7 @@ class Walk:
             candidates = [left.low ** power, left.high ** power] + ([0] if left.low < 0 < left.high else [])
             return self.integer(min(candidates), max(candidates), left.constant,
                                 lambda width: functools.reduce(operator.mul, [left.build(width)] * power,
-                                                               z3.BitVecVal(1, width)))
+                                                               constant(1, width)))
         if op in (ast.FloorDiv, ast.Mod):
             divisor = self.constant(node.right, names, stack, 1, f"the divisor of {'//' if op is ast.FloorDiv else '%'}")
             # z3 % on bit-vectors is bvsmod, whose result has the sign of the divisor, as in Python.
@@ -273,10 +308,13 @@ class Walk:
             shift = self.constant(node.right, names, stack, 0, "the shift of << and >>")
             if op is ast.LShift:
                 return self.integer(left.low << shift, left.high << shift, left.constant,
-                                    lambda width: left.build(width) << shift)
-            # z3 >> on bit-vectors is the arithmetic shift, which rounds down, as in Python.
+                                    lambda width: left.build(width) * 2 ** shift if width is None
+                                    else left.build(width) << shift)
+            # z3 >> on bit-vectors is the arithmetic shift, and z3 / on integers by a positive
+            # divisor rounds down: both as in Python.
             return self.integer(left.low >> shift, left.high >> shift, left.constant,
-                                lambda width: left.build(width) >> shift)
+                                lambda width: left.build(width) / 2 ** shift if width is None
+                                else left.build(width) >> shift)
         if op in BITWISE:
             right = self.number(node.right, names, stack)
             bits = max(left.bits(), right.bits())
@@ -284,8 +322,16 @@ class Walk:
                 low, high = 0, (min(left.high, right.high) if op is ast.BitAnd else 2 ** (bits - 1) - 1)
             else:
                 low, high = -2 ** (bits - 1), 2 ** (bits - 1) - 1
-            return self.integer(low, high, left.constant and right.constant,
-                                lambda width: BITWISE[op](left.build(width), right.build(width)))
+            mask = right.constant and op is ast.BitAnd and right.low >= 0 and (right.low + 1) & right.low == 0
+            line = node.lineno
+
+            def build(width):
+                if width is not None:
+                    return BITWISE[op](left.build(width), right.build(width))
+                if not mask:
+                    raise TwinError(line, f"{ast.unparse(node)!r} has no integer form: & needs a mask 2^k - 1")
+                return left.build(width) % (right.low + 1)
+            return self.integer(low, high, left.constant and right.constant, build)
         raise not_allowed(node)
 
     def call_named(self, node, names, stack):
