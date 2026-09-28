@@ -382,8 +382,9 @@ the ./dev of that commit. So each commit runs in the environment that it
 pins, and edits that are not committed play no part. If either target
 fails, the hook stops the push. When the remote already has a commit of the
 branch, the hook then prints the complexity measures of the pushed commit
-beside those of that commit, and marks each measure that got worse. The table
-never stops a push. A push takes about 35 seconds.
+beside those of that commit, and marks each measure that got worse. For that
+commit it runs make tangle alone, because the measures need no checks. The
+table never stops a push.
 
 
 Changing a tool

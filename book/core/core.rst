@@ -1141,6 +1141,7 @@ Pipeline
 
 .. check:: prove
    :verifies: core.depth, core.step, core.suspend
+   :depth: 10
 
    module core_props (input wire clk, input wire [31:0] fetch_word, data_rdata, port_pc,
                       input wire [2:0] port_thread, input wire port_we, port_run);
