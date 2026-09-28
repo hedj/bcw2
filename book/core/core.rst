@@ -1085,6 +1085,12 @@ Pipeline
        wire [T-1:0][CW-1:0] index;
        logic [TW-1:0] rot, rot_next;
        core_rotate rotate (.turn(rot), .next(rot_next));
+       // The thread of the write slot of the next cycle, whose divide result the core registers a cycle
+       // before it writes it: choosing and negating that result held the critical path.
+       logic [TW-1:0] ahead;
+       wire [TW-1:0] ahead_1, ahead_2;
+       core_rotate step_1 (.turn(rot_next), .next(ahead_1));
+       core_rotate step_2 (.turn(ahead_1), .next(ahead_2));
        assign turn = rot;
 
        // F: fetch the word at the program counter of the thread of the turn.
@@ -1130,9 +1136,11 @@ Pipeline
        wire e_pick = e_class[10:7] != 4'd0;
        wire e_we = e_class[10:7] != 4'd0 || e_load || e_opimm || e_class[2] || e_mul;
        wire [31:0] div_result;
+       logic [31:0] div_value;
        wire [4:0] div_rd;
+       logic [4:0] div_dest;
        core_div divide (.clk, .rst_n, .req(e_v && e_div && e_cause == NONE), .req_thread(e_t), .f3(f3[1:0]),
-                        .a(e_a), .b(e_b), .req_rd(e_insn[11:7]), .thread(rot_next),
+                        .a(e_a), .b(e_b), .req_rd(e_insn[11:7]), .thread(ahead),
                         .result(div_result), .rd(div_rd));
        logic m1_v, m1_we, m1_load, m1_store, m1_mul, m1_div; logic [1:0] m1_cause; logic [TW-1:0] m1_t;
        logic [4:0] m1_rd; logic [2:0] m1_f3; logic [31:0] m1_pc, m1_word, m1_a, m1_b, m1_addr, m1_res, m1_next, m1_other;
@@ -1160,8 +1168,8 @@ Pipeline
        wire retire = w_v && w_cause == NONE;
        wire resume = hold[rot_next] == 3'd1;
        assign we = rst_n && (retire && w_we_r || resume);
-       assign wa = resume ? {index[rot_next], div_rd} : {index[w_t], w_rd};
-       assign wd = resume ? div_result : w_load ? loaded : w_res;
+       assign wa = resume ? {index[rot_next], div_dest} : {index[w_t], w_rd};
+       assign wd = resume ? div_value : w_load ? loaded : w_res;
 
        // Each change of the state of a thread, for the proofs and the tests.
        assign {commit, commit_resume, commit_cause, commit_thread}
@@ -1178,6 +1186,8 @@ Pipeline
 
        always_ff @(posedge clk) begin
            rot <= rst_n ? rot_next : '0;
+           ahead <= rst_n ? ahead_2 : TW'(2);
+           {div_value, div_dest} <= {div_result, div_rd};
            {q_we, q_thread, q_pc, q_run, q_index}
                <= {rst_n && port_we && !port_err, port_thread, port_pc, port_run, port_index};
            {x_v, x_t, x_pc} <= {rst_n && run[rot] && hold[rot] == 3'd0, rot, pc[rot]};
@@ -1343,8 +1353,8 @@ Pipeline
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
 
-   -    assign wa = resume ? {index[rot_next], div_rd} : {index[w_t], w_rd};
-   +    assign wa = resume ? {index[rot_next], div_rd} : {index[rot], w_rd};
+   -    assign wa = resume ? {index[rot_next], div_dest} : {index[w_t], w_rd};
+   +    assign wa = resume ? {index[rot_next], div_dest} : {index[rot], w_rd};
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
