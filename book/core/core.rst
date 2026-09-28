@@ -1206,7 +1206,7 @@ Pipeline
 
 .. check:: prove
    :verifies: core.depth, core.issue, core.own-state, core.own-context, core.step, core.suspend,
-              core.div-wait, core.registers, core.register-write, core.reset-quiet
+              core.div-wait, core.index-write, core.registers, core.register-write, core.reset-quiet
    :depth: 10
 
    module core_props (input wire clk, input wire [31:0] fetch_word, data_rdata, port_pc,
@@ -1230,20 +1230,13 @@ Pipeline
        core dut (.*);
        core_regfile regs (.*);
 
-       // core.depth: an instruction commits 7 cycles after the turn of its thread, so before its next turn.
-       logic [20:0] turns;
-       always_ff @(posedge clk) turns <= {turns[17:0], turn};
        wire step = rst_n && commit && !commit_resume;
        // core.reset-quiet: in reset, the state of the stages is still that of power-up.
        always_comb if (!rst_n) assert (!data_we && !we);
-       always_comb if (step) assert (commit_thread == turns[20:18]);
-       // core.own-context: a write goes to the context of the index of its thread, and so do the
-       // reads, in the stage D, 2 cycles after the turn of the thread.
+       // core.own-context: a write goes to the context of the index of its thread.
        always_comb if (we && commit_thread == watched) assert (wa[8:5] == port_rd_index);
        logic [3:0] age = 4'd0;
        always_ff @(posedge clk) if (age != 4'd8) age <= age + 4'd1;
-       always_comb if (age >= 4'd2 && turns[5:3] == watched)
-           assert (ra[8:5] == port_rd_index && rb[8:5] == port_rd_index);
 
        // Each commit equals one step of the instruction from its word, its program counter, its two
        // registers and its loaded word, by the units that the equiv checks prove.
@@ -1275,9 +1268,9 @@ Pipeline
        always_comb if (done && writes && !mul) assert (wd == value);
        always_comb if (done && (load || store)) assert (commit_addr == addr);
 
-       // core.own-state, core.issue: a model that names only the turn, the writes of the port to the
-       // watched thread and its commits gives its next state, and when it starts and commits each
-       // instruction.
+       // core.own-state, core.issue, core.depth, core.index-write: a model that names only the turn,
+       // the writes of the port to the watched thread and its commits gives its next state, and when
+       // it starts each instruction and commits it, 7 cycles later.
        wire mine = commit && commit_thread == watched, slot = 3'(turn + 3'd1) == watched;
        logic [31:0] m_pc, set_pc;
        logic m_run, set_now, set_run, modelled = 1'b0;
@@ -1320,6 +1313,9 @@ Pipeline
            if (started[5]) load_at <= data_rdata;
        end
        always_comb if (rst_n && turn == watched) assert (fetch_addr == port_rd_pc);
+       // core.own-context: the reads, in the stage D, are in the context of the index of the thread.
+       always_comb if (age >= 4'd2 && started[1])
+           assert (ra[8:5] == port_rd_index && rb[8:5] == port_rd_index);
        always_comb if (age == 4'd8 && started[6])
            assert ({commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load} ==
                    {pc_at, word_at, a_at, b_at, addr_at, load_at}
@@ -1439,27 +1435,8 @@ Thread control
            end
    endmodule
 
-.. check:: prove
-   :verifies: core.index-write
-
-   module core_thread_props (input wire clk, rst_n, slot, retire, stop, div, set, set_run,
-                             input wire [31:0] next, set_pc, input wire [1:0] why,
-                             input wire [3:0] set_index);
-       wire [31:0] pc;
-       wire run;
-       wire [2:0] hold;
-       wire [1:0] cause;
-       wire [3:0] index;
-       core_thread #(.ID(5)) dut (.*);
-       logic started = 1'b0, was_reset, was_set;
-       logic [3:0] was_index, last;
-       always_ff @(posedge clk)
-           {started, was_reset, was_set, was_index, last} <= {1'b1, !rst_n, set, set_index, index};
-       always_comb if (started) assert (index == (was_reset ? 4'd5 : was_set ? was_index : last));
-   endmodule
-
 .. mutant:: build/rtl/core/core_thread.v
-   :kills: core.index-write.prove
+   :kills: core.depth.prove
 
    -            if (retire) {pc, hold} <= {next, div ? DIVIDE : 3'd0};
    +            if (retire) {pc, hold, index} <= {next, div ? DIVIDE : 3'd0, set_index};
