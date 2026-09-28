@@ -8,7 +8,7 @@ Overview
 ========
 
 The core runs every thread of the machine through one pipeline. The threads take turns in a
-fixed order, so no thread can change when another thread gets its turn.
+fixed order, so no thread can change when another thread has its turn.
 
 Rotation
 ========
@@ -43,7 +43,7 @@ Rotation
 
 .. parameter:: core.clock
    :parent: core.core
-   :value: 110 * 10 ** 6
+   :value: 80 * 10 ** 6
    :unit: Hz
 
    The number of cycles in a second.
@@ -921,3 +921,553 @@ Divide
 
    One step for each thread in each cycle gives a fixed time of 32 cycles, which is 5 turns. A
    radix-16 divider of ``bcw-1`` took 9 turns and 3 modules.
+
+Registers
+=========
+
+.. requirement:: core.registers
+   :parent: design.economy
+
+   The core shall give each thread 32 registers of 32 bits, and read register 0 as zero.
+
+.. source:: build/rtl/core/core_regfile.v
+   :implements: core.registers
+
+   module core_regfile (input wire clk,
+                        input wire [bcw_params::CORE_TURN_WIDTH+4:0] ra, rb, wa,
+                        input wire we, input wire [31:0] wd, output wire [31:0] a, b);
+       logic [31:0] bank_a [2 ** (bcw_params::CORE_TURN_WIDTH + 5)];
+       logic [31:0] bank_b [2 ** (bcw_params::CORE_TURN_WIDTH + 5)];
+       logic [31:0] read_a, read_b;
+       logic zero_a, zero_b;
+       always_ff @(posedge clk) begin
+           if (we) begin
+               bank_a[wa] <= wd;
+               bank_b[wa] <= wd;
+           end
+           read_a <= bank_a[ra];
+           read_b <= bank_b[rb];
+           zero_a <= ra[4:0] == 5'd0;
+           zero_b <= rb[4:0] == 5'd0;
+       end
+       assign a = zero_a ? 32'd0 : read_a;
+       assign b = zero_b ? 32'd0 : read_b;
+   endmodule
+
+.. rationale::
+
+   Two copies of the registers give two reads in one cycle from the block memory of the chip.
+   Register 0 reads as zero by a compare, not by the contents of the memory.
+
+Pipeline
+========
+
+.. definition:: core.stage
+   :parent: core.core
+
+   A :dfn:`stage` is one cycle of the work on an instruction. The core has 8 stages: fetch,
+   expand, decode, read, execute, address, data and write.
+
+.. requirement:: core.depth
+   :parent: design.economy
+
+   The core shall finish each instruction of a thread before the next turn of the thread.
+
+.. requirement:: core.step
+   :parent: design.economy
+
+   When an instruction finishes, the core shall change the state of its thread as one step
+   of ``RV32IMC`` from the word of the instruction, its program counter, its registers and
+   its loaded word.
+
+.. source:: build/rtl/core/core_expand.v
+   :implements: core.step
+
+   module core_expand (input wire [31:0] word, output wire [31:0] insn, output wire illegal, wide);
+       wire [31:0] i0, i1, i2;
+       wire b0, b1, b2;
+       core_rvc0 q0 (.c(word[15:0]), .insn(i0), .illegal(b0));
+       core_rvc1 q1 (.c(word[15:0]), .insn(i1), .illegal(b1));
+       core_rvc2 q2 (.c(word[15:0]), .insn(i2), .illegal(b2));
+       assign wide = word[1:0] == 2'd3;
+       assign {insn, illegal} = word[1:0] == 2'd0 ? {i0, b0} : word[1:0] == 2'd1 ? {i1, b1}
+                              : word[1:0] == 2'd2 ? {i2, b2} : {word, 1'b0};
+   endmodule
+
+.. source:: build/rtl/core/core.v
+   :implements: core.depth, core.step, core.suspend, core.div-wait, core.port-write, core.reset
+
+   module core (input wire clk, rst_n, output wire [bcw_params::CORE_TURN_WIDTH-1:0] turn,
+                output wire [31:0] fetch_addr, input wire [31:0] fetch_word,
+                output wire [31:0] data_addr, output wire [3:0] data_be, output wire data_we,
+                output wire [31:0] data_wdata, input wire [31:0] data_rdata,
+                input wire [bcw_params::CORE_TURN_WIDTH-1:0] port_thread, input wire port_we, port_run,
+                input wire [31:0] port_pc, output wire [31:0] port_rd_pc, output wire port_rd_run,
+                output wire [1:0] port_rd_cause, output wire port_err,
+                output wire commit, commit_resume, commit_we, output wire [1:0] commit_cause,
+                output wire [bcw_params::CORE_TURN_WIDTH-1:0] commit_thread, output wire [4:0] commit_rd,
+                output wire [31:0] commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load,
+                output wire [31:0] commit_next, commit_value);
+       localparam int T = bcw_params::CORE_THREADS, TW = bcw_params::CORE_TURN_WIDTH;
+       localparam logic [1:0] NONE = 2'd0, ECALL = 2'd1, ILLEGAL = 2'd2, MISALIGNED = 2'd3;
+
+       // The state of each thread, which only the stage W, the divider and the port write.
+       logic [31:0] pc [T];
+       logic run [T], waiting [T];
+       logic [1:0] cause [T];
+       logic [TW-1:0] rot, rot_next;
+       core_rotate rotate (.turn(rot), .next(rot_next));
+       assign turn = rot;
+
+       // F: fetch the word at the program counter of the thread of the turn.
+       assign fetch_addr = pc[rot];
+       logic x_v; logic [TW-1:0] x_t; logic [31:0] x_pc;
+
+       // X: expand a compressed instruction.
+       wire [31:0] x_insn;
+       wire x_bad, x_wide;
+       core_expand expand (.word(fetch_word), .insn(x_insn), .illegal(x_bad), .wide(x_wide));
+       logic d_v, d_bad, d_wide; logic [TW-1:0] d_t; logic [31:0] d_pc, d_insn, d_word;
+
+       // D: decode, and read the registers.
+       wire lui, auipc, jal, jalr, branch, load, store, opimm, op, mul, div, ecall, illegal, alt;
+       wire [31:0] d_imm;
+       core_decode decode (.insn(d_insn), .lui, .auipc, .jal, .jalr, .branch, .load, .store, .opimm, .op,
+                           .mul, .div, .ecall, .illegal, .alt);
+       core_imm immediate (.insn(d_insn), .imm(d_imm));
+       wire [31:0] a, b, w_wd;
+       wire [TW+4:0] w_wa;
+       wire w_we;
+       core_regfile regs (.clk, .ra({d_t, d_insn[19:15]}), .rb({d_t, d_insn[24:20]}), .we(w_we), .wa(w_wa),
+                          .wd(w_wd), .a, .b);
+       logic r_v, r_wide, r_alt; logic [10:0] r_class; logic [1:0] r_cause; logic [TW-1:0] r_t;
+       logic [31:0] r_pc, r_imm, r_word; logic [14:7] r_insn;
+
+       // R: the registers arrive.
+       logic e_v, e_wide, e_alt; logic [10:0] e_class; logic [1:0] e_cause; logic [TW-1:0] e_t;
+       logic [31:0] e_pc, e_imm, e_word, e_a, e_b; logic [14:7] e_insn;
+
+       // E: execute. The class bits are, in order, lui auipc jal jalr branch load store opimm op mul div.
+       wire e_lui = e_class[10], e_auipc = e_class[9], e_jal = e_class[8], e_jalr = e_class[7];
+       wire e_branch = e_class[6], e_load = e_class[5], e_store = e_class[4], e_opimm = e_class[3];
+       wire e_mul = e_class[1], e_div = e_class[0];
+       wire [2:0] f3 = e_insn[14:12];
+       wire [31:0] alu_y, sum = e_a + e_imm, link = e_pc + (e_wide ? 32'd4 : 32'd2);
+       wire taken, fault;
+       core_alu alu (.f3, .alt(e_alt), .a(e_a), .b(e_opimm ? e_imm : e_b), .y(alu_y));
+       core_branch compare (.f3, .a(e_a), .b(e_b), .taken);
+       core_misaligned align (.size(f3[1:0]), .lo(sum[1:0]), .fault);
+       wire [31:0] next = e_jal || e_branch && taken ? e_pc + e_imm : e_jalr ? {sum[31:1], 1'b0} : link;
+       wire [1:0] e_stop = e_cause != NONE ? e_cause : (e_load || e_store) && fault ? MISALIGNED : NONE;
+       wire [31:0] e_res = e_lui ? e_imm : e_auipc ? e_pc + e_imm : e_jal || e_jalr ? link : alu_y;
+       wire e_we = e_class[10:7] != 4'd0 || e_load || e_opimm || e_class[2] || e_mul;
+       wire div_done;
+       wire [31:0] div_result;
+       wire [4:0] div_rd;
+       core_div divide (.clk, .rst_n, .req(e_v && e_div && e_stop == NONE), .req_thread(e_t), .f3(f3[1:0]),
+                        .a(e_a), .b(e_b), .req_rd(e_insn[11:7]), .thread(rot_next), .done(div_done),
+                        .result(div_result), .rd(div_rd));
+       logic m1_v, m1_we, m1_load, m1_store, m1_mul, m1_div; logic [1:0] m1_cause; logic [TW-1:0] m1_t;
+       logic [4:0] m1_rd; logic [2:0] m1_f3; logic [31:0] m1_pc, m1_word, m1_a, m1_b, m1_addr, m1_res, m1_next;
+
+       // M1: send the address of the data, and form the partial products.
+       wire [35:0] ll, lh, hl, hh;
+       core_mul_part part (.f3(m1_f3[1:0]), .a(m1_a), .b(m1_b), .ll, .lh, .hl, .hh);
+       core_store place (.size(m1_f3[1:0]), .lo(m1_addr[1:0]), .data(m1_b), .be(data_be), .wdata(data_wdata));
+       assign data_addr = m1_addr;
+       assign data_we = m1_v && m1_store && m1_cause == NONE;
+       logic m2_v, m2_we, m2_load, m2_mul, m2_div; logic [1:0] m2_cause; logic [TW-1:0] m2_t;
+       logic [4:0] m2_rd; logic [2:0] m2_f3; logic [31:0] m2_pc, m2_word, m2_a, m2_b, m2_addr, m2_res, m2_next;
+       logic [35:0] m2_ll, m2_lh, m2_hl, m2_hh;
+
+       // M2: the loaded word arrives, and the partial products add up.
+       wire [31:0] product;
+       core_mul_sum total (.f3(m2_f3[1:0]), .ll(m2_ll), .lh(m2_lh), .hl(m2_hl), .hh(m2_hh), .y(product));
+       logic w_v, w_we_r, w_load, w_div; logic [1:0] w_cause; logic [TW-1:0] w_t; logic [4:0] w_rd;
+       logic [2:0] w_f3; logic [31:0] w_pc, w_word, w_a, w_b, w_addr, w_res, w_next, w_data;
+
+       // W: the one place that an instruction changes the state of its thread.
+       wire [31:0] loaded;
+       core_load extract (.f3(w_f3), .lo(w_addr[1:0]), .word(w_data), .y(loaded));
+       wire retire = w_v && w_cause == NONE;
+       wire resume = waiting[rot_next] && div_done;
+       assign w_we = retire && w_we_r || resume;
+       assign w_wa = resume ? {rot_next, div_rd} : {w_t, w_rd};
+       assign w_wd = resume ? div_result : w_load ? loaded : w_res;
+
+       // Each change of the state of a thread, for the proofs and the tests.
+       assign {commit, commit_resume, commit_we, commit_cause, commit_thread, commit_rd}
+           = {w_v || resume, resume, w_we, resume ? NONE : w_cause, resume ? rot_next : w_t, w_wa[4:0]};
+       assign {commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next, commit_value}
+           = {w_pc, w_word, w_a, w_b, w_addr, w_data, w_next, w_wd};
+
+       // The port writes a thread only while it is suspended, with no divide and no port write pending.
+       logic q_we, q_run; logic [TW-1:0] q_thread; logic [31:0] q_pc;
+       assign port_err = port_we && (run[port_thread] || waiting[port_thread] || q_we && q_thread == port_thread);
+       assign {port_rd_pc, port_rd_run, port_rd_cause} = {pc[port_thread], run[port_thread], cause[port_thread]};
+
+       always_ff @(posedge clk) begin
+           rot <= rst_n ? rot_next : '0;
+           {q_we, q_thread, q_pc, q_run} <= {rst_n && port_we && !port_err, port_thread, port_pc, port_run};
+           {x_v, x_t, x_pc} <= {rst_n && run[rot] && !waiting[rot], rot, pc[rot]};
+           {d_v, d_t, d_pc, d_insn, d_word, d_bad, d_wide} <= {rst_n && x_v, x_t, x_pc, x_insn, fetch_word, x_bad, x_wide};
+           {r_v, r_t, r_pc, r_word, r_insn, r_imm, r_wide, r_alt} <= {rst_n && d_v, d_t, d_pc, d_word, d_insn[14:7],
+                                                                      d_imm, d_wide, alt};
+           r_class <= {lui, auipc, jal, jalr, branch, load, store, opimm, op, mul, div};
+           r_cause <= ecall ? ECALL : d_bad || illegal ? ILLEGAL : NONE;
+           {e_v, e_t, e_pc, e_word, e_insn, e_imm, e_wide, e_alt, e_class, e_cause, e_a, e_b}
+               <= {rst_n && r_v, r_t, r_pc, r_word, r_insn, r_imm, r_wide, r_alt, r_class, r_cause, a, b};
+           {m1_v, m1_t, m1_pc, m1_word, m1_a, m1_b, m1_cause, m1_rd, m1_f3, m1_addr, m1_res, m1_next}
+               <= {rst_n && e_v, e_t, e_pc, e_word, e_a, e_b, e_stop, e_insn[11:7], f3, sum, e_res, next};
+           {m1_we, m1_load, m1_store, m1_mul, m1_div} <= {e_we, e_load, e_store, e_mul, e_div};
+           {m2_v, m2_t, m2_pc, m2_word, m2_a, m2_b, m2_cause, m2_rd, m2_f3, m2_addr, m2_res, m2_next}
+               <= {rst_n && m1_v, m1_t, m1_pc, m1_word, m1_a, m1_b, m1_cause, m1_rd, m1_f3, m1_addr, m1_res, m1_next};
+           {m2_we, m2_load, m2_mul, m2_div, m2_ll, m2_lh, m2_hl, m2_hh} <= {m1_we, m1_load, m1_mul, m1_div, ll, lh, hl, hh};
+           {w_v, w_t, w_pc, w_word, w_a, w_b, w_cause, w_rd, w_f3, w_addr, w_next, w_data}
+               <= {rst_n && m2_v, m2_t, m2_pc, m2_word, m2_a, m2_b, m2_cause, m2_rd, m2_f3, m2_addr, m2_next, data_rdata};
+           {w_we_r, w_load, w_div, w_res} <= {m2_we, m2_load, m2_div, m2_mul ? product : m2_res};
+       end
+
+       always_ff @(posedge clk)
+           if (!rst_n)
+               for (int t = 0; t < T; t++) {pc[t], run[t], waiting[t], cause[t]} <= {32'd0, t == 0, 1'b0, NONE};
+           else begin
+               if (retire) {pc[w_t], waiting[w_t]} <= {w_next, w_div};
+               else if (w_v) {run[w_t], cause[w_t]} <= {1'b0, w_cause};
+               if (resume) waiting[rot_next] <= 1'b0;
+               if (q_we) {pc[q_thread], run[q_thread]} <= {q_pc, q_run};
+           end
+   endmodule
+
+.. check:: prove
+   :verifies: core.depth, core.step, core.suspend
+
+   module core_props (input wire clk, input wire [31:0] fetch_word, data_rdata, port_pc,
+                      input wire [2:0] port_thread, input wire port_we, port_run);
+       logic rst_n = 1'b0;
+       always_ff @(posedge clk) rst_n <= 1'b1;
+       wire [2:0] turn, commit_thread;
+       wire [31:0] fetch_addr, data_addr, data_wdata, port_rd_pc;
+       wire [3:0] data_be;
+       wire data_we, port_rd_run, port_err, commit, commit_resume, commit_we;
+       wire [1:0] port_rd_cause, commit_cause;
+       wire [4:0] commit_rd;
+       wire [31:0] commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next, commit_value;
+       core dut (.*);
+
+       // core.depth: an instruction commits 7 cycles after the turn of its thread, so before its next turn.
+       logic [20:0] turns;
+       always_ff @(posedge clk) turns <= {turns[17:0], turn};
+       wire step = rst_n && commit && !commit_resume;
+       always_comb if (step) assert (commit_thread == turns[20:18]);
+
+       // Each commit equals one step of the instruction from its word, its program counter, its two
+       // registers and its loaded word, by the units that the equiv checks prove.
+       wire [31:0] insn, imm, alu_y, product, loaded;
+       wire bad, wide, lui, auipc, jal, jalr, branch, load, store, opimm, op, mul, div, ecall, illegal, alt;
+       wire taken, fault;
+       wire [2:0] f3 = insn[14:12];
+       core_expand expand (.word(commit_word), .insn, .illegal(bad), .wide);
+       core_decode decode (.insn, .lui, .auipc, .jal, .jalr, .branch, .load, .store, .opimm, .op, .mul, .div,
+                           .ecall, .illegal, .alt);
+       core_imm immediate (.insn, .imm);
+       wire [31:0] addr = commit_a + imm, link = commit_pc + (wide ? 32'd4 : 32'd2);
+       core_alu alu (.f3, .alt, .a(commit_a), .b(opimm ? imm : commit_b), .y(alu_y));
+       core_branch compare (.f3, .a(commit_a), .b(commit_b), .taken);
+       core_misaligned align (.size(f3[1:0]), .lo(addr[1:0]), .fault);
+       core_mul multiply (.f3(f3[1:0]), .a(commit_a), .b(commit_b), .y(product));
+       core_load extract (.f3, .lo(addr[1:0]), .word(commit_load), .y(loaded));
+       wire [1:0] cause = ecall ? 2'd1 : bad || illegal ? 2'd2 : (load || store) && fault ? 2'd3 : 2'd0;
+       wire [31:0] next = jal || branch && taken ? commit_pc + imm : jalr ? {addr[31:1], 1'b0} : link;
+       wire we = lui || auipc || jal || jalr || load || opimm || op || mul;
+       wire [31:0] value = lui ? imm : auipc ? commit_pc + imm : jal || jalr ? link : load ? loaded
+                         : mul ? product : alu_y;
+       wire done = step && cause == 2'd0;
+       always_comb if (step) assert (commit_cause == cause);
+       always_comb if (done) assert (commit_next == next && commit_we == we);
+       always_comb if (done && we) assert (commit_rd == insn[11:7]);
+       // The solver cannot relate the multiply after the registers of the pipeline to a multiply
+       // here. The equiv of core.mul proves the units, and the test runs them in the pipeline.
+       always_comb if (done && we && !mul) assert (commit_value == value);
+       always_comb if (done && (load || store)) assert (commit_addr == addr);
+   endmodule
+
+.. mutant:: build/rtl/core/core.v
+   :kills: core.depth.prove
+
+   -    wire [31:0] next = e_jal || e_branch && taken ? e_pc + e_imm : e_jalr ? {sum[31:1], 1'b0} : link;
+   +    wire [31:0] next = e_jal || e_branch ? e_pc + e_imm : e_jalr ? {sum[31:1], 1'b0} : link;
+
+.. rationale::
+
+   With as many stages as threads, an instruction finishes before the next instruction of its
+   thread starts. The core needs no forwarding and no stall, and it writes the state of a
+   thread in one place.
+
+Suspension
+==========
+
+.. definition:: core.suspended
+   :parent: core.thread
+
+   The core fetches nothing in the turns of a :dfn:`suspended` thread.
+
+.. requirement:: core.suspend
+   :parent: design.economy
+
+   If an instruction is illegal or ``ECALL`` or has its access refused, then the core shall
+   suspend its thread with its program counter on the instruction.
+
+.. requirement:: core.div-wait
+   :parent: core.div
+
+   While the divide of a thread runs, the core shall fetch nothing in the turns of the thread.
+
+.. rationale::
+
+   The supervisor handles each suspension. It moves the program counter past an ``ECALL`` that
+   it accepts, and it can do an access that the core refused.
+
+Thread control
+==============
+
+.. definition:: core.port
+   :parent: core.core
+
+   The :dfn:`port` of the core reads the program counter, the cause and the run state of a
+   thread, and writes the program counter and the run state.
+
+.. requirement:: core.port-write
+   :parent: design.auditability
+
+   When the port writes a thread, the core shall accept the write only for a suspended thread
+   with no divide and no other write of the port pending.
+
+.. requirement:: core.reset
+   :parent: design.economy
+
+   When the core leaves reset, the core shall run thread 0 from address 0, and hold each other
+   thread suspended.
+
+.. check:: test
+   :verifies: core.registers, core.step, core.suspend, core.div-wait, core.port-write, core.reset
+
+   module tb_core;
+       logic clk = 0, rst_n = 0;
+       logic [31:0] fetch_addr, fetch_word, data_addr, data_wdata, data_rdata;
+       logic [3:0] data_be;
+       logic data_we;
+       logic [2:0] port_thread = 0;
+       logic port_we = 0, port_run = 0;
+       logic [31:0] port_pc = 0, port_rd_pc;
+       logic port_rd_run, port_err;
+       logic [1:0] port_rd_cause;
+       wire [2:0] turn, commit_thread;
+       wire commit, commit_resume, commit_we;
+       wire [1:0] commit_cause;
+       wire [4:0] commit_rd;
+       wire [31:0] commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next, commit_value;
+       core dut (.*);
+
+       logic [7:0] mem [65536];
+       always @(posedge clk) begin
+           fetch_word <= {mem[16'(fetch_addr + 3)], mem[16'(fetch_addr + 2)], mem[16'(fetch_addr + 1)],
+                          mem[16'(fetch_addr)]};
+           data_rdata <= {mem[16'({data_addr[31:2], 2'd3})], mem[16'({data_addr[31:2], 2'd2})],
+                          mem[16'({data_addr[31:2], 2'd1})], mem[16'({data_addr[31:2], 2'd0})]};
+           if (data_we)
+               for (int i = 0; i < 4; i++)
+                   if (data_be[i]) mem[16'({data_addr[31:2], 2'(i)})] <= data_wdata[8 * i +: 8];
+       end
+       always #5 clk = !clk;
+
+       function [31:0] enc_i(input [11:0] imm_f, input [4:0] rs1_f, input [2:0] fn3, input [4:0] rd_f,
+                             input [6:0] op_f);
+           enc_i = {imm_f, rs1_f, fn3, rd_f, op_f};
+       endfunction
+       function [31:0] enc_s(input [11:0] imm_f, input [4:0] rs2_f, input [4:0] rs1_f, input [2:0] fn3,
+                             input [6:0] op_f);
+           enc_s = {imm_f[11:5], rs2_f, rs1_f, fn3, imm_f[4:0], op_f};
+       endfunction
+       function [31:0] enc_r(input [6:0] f7_f, input [4:0] rs2_f, input [4:0] rs1_f, input [2:0] fn3,
+                             input [4:0] rd_f, input [6:0] op_f);
+           enc_r = {f7_f, rs2_f, rs1_f, fn3, rd_f, op_f};
+       endfunction
+       function [31:0] enc_b(input [12:1] imm_f, input [4:0] rs2_f, input [4:0] rs1_f, input [2:0] fn3,
+                             input [6:0] op_f);
+           enc_b = {imm_f[12], imm_f[10:5], rs2_f, rs1_f, fn3, imm_f[4:1], imm_f[11], op_f};
+       endfunction
+       function [31:0] enc_j(input [20:1] imm_f, input [4:0] rd_f, input [6:0] op_f);
+           enc_j = {imm_f[20], imm_f[10:1], imm_f[11], imm_f[19:12], rd_f, op_f};
+       endfunction
+
+       int at;
+       task automatic put(input [31:0] word);
+           {mem[16'(at + 3)], mem[16'(at + 2)], mem[16'(at + 1)], mem[16'(at)]} = word;
+           at += 4;
+       endtask
+       task automatic put16(input [15:0] half);
+           {mem[16'(at + 1)], mem[16'(at)]} = half;
+           at += 2;
+       endtask
+       task automatic li(input [4:0] rd, input [31:0] value);
+           logic [31:0] upper = (value + 32'h800) >> 12;
+           put({upper[19:0], rd, 7'd55});
+           put(enc_i(12'(value - (upper << 12)), rd, 3'd0, rd, 7'd19));
+       endtask
+       // Stores register rs at the next word of the results of the thread, and records what it should be.
+       int out;
+       logic [31:0] want [int];
+       task automatic keep(input [4:0] rs, input [31:0] value);
+           li(5'd31, 32'(out));
+           put(enc_s(12'd0, rs, 5'd31, 3'd2, 7'd35));
+           want[out] = value;
+           out += 4;
+       endtask
+       function automatic [31:0] word_at(input int a);
+           return {mem[16'(a + 3)], mem[16'(a + 2)], mem[16'(a + 1)], mem[16'(a)]};
+       endfunction
+
+       localparam logic [31:0] ECALL = 32'h73;
+       logic [31:0] ops [$] = '{0, 1, 2, 7, 32'hffffffff, 32'h80000000, 32'h7fffffff, 32'h12345678, 32'hfffffff9,
+                                 32'hdeadbeef};
+       int fails = 0;
+
+       // Thread 0: every class of instruction but the divide, then ECALL.
+       task automatic program0();
+           int here;
+           at = 0; out = 32'h8000;
+           li(5'd1, 32'h12345678); li(5'd2, 32'hfffffff9);
+           put(enc_r(7'd0, 5'd2, 5'd1, 3'd0, 5'd3, 7'd51));  keep(5'd3, 32'h12345678 + 32'hfffffff9);
+           put(enc_r(7'd32, 5'd2, 5'd1, 3'd0, 5'd3, 7'd51)); keep(5'd3, 32'h12345678 - 32'hfffffff9);
+           put(enc_r(7'd0, 5'd2, 5'd1, 3'd1, 5'd3, 7'd51));  keep(5'd3, 32'h12345678 << 25);
+           put(enc_r(7'd0, 5'd2, 5'd1, 3'd2, 5'd3, 7'd51));  keep(5'd3, 0);
+           put(enc_r(7'd0, 5'd2, 5'd1, 3'd3, 5'd3, 7'd51));  keep(5'd3, 1);
+           put(enc_r(7'd32, 5'd1, 5'd2, 3'd5, 5'd3, 7'd51)); keep(5'd3, 32'hffffffff);
+           put(enc_i(12'd4, 5'd2, 3'd5, 5'd3, 7'd19));       keep(5'd3, 32'h0fffffff);
+           put(enc_i({7'd32, 5'd4}, 5'd2, 3'd5, 5'd3, 7'd19)); keep(5'd3, 32'hffffffff);
+           put(enc_i(12'hff0, 5'd1, 3'd7, 5'd3, 7'd19));     keep(5'd3, 32'h12345670);
+           put(enc_r(7'd1, 5'd2, 5'd1, 3'd0, 5'd3, 7'd51));  keep(5'd3, 32'h12345678 * 32'hfffffff9);
+           put(enc_r(7'd1, 5'd2, 5'd1, 3'd1, 5'd3, 7'd51));  keep(5'd3, 32'hffffffff);
+           put(enc_r(7'd1, 5'd2, 5'd1, 3'd3, 5'd3, 7'd51));  keep(5'd3, 32'h12345677);
+           // Store a byte and a half, and load them back signed and unsigned.
+           li(5'd4, 32'h9000);
+           put(enc_s(12'd1, 5'd2, 5'd4, 3'd0, 7'd35));
+           put(enc_s(12'd2, 5'd2, 5'd4, 3'd1, 7'd35));
+           put(enc_i(12'd1, 5'd4, 3'd0, 5'd3, 7'd3));        keep(5'd3, 32'hfffffff9);
+           put(enc_i(12'd1, 5'd4, 3'd4, 5'd3, 7'd3));        keep(5'd3, 32'h000000f9);
+           put(enc_i(12'd2, 5'd4, 3'd1, 5'd3, 7'd3));        keep(5'd3, 32'hfffffff9);
+           put(enc_i(12'd2, 5'd4, 3'd5, 5'd3, 7'd3));        keep(5'd3, 32'h0000fff9);
+           // A taken branch skips an addi; a not-taken one does not.
+           li(5'd3, 0);
+           put(enc_b(12'd4, 5'd2, 5'd1, 3'd1, 7'd99));
+           put(enc_i(12'd1, 5'd3, 3'd0, 5'd3, 7'd19));
+           put(enc_b(12'd4, 5'd2, 5'd1, 3'd0, 7'd99));
+           put(enc_i(12'd2, 5'd3, 3'd0, 5'd3, 7'd19));       keep(5'd3, 2);
+           // jal links and jumps; auipc; compressed c.li x5, 7 and c.addi x5, 1.
+           here = at;
+           put(enc_j(20'd4, 5'd6, 7'd111));
+           put(enc_i(12'd1, 5'd3, 3'd0, 5'd3, 7'd19));
+           put(enc_i(12'd0, 5'd6, 3'd0, 5'd7, 7'd19));       keep(5'd7, 32'(here + 4));
+           here = at;
+           put({20'd1, 5'd8, 7'd23});                        keep(5'd8, 32'(here + 32'h1000));
+           put16(16'h429d); put16(16'h0285);                 keep(5'd5, 8);
+           put(enc_i(12'd5, 5'd1, 3'd0, 5'd0, 7'd19));
+           put(enc_i(12'd0, 5'd0, 3'd0, 5'd3, 7'd19));       keep(5'd3, 0);
+           put(ECALL);
+       endtask
+
+       // Thread 1: each divide and remainder of every pair of ops, then ECALL.
+       task automatic program1();
+           at = 32'h2000; out = 32'ha000;
+           foreach (ops[i]) foreach (ops[j]) begin
+               li(5'd1, ops[i]); li(5'd2, ops[j]);
+               for (int f = 4; f < 8; f++) begin
+                   put(enc_r(7'd1, 5'd2, 5'd1, 3'(f), 5'd3, 7'd51));
+                   keep(5'd3, expect_div(f, ops[i], ops[j]));
+               end
+           end
+           put(ECALL);
+       endtask
+
+       function automatic [31:0] expect_div(input int f, input [31:0] a, b);
+           case (f)
+               4: return b == 0 ? 32'hffffffff : a == 32'h80000000 && b == 32'hffffffff ? a
+                       : 32'($signed(a) / $signed(b));
+               5: return b == 0 ? 32'hffffffff : a / b;
+               6: return b == 0 ? a : a == 32'h80000000 && b == 32'hffffffff ? 0 : 32'($signed(a) % $signed(b));
+               default: return b == 0 ? a : a % b;
+           endcase
+       endfunction
+
+       task automatic start(input [2:0] t, input [31:0] pc);
+           @(negedge clk);
+           {port_thread, port_pc, port_run, port_we} = {t, pc, 1'b1, 1'b1};
+           #1;
+           if (port_err) begin $display("FAIL: the port refused to start thread %0d", t); fails++; end
+           @(negedge clk);
+           port_we = 0;
+       endtask
+
+       task automatic expect_stop(input [2:0] t, input [1:0] cause, input [31:0] pc);
+           port_thread = t;
+           #1;
+           if (port_rd_run || port_rd_cause != cause || port_rd_pc != pc) begin
+               $display("FAIL: thread %0d run=%0d cause=%0d pc=%h, want cause %0d at pc %h", t, port_rd_run,
+                        port_rd_cause, port_rd_pc, cause, pc);
+               fails++;
+           end
+       endtask
+
+       int ecall0, ecall1;
+       initial begin
+           foreach (mem[i]) mem[i] = 0;
+           program0(); ecall0 = at - 4;
+           program1(); ecall1 = at - 4;
+           // Thread 2 meets an illegal instruction; thread 3 a misaligned load.
+           at = 32'h6000; put(32'hffffffff);
+           at = 32'h6100; put(enc_i(12'd2, 5'd0, 3'd2, 5'd3, 7'd3));
+           repeat (4) @(negedge clk);
+           rst_n = 1;
+           start(3'd1, 32'h2000); start(3'd2, 32'h6000); start(3'd3, 32'h6100);
+           // A second write to a thread while the first is pending is refused.
+           @(negedge clk); {port_thread, port_pc, port_run, port_we} = {3'd4, 32'h6100, 1'b0, 1'b1};
+           @(negedge clk); {port_thread, port_pc, port_run, port_we} = {3'd4, 32'h6000, 1'b1, 1'b1};
+           #1 if (!port_err) begin $display("FAIL: the port wrote a thread with a write pending"); fails++; end
+           @(negedge clk); port_we = 0;
+           // A write to a running thread is refused.
+           @(negedge clk); {port_thread, port_pc, port_run, port_we} = {3'd1, 32'd0, 1'b0, 1'b1};
+           #1 if (!port_err) begin $display("FAIL: the port wrote a running thread"); fails++; end
+           @(negedge clk); port_we = 0;
+           repeat (400000) @(negedge clk);
+           expect_stop(3'd0, 2'd1, 32'(ecall0));
+           expect_stop(3'd1, 2'd1, 32'(ecall1));
+           expect_stop(3'd2, 2'd2, 32'h6000);
+           expect_stop(3'd3, 2'd3, 32'h6100);
+           foreach (want[a]) if (word_at(a) != want[a]) begin
+               if (fails < 20) $display("FAIL: word %h is %h, want %h", a, word_at(a), want[a]);
+               fails++;
+           end
+           $display("%0d results, %0d failures", want.size(), fails);
+           if (fails != 0) $fatal(1, "the core failed");
+           $finish;
+       end
+   endmodule
+
+.. mutant:: build/rtl/core/core_regfile.v
+   :kills: core.registers.test
+
+   -    assign a = zero_a ? 32'd0 : read_a;
+   +    assign a = read_a;
+
+.. mutant:: build/rtl/core/core.v
+   :kills: core.registers.test
+
+   -    assign port_err = port_we && (run[port_thread] || waiting[port_thread] || q_we && q_thread == port_thread);
+   +    assign port_err = port_we && (run[port_thread] || waiting[port_thread]);
+
+.. mutant:: build/rtl/core/core.v
+   :kills: core.registers.test
+
+   -            for (int t = 0; t < T; t++) {pc[t], run[t], waiting[t], cause[t]} <= {32'd0, t == 0, 1'b0, NONE};
+   +            for (int t = 0; t < T; t++) {pc[t], run[t], waiting[t], cause[t]} <= {32'd0, 1'b1, 1'b0, NONE};

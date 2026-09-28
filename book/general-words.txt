@@ -2,6 +2,7 @@
 # The rule doc.known-words in book/doc/doc.rst reads this list.
 a
 about
+accept
 access
 across
 address
@@ -50,6 +51,7 @@ capital
 carries
 carry
 case
+cause
 change
 characters
 check
@@ -69,6 +71,7 @@ count
 counted
 counter
 cycle
+data
 day
 days
 decode
@@ -104,6 +107,7 @@ evaluate
 event
 every
 exactly
+execute
 expand
 expands
 explanation
@@ -114,12 +118,16 @@ extension
 fact
 fail
 failing
+fetch
+fetches
 fewer
 fewest
 field
 file
 find
 finding
+finish
+finishes
 first
 fits
 follow
@@ -185,6 +193,7 @@ line
 list
 literal
 load
+loaded
 lower
 lower-case
 lowest
@@ -240,6 +249,7 @@ parentheses
 part
 parties
 path
+pending
 physics
 place
 plain
@@ -260,12 +270,14 @@ real
 record
 reduce
 refuse
+refused
 register
 relates
 remainder
 request
 requirement
 reserves
+reset
 resource
 restructuredtext
 rests
@@ -310,6 +322,7 @@ structural
 structure
 subtracts
 such
+suspend
 suspends
 system
 table
@@ -323,6 +336,7 @@ than
 that
 the
 their
+then
 these
 third
 this
@@ -353,6 +367,7 @@ what
 when
 where
 which
+while
 whole
 whose
 width
@@ -366,3 +381,4 @@ write
 written
 wrong
 wrote
+zero
