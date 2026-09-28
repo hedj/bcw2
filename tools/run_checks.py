@@ -15,7 +15,11 @@ not compile is a failure at its first chapter line.
 A test passes when Verilator builds the testbench and the testbench exits 0
 within its timeout option, in seconds (60 if the option is not there). A
 prove passes when SymbiYosys proves each assertion with the smtbmc engine and
-Yices, to the depth of the check.
+Yices, to the depth of the check, and the proof means something: SymbiYosys
+reaches the condition of each assertion within that depth (a cover of its
+enable), and each assertion of the harness fails when the instance dut is a cut
+point, whose outputs are free. An assertion whose condition never holds passes
+by default, and one that holds for any dut does not test the design.
 
 An equiv passes when z3 proves that the module equals its twin. yosys writes
 the module as SMT. tools/twin.py translates the function of the twin, which
@@ -40,7 +44,9 @@ mutant at the chapter line of its directive:
     book/core/core.rst:95: FAIL: [mutant] core.rotation.test: the check passes with the mutant
 
 It exits 1 if a check or a mutant fails. The work of each check is in
-build/run/<name>, and of each of its mutants in build/run/<name>/mutant-<n>.
+build/run/<name>, of the cover and the cut point of a prove in
+build/run/<name>.cover and build/run/<name>.havoc, and of each mutant in
+build/run/<name>/mutant-<n>.
 """
 
 import functools
@@ -59,6 +65,10 @@ MODULE = re.compile(r"^\s*module\s+(\w+)", re.MULTILINE)
 # The lines of SymbiYosys that tell why a proof failed, and its last line.
 PROOF_LINES = re.compile(r"Assert failed|ERROR|DONE")
 PROOF_PREFIX = re.compile(r"^SBY\s+[\d:]+\s+\[[^\]]*\]\s+")
+# The place of each assertion whose enable a cover reached, and of each assertion that failed.
+REACHED = re.compile(r"Reached cover statement in step \d+ at \w+: (\S+)")
+FAILED = re.compile(r"Assert failed in \w+: (\S+)")
+DUT = re.compile(r"\bdut\s*\(")
 # The comments of yosys write_smt2 that name each port, and that mark a register or a memory.
 PORT = re.compile(r"^; yosys-smt2-(input|output) (\S+) (\d+)$", re.MULTILINE)
 STATE = re.compile(r"^; yosys-smt2-(register|memory) ", re.MULTILINE)
@@ -108,19 +118,46 @@ def run_test(check, top, work, files, objects):
     return None
 
 
+def symbiyosys(check, top, work, files, mode, engine="smtbmc yices", steps=""):
+    """The result of SymbiYosys in the mode on the harness, after the extra yosys steps."""
+    work.parent.mkdir(parents=True, exist_ok=True)
+    job = work.parent / f"{work.name}.sby"
+    reads = "".join(f"read -formal {Path(path).absolute()}\n" for path in files + [check["file"]])
+    job.write_text(f"[options]\nmode {mode}\ndepth {check['depth']}\n\n[engines]\n{engine}\n\n"
+                   f"[script]\n{reads}prep -top {top}\n{steps}")
+    return subprocess.run(["sby", "-f", "-d", str(work), str(job)], capture_output=True, text=True)
+
+
+def proof_lines(result):
+    return "\n".join(PROOF_PREFIX.sub("", text) for text in result.stdout.splitlines() if PROOF_LINES.search(text))
+
+
 def run_prove(check, top, work, files):
     """None if SymbiYosys proves the properties, or (reason, output)."""
-    work.parent.mkdir(parents=True, exist_ok=True)
-    job = work.parent / f"{check['name']}.sby"
-    reads = "".join(f"read -formal {Path(path).absolute()}\n" for path in files + [check["file"]])
-    job.write_text(f"[options]\nmode prove\ndepth {check['depth']}\n\n[engines]\nsmtbmc yices\n\n"
-                   f"[script]\n{reads}prep -top {top}\n")
-    result = subprocess.run(["sby", "-f", "-d", str(work), str(job)], capture_output=True, text=True)
+    result = symbiyosys(check, top, work, files, "prove")
     if result.returncode == 0:
         return None
-    lines = [PROOF_PREFIX.sub("", text) for text in result.stdout.splitlines() if PROOF_LINES.search(text)]
     reason = "the proof failed" if result.returncode == 2 else "SymbiYosys stopped with an error"
-    return reason, "\n".join(lines)
+    return reason, proof_lines(result)
+
+
+# implements: doc.proof-meaning
+def run_meaning(check, top, work, files):
+    """None if each assertion of a proof can apply and tests the design, or (reason, output)."""
+    if not DUT.search(Path(check["file"]).read_text()):
+        return "the harness has no instance dut", ""
+    cover = symbiyosys(check, top, work.with_name(work.name + ".cover"), files, "cover",
+                       steps="chformal -assert -coverenable\nchformal -assert -remove\n")
+    if cover.returncode:
+        lines = [PROOF_PREFIX.sub("", text) for text in cover.stdout.splitlines() if "nreached" in text]
+        return "the condition of an assertion never holds", "\n".join(lines) or proof_lines(cover)
+    harness = {place for place in REACHED.findall(cover.stdout) if place.startswith(str(Path(check["file"]).absolute()))}
+    havoc = symbiyosys(check, top, work.with_name(work.name + ".havoc"), files, "bmc",
+                       engine="smtbmc --keep-going yices", steps=f"cutpoint {top}/dut\n")
+    held = sorted(harness - set(FAILED.findall(havoc.stdout)))
+    if held:
+        return "an assertion holds whatever dut does", "\n".join(f"{place}: holds with a free dut" for place in held)
+    return None
 
 
 def port_terms(text, top, ports):
@@ -335,6 +372,8 @@ def main():
             failure = "the code declares no module", ""
         else:
             failure = runners[check["kind"]](check, top, Path("build/run") / check["name"], files)
+        if failure is None and check["kind"] == "prove":
+            failure = run_meaning(check, top, Path("build/run") / check["name"], files)
         if failure is None:
             print(f"{place}: PASS: [check] {check['name']}")
             passed += 1

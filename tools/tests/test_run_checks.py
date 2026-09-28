@@ -246,6 +246,39 @@ class MutantTest:
         assert result.stdout.splitlines()[-1] == "run_checks: 1 passed, 1 failed"
 
 
+# verifies: doc.proof-meaning
+class MeaningTest:
+    def test_an_assertion_whose_condition_never_holds_fails_at_its_chapter_line(self, tmp_path):
+        code = PROPERTIES.format(property="next != turn").replace(
+            "always_comb assert", "always_comb if (turn == 3'd1 && turn == 3'd2) assert")
+        text, result = run(tmp_path, check("prove", code))
+        assert result.returncode == 1
+        lines = result.stdout.splitlines()
+        assert lines[1] == (f"{CHAPTER}:{line(text, '.. check:: prove')}: FAIL: [check] core.rotation.prove: "
+                            "the condition of an assertion never holds")
+        assert any(f"{CHAPTER}:{line(text, 'assert (')}." in entry for entry in lines[2:])
+
+    def test_an_assertion_that_holds_for_any_dut_fails_at_its_chapter_line(self, tmp_path):
+        text, result = run(tmp_path, check("prove", PROPERTIES.format(property="next == next")))
+        assert result.returncode == 1
+        lines = result.stdout.splitlines()
+        assert lines[1] == (f"{CHAPTER}:{line(text, '.. check:: prove')}: FAIL: [check] core.rotation.prove: "
+                            "an assertion holds whatever dut does")
+        assert any(f"{CHAPTER}:{line(text, 'assert (')}." in entry and "holds with a free dut" in entry
+                   for entry in lines[2:])
+
+    def test_a_harness_without_an_instance_dut_fails(self, tmp_path):
+        text, result = run(tmp_path, check("prove", PROPERTIES.format(property="next != turn").replace(
+            "core_rotate dut", "core_rotate rotate")))
+        assert result.stdout.splitlines()[1] == (f"{CHAPTER}:{line(text, '.. check:: prove')}: FAIL: [check] "
+                                                 "core.rotation.prove: the harness has no instance dut")
+
+    def test_the_mutants_of_a_proof_without_meaning_do_not_run(self, tmp_path):
+        text, result = run(tmp_path, check("prove", PROPERTIES.format(property="next == next"))
+                           + mutant(ROTATE, SAME, kills="core.rotation.prove"))
+        assert "[mutant]" not in result.stdout
+
+
 class ProofTest:
     def test_a_property_that_holds_passes(self, tmp_path):
         text, result = run(tmp_path, check("prove", PROPERTIES.format(property="next != turn")))

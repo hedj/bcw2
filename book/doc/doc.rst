@@ -608,6 +608,12 @@ Checks that can fail
 
    Each mutant shall make each check that it names fail.
 
+.. requirement:: doc.proof-meaning
+   :parent: doc.read-is-checked
+
+   Where a check directive is a ``prove``, the check directive shall reach the condition of each
+   property, and fail each property of its code when the module ``dut`` can give any value.
+
 .. rationale::
 
    A check that cannot fail checks nothing. A mutant shows that a check sees a fault. A
