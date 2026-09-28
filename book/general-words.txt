@@ -81,6 +81,8 @@ discipline
 discussion
 display
 distinct
+divide
+divisor
 docutils
 does
 dot
@@ -119,6 +121,7 @@ file
 find
 finding
 first
+fits
 follow
 for
 form
@@ -247,6 +250,7 @@ property
 prose
 put
 question
+quotient
 rationale
 reach
 read
@@ -258,6 +262,7 @@ reduce
 refuse
 register
 relates
+remainder
 request
 requirement
 reserves
@@ -297,11 +302,13 @@ state
 stated
 statement
 stay
+step
 stop
 store
 stream
 structural
 structure
+subtracts
 such
 suspends
 system

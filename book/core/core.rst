@@ -741,3 +741,183 @@ Memory access
 
    ``RV32I`` lets a core refuse an access that is not aligned. The supervisor can do the
    access for the thread, so the hardware needs no second cycle and no second port.
+
+Divide
+======
+
+.. requirement:: core.div
+   :parent: design.economy
+
+   Where an instruction is a divide or a remainder, the core shall give the result that
+   ``RV32M`` defines for its ``f3`` field and its two operands.
+
+.. requirement:: core.div-time
+   :parent: design.timing-invariant
+
+   The core shall give the result of each divide 32 cycles after its request, for any operands
+   and any work of the other threads.
+
+.. requirement:: core.div-step
+   :parent: core.div
+
+   The core shall find one bit of the quotient in each step of a divide: it subtracts the
+   divisor from the remainder where the divisor fits.
+
+   .. twin::
+      :stamp: 3c878b7a
+
+      def core_div_step(r, q, d):
+          t = r * 2 + (q >> 31)
+          fits = t >= d
+          return {'r_next': (t - d if fits else t) & 4294967295,
+                  'q_next': ((q << 1) & 4294967295) | (1 if fits else 0)}
+
+.. source:: build/rtl/core/core_div_step.v
+   :implements: core.div-step
+
+   module core_div_step (input wire [31:0] r, q, d, output wire [31:0] r_next, q_next);
+       wire [32:0] t = {r, q[31]};
+       wire fits = t >= {1'b0, d};
+       assign r_next = fits ? 32'(t - {1'b0, d}) : t[31:0];
+       assign q_next = {q[30:0], fits};
+   endmodule
+
+.. check:: equiv
+   :verifies: core.div-step
+   :module: core_div_step
+
+.. source:: build/rtl/core/core_div.v
+   :implements: core.div, core.div-time
+
+   module core_div (input wire clk, rst_n, req, input wire [bcw_params::CORE_TURN_WIDTH-1:0] req_thread,
+                    input wire [1:0] f3, input wire [31:0] a, b, input wire [4:0] req_rd,
+                    input wire [bcw_params::CORE_TURN_WIDTH-1:0] thread,
+                    output wire done, output wire [31:0] result, output wire [4:0] rd);
+       localparam int T = bcw_params::CORE_THREADS;
+       logic [31:0] r [T], q [T], d [T];
+       logic [5:0] count [T];
+       logic negate [T], remainder [T];
+       logic [4:0] dest [T];
+       wire [31:0] r_next [T], q_next [T];
+       wire sa = !f3[0] && a[31], sb = !f3[0] && b[31];
+       for (genvar t = 0; t < T; t++) begin : step
+           core_div_step unit (.r(r[t]), .q(q[t]), .d(d[t]), .r_next(r_next[t]), .q_next(q_next[t]));
+           always_ff @(posedge clk)
+               if (!rst_n) count[t] <= '0;
+               else if (req && req_thread == t) begin
+                   {r[t], q[t], d[t], count[t]} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd32};
+                   remainder[t] <= f3[1];
+                   negate[t] <= f3[1] ? sa : sa != sb && b != 32'd0;
+                   dest[t] <= req_rd;
+               end else if (count[t] != '0)
+                   {r[t], q[t], count[t]} <= {r_next[t], q_next[t], count[t] - 6'd1};
+       end
+       wire [31:0] value = remainder[thread] ? r[thread] : q[thread];
+       assign done = count[thread] == '0;
+       assign result = negate[thread] ? -value : value;
+       assign rd = dest[thread];
+   endmodule
+
+.. check:: test
+   :verifies: core.div, core.div-time
+
+   module tb_div;
+       logic clk = 0, rst_n = 0, req = 0;
+       logic [2:0] req_thread = 0, thread = 0;
+       logic [1:0] f3 = 0;
+       logic [31:0] a = 0, b = 0;
+       logic [4:0] req_rd = 0;
+       wire done;
+       wire [31:0] result;
+       wire [4:0] rd;
+       core_div dut (.*);
+       always #20 clk = !clk;
+
+       function automatic [31:0] expect_of(input [1:0] f, input [31:0] x, y);
+           case (f)
+               0: return y == 0 ? 32'hffffffff : x == 32'h80000000 && y == 32'hffffffff ? x
+                       : 32'($signed(x) / $signed(y));
+               1: return y == 0 ? 32'hffffffff : x / y;
+               2: return y == 0 ? x : x == 32'h80000000 && y == 32'hffffffff ? 0
+                       : 32'($signed(x) % $signed(y));
+               default: return y == 0 ? x : x % y;
+           endcase
+       endfunction
+
+       int cycle = 0, fails = 0, checked = 0;
+       int due [8];
+       logic [31:0] want [8];
+       always @(posedge clk) cycle <= cycle + 1;
+
+       // Each cycle, each busy thread must hold done low until its due cycle, then give its result.
+       task automatic watch();
+           for (int t = 0; t < 8; t++) begin
+               thread = 3'(t);
+               #1;
+               if (due[t] != 0 && done != (cycle >= due[t])) begin
+                   if (fails < 10) $display("thread %0d: done=%0d at cycle %0d, due at %0d", t, done, cycle, due[t]);
+                   fails++;
+               end
+               if (due[t] != 0 && cycle == due[t]) begin
+                   if (result != want[t] || rd != 5'(t + 1)) begin
+                       if (fails < 10) $display("thread %0d: result %h rd %0d, want %h", t, result, rd, want[t]);
+                       fails++;
+                   end
+                   checked++;
+                   due[t] = 0;
+               end
+           end
+       endtask
+
+       function automatic bit busy();
+           foreach (due[t]) if (due[t] != 0) return 1;
+           return 0;
+       endfunction
+
+       task automatic divide(input [1:0] f, input [31:0] x, y);
+           int t = checked % 8;
+           while (due[t] != 0) begin
+               @(negedge clk);
+               watch();
+               t = (t + 1) % 8;
+           end
+           {req, req_thread, f3, a, b, req_rd} = {1'b1, 3'(t), f, x, y, 5'(t + 1)};
+           {due[t], want[t]} = {cycle + 33, expect_of(f, x, y)};
+           @(negedge clk);
+           req = 0;
+           watch();
+       endtask
+
+       logic [31:0] edges [10] = '{0, 1, 2, 7, 32'hffffffff, 32'h80000000, 32'h7fffffff, 32'h12345678,
+                                   32'hfffffff9, 32'hdeadbeef};
+       initial begin
+           repeat (2) @(negedge clk);
+           rst_n = 1;
+           foreach (edges[i]) foreach (edges[j]) for (int f = 0; f < 4; f++) divide(2'(f), edges[i], edges[j]);
+           for (int k = 0; k < 4000; k++) divide(2'(k), $urandom, k % 3 == 0 ? $urandom % 97 : $urandom);
+           while (busy()) begin
+               @(negedge clk);
+               watch();
+           end
+           $display("%0d results checked, %0d failures", checked, fails);
+           if (fails != 0 || checked != 4400) $fatal(1, "the divider failed");
+           $finish;
+       end
+   endmodule
+
+.. mutant:: build/rtl/core/core_div.v
+   :kills: core.div.test
+
+   -                negate[t] <= f3[1] ? sa : sa != sb && b != 32'd0;
+   +                negate[t] <= f3[1] ? sa : sa != sb;
+
+.. mutant:: build/rtl/core/core_div.v
+   :kills: core.div.test
+
+   -                {r[t], q[t], d[t], count[t]} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd32};
+   +                {r[t], q[t], d[t], count[t]} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd33};
+
+.. rationale::
+
+   One step for each thread in each cycle gives a fixed time of 32 cycles, which is 5 turns. A
+   radix-16 divider of ``bcw-1`` took 9 turns and 3 modules.

@@ -16,7 +16,12 @@ class PrePushTest:
     def clone(self, tmp_path):
         self.clone = tmp_path / "clone"
         subprocess.run(["git", "clone", "--quiet", str(ROOT), str(self.clone)], check=True)
-        self.good = self.git("rev-parse", "HEAD")
+        # The hook runs make check, whose time grows with the checks of the book. The tests are
+        # of the hook, so the core chapter keeps only the sections before its instruction set.
+        chapter = self.clone / "book" / "core" / "core.rst"
+        text = chapter.read_text()
+        chapter.write_text(text[:text.index("\nInstruction set\n")])
+        self.good = self.commit("Keep the first sections of the core chapter")
 
     def git(self, *args):
         return subprocess.run(["git", "-C", str(self.clone), *args],
