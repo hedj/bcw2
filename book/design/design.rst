@@ -106,6 +106,13 @@ Security properties
    A protection domain that holds no handle can reach nothing outside its region. It has no
    means to reach further, so the machine has no mode that it can fail to enter.
 
+.. open:: What memory returns
+
+   The core reads data at a fixed stage and has no input that makes it wait, so the time of an
+   access depends only on its own thread. The value is not settled: what memory returns at the
+   port of a thread must depend only on the requests of that thread and on the memory that its
+   protection domain can read. The memory chapter will state this as a requirement.
+
 .. goal:: design.unforgeable
    :parent: design.auditability
 
@@ -119,11 +126,18 @@ Security properties
    One write to the entry of a handle revokes the handle. No holder of the handle needs to be
    found, told or trusted.
 
+.. definition:: design.external-clock
+   :parent: design.auditability
+
+   An :dfn:`external clock` is an input from outside the machine that gives a protection
+   domain a measure of real time, such as the time at which data comes from another machine.
+   Such an input is work for the operating system, not for the hardware.
+
 .. goal:: design.timing-invariant
    :parent: design.auditability
 
-   No protection domain can change the observed latency of an operation in any other
-   protection domain.
+   Between protection domains that have no external clock, no protection domain can change
+   the observed latency of an operation in another.
 
 .. goal:: design.no-clock
    :parent: design.auditability
