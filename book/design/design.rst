@@ -106,6 +106,13 @@ Security properties
    A protection domain that holds no handle can reach nothing outside its region. It has no
    means to reach further, so the machine has no mode that it can fail to enter.
 
+.. open:: What memory returns
+
+   The core reads data at a fixed stage and has no input that makes it wait, so the time of an
+   access depends only on its own thread. The value is not settled: what memory returns at the
+   port of a thread must depend only on the requests of that thread and on the memory that its
+   protection domain can read. The memory chapter will state this as a requirement.
+
 .. goal:: design.unforgeable
    :parent: design.auditability
 

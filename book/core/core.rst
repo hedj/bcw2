@@ -364,7 +364,7 @@ Decode
 ======
 
 .. requirement:: core.decode
-   :parent: design.economy
+   :parent: design.economy, design.no-clock
 
    The core shall decode each instruction as the class that ``RV32IM`` gives it, or as an
    illegal instruction where ``RV32IM`` gives it no class.
@@ -481,8 +481,8 @@ Decode
 
 .. rationale::
 
-   The decoder checks every field, not the opcode alone. An encoding outside ``RV32IM`` then
-   suspends its thread, and never runs as another instruction.
+   The decoder checks every field, not the opcode alone. An encoding outside ``RV32IM``, such as
+   a read of a counter, then suspends its thread, and never runs as another instruction.
 
 Arithmetic
 ==========
