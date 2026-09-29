@@ -1108,15 +1108,21 @@ Pipeline
 
 .. schedule:: The thread whose instruction each stage holds in each cycle of one rotation, with thread 0 fetching in cycle 0. The proof of the core shows this for any thread.
    :threads: core.threads
+   :module: core
+   :private: threads units
 
    fetch
-   expand
-   decode
-   read
-   execute
-   address
-   data
-   write, which alone writes the registers
+   expand: x_
+   decode: d_
+   read: r_
+   execute: e_
+   address: m1_
+   data: m2_
+   write, which alone writes the registers: w_
+
+   rot ahead: the thread of the turn, and of the next write slot, which count cycles and no thread changes
+   div_value div_dest div_ready: the divide result of the next write slot, which only its thread reads
+   q_we q_thread q_pc q_run q_select: the write of the port, which only the supervisor drives
 
 .. requirement:: core.step
    :parent: design.economy

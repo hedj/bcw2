@@ -49,7 +49,19 @@ chapter line of its directive:
 
     book/core/core.rst:95: FAIL: [mutant] core.rotation.test: the check passes with the mutant
 
-It exits 1 if a check or a mutant fails. Every run starts at once, the proves
+Each schedule of build/schedules.json, which the weave writes, lists the rows of a
+module with the prefix of the names of their registers, and each shared register that
+no row holds, with its reason. The runner flattens the module with yosys and finds
+the scope of each of its flip-flops: the instance that declares it. A register in a
+scope of the private option, such as threads[3], belongs to one thread. Each other
+register must have the prefix of a row, or stand on a line of the schedule. Each
+name on a line must be such a register, and each prefix must match one. The runner
+reports each schedule after the checks, at the chapter line of its directive:
+
+    book/core/core.rst:1095: FAIL: [schedule] core
+        the register spare of core is in no private scope, no row and no line of the schedule
+
+It exits 1 if a check, a mutant or a schedule fails. Every run starts at once, the proves
 first, since they take longest: a mutant, the cover or the cut point does not
 wait for its check, and counts only if the check passes. The work of each check
 is in build/run/<name>, of the cover and the cut point of a prove in
@@ -87,6 +99,7 @@ MODELS = Path("build/model")
 OBJECTS = Path("build/run/model")
 COMPILE = ["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O2", "-c"]
 BLOCKS = Path(__file__).resolve().parent / "smtbmc_blocks.py"
+SCHEDULES = Path("build/schedules.json")
 
 
 def sources():
@@ -362,6 +375,76 @@ UNBUILT = ("Verilator could not build the testbench", "SymbiYosys stopped with a
 
 
 # implements: doc.mutants-fail
+def netlist(module, files, work):
+    """The flattened module, as the JSON of yosys, or (reason, output)."""
+    work.mkdir(parents=True, exist_ok=True)
+    path = work / "netlist.json"
+    result = subprocess.run(["yosys", "-q", "-p", f"read_verilog -sv {' '.join(files)}; hierarchy -top {module}; "
+                             f"proc; flatten; write_json {path}"], capture_output=True, text=True)
+    if result.returncode:
+        return None, ("yosys could not read the module", result.stdout + result.stderr)
+    return json.loads(path.read_text())["modules"][module], None
+
+
+def instance(name, net):
+    """The instance that declares a net: the path in its hdlname before its own name, or "" for the module."""
+    path = net.get("attributes", {}).get("hdlname", "").split(" ")[:-1]
+    return ".".join(path)
+
+
+def registers(module):
+    """The names of each register of the flattened module: of each flip-flop bit and each memory.
+
+    flatten names a net after each port that it drives too, so the names of a bit are the names of the
+    nets of the instance that declares the flip-flop, such as divide.units[3].unit.r, and of the wires
+    that the module assigns from it. A register of a generate block keeps its block in its name, such
+    as threads[0].own.
+    """
+    names = {}
+    for name, net in module["netnames"].items():
+        for bit in net["bits"]:
+            names.setdefault(bit, []).append((instance(name, net), name))
+    found = set()
+    for name, cell in module["cells"].items():
+        if cell["type"].startswith("$mem"):
+            found.add(frozenset([cell["parameters"]["MEMID"].lstrip("\\")]))
+        if "dff" not in cell["type"]:
+            continue
+        parts = re.sub(r"^\$flatten", "", name).replace("\\", "").split(".")
+        scope = ".".join(parts[:-1])
+        for bit in cell["connections"]["Q"]:
+            own = frozenset(net for path, net in names.get(bit, []) if path == scope and not net.startswith("$"))
+            found.add(own or frozenset([name]))
+    return found
+
+
+# implements: doc.schedule-registers
+# implements: doc.schedule-names
+def run_schedule(schedule, files):
+    """None if each shared register of the module has a row or a line of the schedule, or (reason, output)."""
+    module, failure = netlist(schedule["module"], files, Path("build/run") / f"schedule-{schedule['line']}")
+    if failure:
+        return failure
+    private = [re.compile(rf"(^|\.){re.escape(name)}\[\d+\](\.|$)") for name in schedule["private"]]
+    prefixes = [prefix for prefix in schedule["prefixes"] if prefix]
+    listed = {name for names, _ in schedule["shared"] for name in names}
+    problems, seen, used = [], set(), set()
+    for names in registers(module):
+        if any(pattern.search(name) for pattern in private for name in names):
+            continue
+        matched = {prefix for prefix in prefixes for name in names if name.startswith(prefix)}
+        used |= matched
+        seen |= names & listed
+        if not matched and not names & listed:
+            problems.append(f"the register {min(names, key=len)} of {schedule['module']} is in no private scope, "
+                            "no row and no line of the schedule")
+    problems += [f"the schedule lists {name}, which is no shared register of {schedule['module']}"
+                 for name in sorted(listed - seen)]
+    problems += [f"no register of {schedule['module']} has the prefix {prefix} of a row"
+                 for prefix in prefixes if prefix not in used]
+    return ("a register of the module is not in the schedule", "\n".join(sorted(set(problems)))) if problems else None
+
+
 def run_mutant(mutant, runner, check, top, work, files):
     """None if the check fails with the mutated file in place of the file, or (reason, output)."""
     copy = work / mutant["file"].removeprefix("build/")
@@ -423,6 +506,9 @@ def main():
     with concurrent.futures.ProcessPoolExecutor() as pool:
         runs = {check["name"]: submit(pool, check, mutants, runners, files)
                 for check in sorted(checks, key=lambda check: check["kind"] != "prove")}
+        schedules = [schedule for schedule in (json.loads(SCHEDULES.read_text()) if SCHEDULES.exists() else [])
+                     if schedule["module"]]
+        inventories = [pool.submit(run_schedule, schedule, files) for schedule in schedules]
         results = [(check, *outcome(*runs[check["name"]])) for check in checks]
         for check, failure, killers, survivals in results:
             place = f"{check['path']}:{check['line']}"
@@ -445,6 +531,16 @@ def main():
                 for text in survived[1].splitlines():
                     print("    " + linemap.rewrite(text))
                 failed += 1
+        for schedule, inventory in zip(schedules, inventories):
+            place, failure = f"{schedule['path']}:{schedule['line']}", inventory.result()
+            if failure is None:
+                print(f"{place}: PASS: [schedule] {schedule['module']}")
+                passed += 1
+                continue
+            print(f"{place}: FAIL: [schedule] {schedule['module']}: {failure[0]}")
+            for text in failure[1].splitlines():
+                print("    " + linemap.rewrite(text))
+            failed += 1
     print(f"run_checks: {passed} passed, {failed} failed")
     return 1 if failed else 0
 

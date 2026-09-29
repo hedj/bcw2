@@ -40,10 +40,14 @@ what bcw.py reads:
   fetched s cycles earlier, with thread 0 fetching in cycle 0. A schedule with
   more stages than threads gives a warning and no table, since a thread would
   then hold two stages in one cycle. The HTML lets the reader choose a thread to
-  follow; the LaTeX sets thread 0 in bold.
+  follow; the LaTeX sets thread 0 in bold. Under the table, the weave lists the
+  shared registers that no stage holds, with what each holds. The weave writes
+  each schedule to build/schedules.json, and tools/run_checks.py checks it
+  against its module (doc.schedule-registers).
 """
 
 import html
+import json
 import re
 from pathlib import Path
 
@@ -154,17 +158,29 @@ class CodeIndexDirective(SphinxDirective):
 
 
 class ScheduleDirective(SphinxDirective):
-    """A schedule: its caption, its stages and the PARAMETER of its threads, drawn once the values are known."""
+    """A schedule: its caption, its stages and shared registers, and its options, drawn once the values are known.
+
+    Its first lines name the stages in order, each as "stage: prefix" with the prefix of the names of the
+    registers of the stage, or as "stage" alone. After a blank line, each line names shared registers of the
+    module, as "name name: reason".
+    """
 
     optional_arguments = 1
     final_argument_whitespace = True
     has_content = True
-    option_spec = {"threads": directives.unchanged_required}
+    option_spec = {"threads": directives.unchanged_required, "module": directives.unchanged,
+                   "private": directives.unchanged}
 
     def run(self):
-        stages = [line.strip() for line in self.content if line.strip()]
-        node = nodes.container(classes=["schedule"], stages=stages, threads=self.options.get("threads", ""),
-                               caption=" ".join(self.arguments))
+        text = "\n".join(self.content).strip()
+        stage_lines, _, shared_lines = text.partition("\n\n")
+        stages = [line.rpartition(":")[::2] if ":" in line else (line, "") for line in stage_lines.splitlines()]
+        shared = [(names.split(), reason.strip()) for names, _, reason in
+                  (line.partition(":") for line in shared_lines.splitlines() if line.strip())]
+        node = nodes.container(classes=["schedule"], stages=[name.strip() for name, _ in stages],
+                               prefixes=[prefix.strip() for _, prefix in stages], shared=shared,
+                               threads=self.options.get("threads", ""), module=self.options.get("module", ""),
+                               private=self.options.get("private", "").split(), caption=" ".join(self.arguments))
         node.source, node.line = self.get_source_info()
         return [node]
 
@@ -213,16 +229,47 @@ def schedule_problem(env, box):
     if not stages or len(stages) > threads:
         return (f"the schedule has {len(stages)} stages and {threads} threads, so it needs 1 to {threads} stages: "
                 "with more, a thread would hold two stages in one cycle")
+    for names, reason in box["shared"]:
+        if not names or not reason:
+            return f"the schedule line of {' '.join(names) or 'no register'} needs names, a colon and a reason"
     return None
 
 
 def check_schedules(app, env):
-    """Warn once for each schedule that does not fit, after bcw.py has found the values."""
+    """Warn once for each schedule that does not fit, after bcw.py has found the values, and keep the
+    record of each schedule for tools/run_checks.py."""
+    env.weave_schedules = []
     for docname in sorted(env.found_docs):
         for box in schedules(env.get_doctree(docname)):
             problem = schedule_problem(env, box)
             if problem:
                 logger.warning(problem, location=box)
+            path = Path(box.source).relative_to(Path(app.srcdir).parent).as_posix()
+            env.weave_schedules.append({"path": path, "line": box.line, "module": box["module"],
+                                        "private": box["private"], "stages": box["stages"],
+                                        "prefixes": box["prefixes"], "shared": box["shared"]})
+
+
+def write_schedules(app, exception):
+    """build/schedules.json: the record of each schedule, which tools/run_checks.py checks against its module."""
+    root = app.config.bcw_tangle_root
+    if exception is None and root is not None:
+        bcw.write(Path(root) / "build" / "schedules.json",
+                  json.dumps(getattr(app.env, "weave_schedules", []), indent=1) + "\n")
+
+
+def shared_list(module, shared):
+    """The registers of the module that no stage holds, each line with its reason."""
+    if not shared:
+        return []
+    items = nodes.bullet_list()
+    for names, reason in shared:
+        item = nodes.paragraph()
+        for number, name in enumerate(names):
+            item += [nodes.Text(", " if number else ""), nodes.literal(text=name)]
+        item += nodes.Text(f": {reason}")
+        items += nodes.list_item("", item)
+    return [nodes.paragraph(text=f"The registers of {module or 'the module'} that no stage holds:"), items]
 
 
 def draw_schedules(env, doctree, builder_format):
@@ -237,6 +284,7 @@ def draw_schedules(env, doctree, builder_format):
             box += [follow(identity, threads), schedule_table(identity, stages, threads, box["caption"], lambda o: False)]
         else:
             box += schedule_table(identity, stages, threads, f"{box['caption']} Thread 0 is in bold.", lambda o: o == 0)
+        box += shared_list(box["module"], box["shared"])
 
 
 def link(anchor, docname):
@@ -605,4 +653,5 @@ def setup(app):
     app.connect("doctree-resolved", weave)
     # After bcw.py finds the values, at the default priority of 500.
     app.connect("env-check-consistency", check_schedules, priority=600)
+    app.connect("build-finished", write_schedules)
     return {"parallel_read_safe": False, "env_version": 1}

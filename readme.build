@@ -310,7 +310,8 @@ tools/bcw.py        The Sphinx extension. It reads the chapters, applies
                     the rules to them and tangles the code.
 tools/weave.py      The Sphinx extension that builds the reader edition.
 tools/linemap.py    Maps a location in build/ to its chapter line.
-tools/run_checks.py Runs each check directive of the book.
+tools/run_checks.py Runs each check directive of the book, and checks each
+                    schedule against the registers of its module.
 tools/twin.py       Translates a twin in the twin language to z3.
 tools/metrics.py    Prints the lines of code, McCabe and Halstead metrics of
                     the code in tools/, without its tests. It also prints the

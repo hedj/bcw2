@@ -263,6 +263,72 @@ class MutantTest:
         assert result.stdout.split() == ["-s", "yices", "-t", sent, "design.smt2"]
 
 
+# A module with a register for each of 2 threads, two stages and one shared register.
+PIPE = """\
+module core_pipe (input wire clk, input wire [2:0] in, output wire [2:0] out);
+    logic [2:0] x_t, d_t, spare;
+    for (genvar t = 0; t < 2; t++) begin : threads
+        logic [2:0] own;
+        always_ff @(posedge clk) own <= own + in;
+    end
+    always_ff @(posedge clk) {x_t, d_t, spare} <= {in, x_t, d_t};
+    assign out = spare ^ threads[0].own ^ threads[1].own;
+endmodule
+"""
+
+
+def scheduled(tmp_path, lines, private="threads"):
+    """Tangle GOOD with PIPE and a schedule of it, weave it, run the runner, and return (text, result)."""
+    body = "".join(f"   {text}\n" if text else "\n" for text in lines)
+    source = "\n.. source:: build/rtl/core/core_pipe.v\n\n" + "".join(f"   {text}\n" for text in PIPE.splitlines())
+    text = GOOD + THREADS + source + (f"\n.. schedule:: The pipe.\n   :threads: core.threads\n   :module: core_pipe\n"
+                                      f"   :private: {private}\n\n{body}")
+    Book({"core/core.rst": text}, tangle=True, root=tmp_path, extensions=["bcw", "weave"])
+    result = subprocess.run([sys.executable, str(RUNNER)], cwd=tmp_path, capture_output=True, text=True)
+    return text, result
+
+
+STAGES = ["fetch", "expand: x_", "decode: d_", ""]
+
+
+# verifies: doc.schedule-registers
+# verifies: doc.schedule-names
+class ScheduleTest:
+    """Each register of a scheduled module has a row, a line of the schedule, or a private scope."""
+
+    def place(self, text):
+        return f"{CHAPTER}:{line(text, '.. schedule::')}"
+
+    def test_a_schedule_that_holds_each_register_passes(self, tmp_path):
+        text, result = scheduled(tmp_path, STAGES + ["spare: the last value, which each thread reads"])
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert f"{self.place(text)}: PASS: [schedule] core_pipe" in result.stdout.splitlines()
+
+    def test_a_shared_register_on_no_line_fails(self, tmp_path):
+        text, result = scheduled(tmp_path, STAGES[:-1])
+        assert result.returncode == 1
+        lines = result.stdout.splitlines()
+        at = lines.index(f"{self.place(text)}: FAIL: [schedule] core_pipe: a register of the module is not in the "
+                         "schedule")
+        assert lines[at + 1] == ("    the register spare of core_pipe is in no private scope, no row and no line "
+                                 "of the schedule")
+
+    def test_a_register_of_a_thread_needs_no_line_but_one_outside_the_private_scopes_does(self, tmp_path):
+        _, result = scheduled(tmp_path, STAGES + ["spare: the last value"], private="other")
+        assert "    the register threads[0].own of core_pipe is in no private scope, no row and no line of the " \
+               "schedule" in result.stdout.splitlines()
+
+    def test_a_name_that_is_no_shared_register_fails(self, tmp_path):
+        _, result = scheduled(tmp_path, STAGES + ["spare gone: the last value"])
+        assert result.returncode == 1
+        assert "    the schedule lists gone, which is no shared register of core_pipe" in result.stdout.splitlines()
+
+    def test_a_prefix_that_starts_no_register_fails(self, tmp_path):
+        _, result = scheduled(tmp_path, ["fetch", "expand: x_", "decode: d_", "read: r_", "", "spare: the last value"])
+        assert result.returncode == 1
+        assert "    no register of core_pipe has the prefix r_ of a row" in result.stdout.splitlines()
+
+
 # verifies: doc.proof-meaning
 class MeaningTest:
     def test_an_assertion_whose_condition_never_holds_fails_at_its_chapter_line(self, tmp_path):

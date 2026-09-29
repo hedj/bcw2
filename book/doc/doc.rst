@@ -619,6 +619,34 @@ Checks that can fail
    A check that cannot fail checks nothing. A mutant shows that a check sees a fault. A
    compiler that makes a testbench check nothing makes its mutant fail too.
 
+Schedules
+---------
+
+.. definition:: doc.schedule
+   :parent: doc.read-is-checked
+
+   A :dfn:`schedule` is a ``schedule`` directive. Its first lines name the rows of its table,
+   each with the start of the names of the registers of the row, in the module of its ``module``
+   option. After a line with no text, each line names registers that no row holds, and what each
+   holds.
+
+.. requirement:: doc.schedule-registers
+   :parent: doc.read-is-checked
+
+   Each schedule shall name on a line each register of its module that no row holds and that no
+   part that its ``private`` option names holds.
+
+.. requirement:: doc.schedule-names
+   :parent: doc.read-is-checked
+
+   Each schedule shall name on its lines only such registers, and give each row the start of the
+   name of a register.
+
+.. rationale::
+
+   A schedule shows which thread holds each shared part of the core. A shared register that it
+   leaves out would hide a way for one thread to reach another.
+
 Review of changes
 =================
 
