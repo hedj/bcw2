@@ -211,3 +211,17 @@ text = "Compaq, Hewlett-Packard, Intel, Lucent, Microsoft, NEC and Philips, *Uni
 [[reference]]
 key = "USB HID 2001"
 text = "USB Implementers Forum, *Device Class Definition for Human Interface Devices (HID)*, version 1.11, 2001."
+
+# Works that the chapters of the book name.
+
+[[reference]]
+key = "Wirth 2013"
+text = "N. Wirth and J. Gutknecht, *Project Oberon: The Design of an Operating System, a Compiler, and a Computer*, revised edition. 2013, https://people.inf.ethz.ch/wirth/ProjectOberon/ (first edition Addison-Wesley, 1992)."
+
+[[reference]]
+key = "Mavin 2009"
+text = "A. Mavin, P. Wilkinson, A. Harwood and M. Novak, \"Easy Approach to Requirements Syntax (EARS),\" *Proc. 17th IEEE International Requirements Engineering Conference (RE'09)*, 2009, pp. 317–322."
+
+[[reference]]
+key = "Procida 2026"
+text = "D. Procida, *Diátaxis: a systematic approach to technical documentation authoring*, https://diataxis.fr, accessed 29 September 2026."
