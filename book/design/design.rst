@@ -165,7 +165,7 @@ Audit budget
 
 .. target:: design.hardware-audit-budget
    :parent: design.auditability
-   :value: 6
+   :value: 7
    :unit: days
 
    The audit time of the book without its parts on the operating system is at most
