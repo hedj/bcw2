@@ -860,104 +860,14 @@ Divide
        assign look_result = negative[look_thread] ? -value[look_thread] : value[look_thread];
    endmodule
 
-.. check:: test
-   :verifies: core.div, core.div-time
-
-   module tb_div;
-       logic clk = 0, rst_n = 0, req = 0;
-       logic [2:0] req_thread = 0, thread = 0, look_thread = 0;
-       logic [1:0] f3 = 0;
-       logic [31:0] a = 0, b = 0;
-       logic [4:0] req_rd = 0;
-       logic wrote = 0;
-       logic [2:0] wrote_thread = 0;
-       wire [31:0] result, look_result;
-       wire [4:0] rd;
-       wire [7:0] wait_div;
-       wire [7:0][5:0] steps;
-       core_div dut (.*);
-       always #20 clk = !clk;
-
-       function automatic [31:0] expect_of(input [1:0] f, input [31:0] x, y);
-           case (f)
-               0: return y == 0 ? 32'hffffffff : x == 32'h80000000 && y == 32'hffffffff ? x
-                       : 32'($signed(x) / $signed(y));
-               1: return y == 0 ? 32'hffffffff : x / y;
-               2: return y == 0 ? x : x == 32'h80000000 && y == 32'hffffffff ? 0
-                       : 32'($signed(x) % $signed(y));
-               default: return y == 0 ? x : x % y;
-           endcase
-       endfunction
-
-       int cycle = 0, fails = 0, checked = 0;
-       int due [8];
-       logic [31:0] want [8];
-       always @(posedge clk) cycle <= cycle + 1;
-
-       // Each busy thread must give its result at its due cycle, and hold it for the 2 cycles until
-       // the core writes it.
-       task automatic watch();
-           for (int t = 0; t < 8; t++) begin
-               thread = 3'(t);
-               #1;
-               if (due[t] != 0 && cycle >= due[t]) begin
-                   if (result != want[t] || rd != 5'(t + 1)) begin
-                       if (fails < 10) $display("thread %0d: result %h rd %0d at cycle %0d, want %h", t, result,
-                                                rd, cycle, want[t]);
-                       fails++;
-                   end
-                   if (cycle == due[t] + 2) begin
-                       checked++;
-                       due[t] = 0;
-                   end
-               end
-           end
-       endtask
-
-       function automatic bit busy();
-           foreach (due[t]) if (due[t] != 0) return 1;
-           return 0;
-       endfunction
-
-       task automatic divide(input [1:0] f, input [31:0] x, y);
-           int t = checked % 8;
-           while (due[t] != 0) begin
-               @(negedge clk);
-               watch();
-               t = (t + 1) % 8;
-           end
-           {req, req_thread, f3, a, b, req_rd} = {1'b1, 3'(t), f, x, y, 5'(t + 1)};
-           {due[t], want[t]} = {cycle + 33, expect_of(f, x, y)};
-           @(negedge clk);
-           req = 0;
-           watch();
-       endtask
-
-       logic [31:0] edges [10] = '{0, 1, 2, 7, 32'hffffffff, 32'h80000000, 32'h7fffffff, 32'h12345678,
-                                   32'hfffffff9, 32'hdeadbeef};
-       initial begin
-           repeat (2) @(negedge clk);
-           rst_n = 1;
-           foreach (edges[i]) foreach (edges[j]) for (int f = 0; f < 4; f++) divide(2'(f), edges[i], edges[j]);
-           for (int k = 0; k < 4000; k++) divide(2'(k), $urandom, k % 3 == 0 ? $urandom % 97 : $urandom);
-           while (busy()) begin
-               @(negedge clk);
-               watch();
-           end
-           $display("%0d results checked, %0d failures", checked, fails);
-           if (fails != 0 || checked != 4400) $fatal(1, "the divider failed");
-           $finish;
-       end
-   endmodule
-
 .. mutant:: build/rtl/core/core_div_unit.v
-   :kills: core.div.test
+   :kills: core.registers.test
 
    -            negate <= f3[1] ? sa : sa != sb && b != 32'd0;
    +            negate <= f3[1] ? sa : sa != sb;
 
 .. mutant:: build/rtl/core/core_div_unit.v
-   :kills: core.div.test
+   :kills: core.registers.test
 
    -            {r, q, d, count, pending} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd32, 1'b1};
    +            {r, q, d, count, pending} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd33, 1'b1};
@@ -1692,8 +1602,8 @@ Stop
    it had not stopped. No cause tells the supervisor that the port stopped it.
 
 .. check:: test
-   :verifies: core.registers, core.own-context, core.step, core.suspend, core.div-wait, core.port-write,
-              core.reset, core.stop
+   :verifies: core.registers, core.own-context, core.step, core.suspend, core.div, core.div-wait,
+              core.port-write, core.reset, core.stop
 
    module tb_core;
        logic clk = 0, rst_n = 0;
@@ -1827,16 +1737,19 @@ Stop
            put(ECALL);
        endtask
 
-       // Thread 1: each divide and remainder of every pair of ops, then ECALL.
+       task automatic divides(input [31:0] x, y);
+           li(5'd1, x); li(5'd2, y);
+           for (int f = 4; f < 8; f++) begin
+               put(enc_r(7'd1, 5'd2, 5'd1, 3'(f), 5'd3, 7'd51));
+               keep(5'd3, expect_div(f, x, y));
+           end
+       endtask
+
+       // Thread 1: each divide and remainder of every pair of ops and of 100 random pairs, then ECALL.
        task automatic program1();
            at = 32'h2000; out = 32'ha000;
-           foreach (ops[i]) foreach (ops[j]) begin
-               li(5'd1, ops[i]); li(5'd2, ops[j]);
-               for (int f = 4; f < 8; f++) begin
-                   put(enc_r(7'd1, 5'd2, 5'd1, 3'(f), 5'd3, 7'd51));
-                   keep(5'd3, expect_div(f, ops[i], ops[j]));
-               end
-           end
+           foreach (ops[i]) foreach (ops[j]) divides(ops[i], ops[j]);
+           for (int k = 0; k < 100; k++) divides($urandom, k % 3 == 0 ? $urandom % 97 : $urandom);
            put(ECALL);
        endtask
 
@@ -1891,6 +1804,7 @@ Stop
            foreach (mem[i]) mem[i] = 0;
            program0(); ecall0 = at - 4;
            program1(); ecall1 = at - 4;
+           if (at > 32'h6000) $fatal(1, "the code of thread 1 reaches that of thread 2");
            // Thread 2 meets an illegal instruction; thread 3 a misaligned load.
            at = 32'h6000; put(32'hffffffff);
            at = 32'h6100; put(enc_i(12'd2, 5'd0, 3'd2, 5'd3, 7'd3));
