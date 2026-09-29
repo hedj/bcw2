@@ -158,12 +158,21 @@ Audit budget
 
 .. target:: design.audit-budget
    :parent: design.auditability
-   :value: 5
+   :value: 40
    :unit: days
 
    The audit time of the book is at most :param:`design.audit-budget`.
 
+.. target:: design.hardware-audit-budget
+   :parent: design.auditability
+   :value: 6
+   :unit: days
+
+   The audit time of the book without its parts on the operating system is at most
+   :param:`design.hardware-audit-budget`.
+
 .. rationale::
 
-   The rates come from studies of inspection. Four hours is the limit of focused work in a
-   day. An audit checks each rule, so it is slower than a reading.
+   The rates come from studies of inspection, and four hours is the limit of focused work in a
+   day. The whole budget is preliminary: half of the 84 days of Project Oberon at these rates keeps
+   it meaningfully small.
