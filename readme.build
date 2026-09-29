@@ -179,7 +179,8 @@ kind, such as core.rotation.test, with -2, -3 and so on for a later check of
 the same name. build/checks.json lists each check with its kind, its options,
 its file and its chapter line.
 
-make check runs each check with tools/run_checks.py, in the chapter order.
+make check runs the checks in parallel with tools/run_checks.py, and prints
+their results in the chapter order.
 The first module in the code of a test or a prove is its top module. Each
 check reads build/rtl/bcw_params.sv and each Verilog file of build/rtl. A
 test passes when Verilator builds the testbench and the testbench exits 0,

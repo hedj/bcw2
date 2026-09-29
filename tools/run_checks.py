@@ -1,10 +1,11 @@
 """Run the checks of the book: each test with Verilator, each prove with SymbiYosys, and each equiv with z3.
 
 make check runs it from the root of the repository, after the tangle. It reads
-build/checks.json, which the tangle writes, and runs each check in the chapter
-order. The top module of a test or a prove is the first module in its code, and
-the top module of an equiv is its module option. Each check reads
-build/rtl/bcw_params.sv and each Verilog file of build/rtl.
+build/checks.json, which the tangle writes, runs the checks in parallel, and
+prints their results in the chapter order. The top module of a test or a prove
+is the first module in its code, and the top module of an equiv is its module
+option. Each check reads build/rtl/bcw_params.sv and each Verilog file of
+build/rtl.
 
 Before the checks, the runner compiles each C reference model of build/model
 with the C compiler, into build/run/model, and links each model into each test,
@@ -50,6 +51,7 @@ build/run/<name>.cover and build/run/<name>.havoc, and of each mutant in
 build/run/<name>/mutant-<n>.
 """
 
+import concurrent.futures
 import functools
 import json
 import re
@@ -73,6 +75,8 @@ DUT = re.compile(r"\bdut\s*\(")
 # The comments of yosys write_smt2 that name each port, and that mark a register or a memory.
 PORT = re.compile(r"^; yosys-smt2-(input|output) (\S+) (\d+)$", re.MULTILINE)
 STATE = re.compile(r"^; yosys-smt2-(register|memory) ", re.MULTILINE)
+# The widest input that an equiv splits into one goal for each of its values.
+SPLIT_WIDTH = 3
 MODELS = Path("build/model")
 OBJECTS = Path("build/run/model")
 COMPILE = ["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O2", "-c"]
@@ -316,7 +320,14 @@ def run_equiv(check, top, work, files):
     values = {name: z3.simplify(z3.SignExt(wide - width, values[name])) for name in outputs}
     # Bit-blasting and SAT alone: the default solver of z3 took from 3 to more than 200 seconds on
     # the same partial products, as the order of its terms changed.
-    solver = z3.Then("simplify", "solve-eqs", "bit-blast", "sat").solver()
+    blast = z3.Then("simplify", "solve-eqs", "bit-blast", "sat")
+    solver = blast.solver()
+    # With the narrowest input fixed, simplify removes each branch on it. split-clause makes a goal
+    # for each value, and ParThen solves the goals in parallel: 63 s to 8 s for the multiply.
+    narrowest = min(inputs.values(), key=lambda term: term.size(), default=None)
+    if narrowest is not None and narrowest.size() <= SPLIT_WIDTH:
+        solver = z3.ParThen("split-clause", blast).solver()
+        solver.add(z3.Or([narrowest == value for value in range(2 ** narrowest.size())]))
     solver.add(z3.Or([module[name] != values[name] for name in outputs]))
     if solver.check() == z3.unsat:
         return None
@@ -351,6 +362,22 @@ def run_mutant(mutant, runner, check, top, work, files):
     return None
 
 
+def verdict(check, runners, files):
+    """(the top module of the check, None if the check passes or (reason, output))."""
+    if check["kind"] == "equiv":
+        top = check["module"]
+    else:
+        module = MODULE.search(Path(check["file"]).read_text())
+        top = module.group(1) if module else None
+    if top is None:
+        return top, ("the code declares no module", "")
+    work = Path("build/run") / check["name"]
+    failure = runners[check["kind"]](check, top, work, files)
+    if failure is None and check["kind"] == "prove":
+        failure = run_meaning(check, top, work, files)
+    return top, failure
+
+
 def main():
     manifest = json.loads(Path("build/checks.json").read_text())
     checks, mutants = manifest["checks"], manifest["mutants"]
@@ -363,26 +390,30 @@ def main():
         print(f"{chapter}:{line}: FAIL: [model] {path}: the C compiler could not build the model")
         for text in output.splitlines():
             print("    " + linemap.rewrite(text))
-    for check in checks:
-        place = f"{check['path']}:{check['line']}"
-        if check["kind"] == "equiv":
-            top = check["module"]
-        else:
-            module = MODULE.search(Path(check["file"]).read_text())
-            top = module.group(1) if module else None
-        if top is None:
-            failure = "the code declares no module", ""
-        else:
-            failure = runners[check["kind"]](check, top, Path("build/run") / check["name"], files)
-        if failure is None and check["kind"] == "prove":
-            failure = run_meaning(check, top, Path("build/run") / check["name"], files)
-        if failure is None:
+    # The checks and the mutants have separate work directories, so they run in parallel.
+    # The mutants of a check run once it passes, and the results print in the chapter order.
+    with concurrent.futures.ProcessPoolExecutor() as pool:
+        verdicts = [pool.submit(verdict, check, runners, files) for check in checks]
+        results = []
+        for check, future in zip(checks, verdicts):
+            top, failure = future.result()
+            killers = [] if failure else [mutant for mutant in mutants if check["name"] in mutant["kills"]]
+            results.append((check, failure, killers, [
+                pool.submit(run_mutant, mutant, runners[check["kind"]], check, top,
+                            Path("build/run") / check["name"] / f"mutant-{number}", files)
+                for number, mutant in enumerate(killers, 1)]))
+        for check, failure, killers, survivals in results:
+            place = f"{check['path']}:{check['line']}"
+            if failure:
+                print(f"{place}: FAIL: [check] {check['name']}: {failure[0]}")
+                for text in failure[1].splitlines():
+                    print("    " + linemap.rewrite(text))
+                failed += 1
+                continue
             print(f"{place}: PASS: [check] {check['name']}")
             passed += 1
-            killers = [mutant for mutant in mutants if check["name"] in mutant["kills"]]
-            for number, mutant in enumerate(killers, 1):
-                work = Path("build/run") / check["name"] / f"mutant-{number}"
-                survived = run_mutant(mutant, runners[check["kind"]], check, top, work, files)
+            for mutant, survival in zip(killers, survivals):
+                survived = survival.result()
                 where = f"{mutant['path']}:{mutant['line']}: "
                 if survived is None:
                     print(f"{where}PASS: [mutant] {check['name']}")
@@ -392,12 +423,6 @@ def main():
                 for text in survived[1].splitlines():
                     print("    " + linemap.rewrite(text))
                 failed += 1
-            continue
-        reason, output = failure
-        print(f"{place}: FAIL: [check] {check['name']}: {reason}")
-        for text in output.splitlines():
-            print("    " + linemap.rewrite(text))
-        failed += 1
     print(f"run_checks: {passed} passed, {failed} failed")
     return 1 if failed else 0
 

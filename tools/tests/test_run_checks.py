@@ -504,6 +504,14 @@ class EquivTest:
         if not passes:
             assert re.fullmatch(r"    a=\d+, b=\d+, f3=1: module y=\d+, twin y=\d+", result.stdout.splitlines()[2])
 
+    @pytest.mark.parametrize("value, passes", [(5, True), (6, False)])
+    def test_a_module_without_inputs_is_proved_or_refuted(self, tmp_path, value, passes):
+        # The narrowest input splits the goal, and this module has none.
+        extra, chapter = self.module("five", "output wire [3:0] y", "assign y = 4'd5;",
+                                     f"def five():\n    return {{'y': {value}}}")
+        text, result = run(tmp_path, extra, chapter)
+        assert (result.returncode == 0) == passes, result.stdout + result.stderr
+
     @pytest.mark.parametrize("bit, passes", [(20, True), (21, False)])
     def test_input_bits_that_yosys_reorders_are_put_back(self, tmp_path, bit, passes):
         # yosys declares one function for the bits 31, 19:12, 20 and 30:21 of i, in that order.
