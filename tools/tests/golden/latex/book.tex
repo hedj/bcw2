@@ -307,12 +307,6 @@ Serves: {\hyperref[\detokenize{core/core:core.threads}]{\sphinxcrossref{\sphinxc
 \sphinxAtStartPar
 Verilog: {\hyperref[\detokenize{core/core:source-2}]{\sphinxcrossref{build/rtl/core/pair.v}}}
 
-\sphinxAtStartPar
-Uses: {\hyperref[\detokenize{core/core:fragment-core.pair-logic}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{:core.pair\sphinxhyphen{}logic}}}}}
-
-\sphinxAtStartPar
-Fragment: {\hyperref[\detokenize{core/core:source-3}]{\sphinxcrossref{:core.pair\sphinxhyphen{}logic}}}
-
 \begingroup\fvset{fontsize=\small}\def\sphinxbelowcaptionspace{0pt}
 \sphinxSetupCaptionForVerbatim{Check (test)}
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
@@ -342,7 +336,7 @@ Verifies: {\hyperref[\detokenize{core/core:core.rotation}]{\sphinxcrossref{\sphi
 Verifies: {\hyperref[\detokenize{core/core:core.rotation}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{core.rotation}}}}}
 
 \sphinxAtStartPar
-Source: {\hyperref[\detokenize{core/core:source-4}]{\sphinxcrossref{build/model/core/ref.c}}}
+Source: {\hyperref[\detokenize{core/core:source-3}]{\sphinxcrossref{build/model/core/ref.c}}}
 
 
 \section{Explanation}
@@ -382,7 +376,7 @@ The aim is {\hyperref[\detokenize{core/core:core.aim}]{\sphinxcrossref{\DUrole{p
 \def\sphinxLiteralBlockLabel{\label{\detokenize{core/core:file-build/rtl/core/pair.v}}}
 \begin{sphinxVerbatim}[commandchars=\\\{\}]
 \PYG{k}{module}\PYG{+w}{ }\PYG{n}{pair}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{input}\PYG{+w}{ }\PYG{k+kt}{wire}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{output}\PYG{+w}{ }\PYG{k+kt}{wire}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{)}\PYG{p}{;}
-\PYG{+w}{    }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{o}{:}\PYG{n}{core}\PYG{p}{.}\PYG{n}{pair}\PYG{o}{\PYGZhy{}}\PYG{k+kt}{logic}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{k}{assign}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{;}
 \PYG{k}{endmodule}
 \end{sphinxVerbatim}
 
@@ -390,17 +384,6 @@ The aim is {\hyperref[\detokenize{core/core:core.aim}]{\sphinxcrossref{\DUrole{p
 
 \end{sphinxuseclass}
 \begin{sphinxuseclass}{implementation}\phantomsection\label{\detokenize{core/core:source-3}}
-\begingroup\def\sphinxbelowcaptionspace{0pt}
-\sphinxSetupCaptionForVerbatim{Fragment: :core.pair\sphinxhyphen{}logic}
-\def\sphinxLiteralBlockLabel{\label{\detokenize{core/core:fragment-core.pair-logic}}}
-\begin{sphinxVerbatim}[commandchars=\\\{\}]
-assign b = a;
-\end{sphinxVerbatim}
-
-\endgroup
-
-\end{sphinxuseclass}
-\begin{sphinxuseclass}{implementation}\phantomsection\label{\detokenize{core/core:source-4}}
 \begingroup\def\sphinxbelowcaptionspace{0pt}
 \sphinxSetupCaptionForVerbatim{Source: build/model/core/ref.c}
 \def\sphinxLiteralBlockLabel{\label{\detokenize{core/core:file-build/model/core/ref.c}}}
@@ -424,10 +407,6 @@ assign b = a;
 \item {} 
 \sphinxAtStartPar
 \sphinxcode{\sphinxupquote{build/rtl/core/pair.v}}: defined in {\hyperref[\detokenize{core/core:file-build/rtl/core/pair.v}]{\sphinxcrossref{Core}}}.
-
-\item {} 
-\sphinxAtStartPar
-\sphinxcode{\sphinxupquote{:core.pair\sphinxhyphen{}logic}}: defined in {\hyperref[\detokenize{core/core:fragment-core.pair-logic}]{\sphinxcrossref{Core}}}, used in {\hyperref[\detokenize{core/core:file-build/rtl/core/pair.v}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{build/rtl/core/pair.v}}}}}.
 
 \end{itemize}
 

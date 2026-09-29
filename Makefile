@@ -10,8 +10,8 @@
 #
 # Sphinx runs tools/bcw.py on book/. It checks the book, reports each finding
 # at its chapter line, and tangles the code into build/. Each Verilog file is
-# linted with build/rtl/bcw_params.sv, the package of PARAMETERs, and read by
-# yosys, which the formal checks use. No tool runs a twin: tools/bcw.py and
+# linted with each package of build/rtl, a .sv file such as build/rtl/bcw_params.sv
+# of the PARAMETERs, and read by yosys, which the formal checks use. No tool runs a twin: tools/bcw.py and
 # tools/run_checks.py translate each twin with tools/twin.py. tools/run_checks.py
 # then runs each check directive that build/checks.json lists. Every location that
 # make check prints is a line in the book: the output of Verilator and of each
@@ -38,9 +38,10 @@ tangle:
 
 check:
 	$(SPHINX) -W --keep-going 2>&1 | $(RELATIVE)
-	@for f in $$(find build/rtl -name '*.v' | sort); do \
-	    verilator --lint-only --quiet-stats -Wall -y "$$(dirname "$$f")" build/rtl/bcw_params.sv "$$f" 2>&1 | $(MAP) || exit 1; \
-	    yosys -q -p "read_verilog -sv build/rtl/bcw_params.sv $$f" 2>&1 | $(MAP) || exit 1; \
+	@packages="$$(find build/rtl -name '*.sv' | sort | tr '\n' ' ')"; \
+	for f in $$(find build/rtl -name '*.v' | sort); do \
+	    verilator --lint-only --quiet-stats -Wall -y "$$(dirname "$$f")" $$packages "$$f" 2>&1 | $(MAP) || exit 1; \
+	    yosys -q -p "read_verilog -sv $$packages $$f" 2>&1 | $(MAP) || exit 1; \
 	done
 	$(PY) tools/run_checks.py
 

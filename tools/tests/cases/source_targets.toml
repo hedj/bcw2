@@ -1,0 +1,85 @@
+# verifies: doc.source-targets
+
+[[case]]
+name = "a source that names a file in build passes"
+append = '''
+
+.. source:: build/rtl/core/pair.v
+
+   module pair (input wire a, output wire b);
+       assign b = a;
+   endmodule
+'''
+findings = []
+
+[[case]]
+name = "a target outside build is a finding [rtl/core/pair.v]"
+append = '''
+
+.. source:: rtl/core/pair.v
+
+   assign b = a;
+'''
+findings = [
+    {check = "source-targets", at = ".. source:: rtl/core/pair.v"},
+]
+
+[[case]]
+name = "a target outside build is a finding [src/pair.v]"
+append = '''
+
+.. source:: src/pair.v
+
+   assign b = a;
+'''
+findings = [
+    {check = "source-targets", at = ".. source:: src/pair.v"},
+]
+
+[[case]]
+name = "a target outside build is a finding [Core_Pair]"
+append = '''
+
+.. source:: Core_Pair
+
+   assign b = a;
+'''
+findings = [
+    {check = "source-targets", at = ".. source:: Core_Pair"},
+]
+
+[[case]]
+name = "a target outside build is a finding [core.pair-logic]"
+append = '''
+
+.. source:: core.pair-logic
+
+   assign b = a;
+'''
+findings = [
+    {check = "source-targets", at = ".. source:: core.pair-logic"},
+]
+
+[[case]]
+name = "a target outside build is a finding [pair.v]"
+append = '''
+
+.. source:: pair.v
+
+   assign b = a;
+'''
+findings = [
+    {check = "source-targets", at = ".. source:: pair.v"},
+]
+
+[[case]]
+name = "a target outside build is a finding [:core.pair-logic]"
+append = '''
+
+.. source:: :core.pair-logic
+
+   assign b = a;
+'''
+findings = [
+    {check = "source-targets", at = ".. source:: :core.pair-logic"},
+]

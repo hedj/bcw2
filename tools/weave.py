@@ -17,8 +17,6 @@ what bcw.py reads:
   <details>. The LaTeX prints each twin in small text, moves each source to a
   last section, Implementation, and starts each kind with an unnumbered part.
 - The HTML numbers the chapters through the whole book, as LaTeX does.
-- A source block that uses fragments gets a line Uses: with a link to each
-  fragment, and the first block of each fragment is its target.
 - A check gets a line Verifies: with a link to each REQUIREMENT that it
   verifies. The HTML shows its code in a closed <details>, and the LaTeX prints
   it in small text. An equiv check has no code, so a paragraph names its module
@@ -28,8 +26,8 @@ what bcw.py reads:
   weave.css, so the PDF shows the same colours.
 - Each :param: citation shows the value and unit of its PARAMETER or TARGET,
   and each PARAMETER and TARGET shows its value on its first line.
-- The directive code-index lists each file and each fragment, with a link to
-  the block that defines it and to each block that uses it.
+- The directive code-index lists each file, with a link to the block that
+  defines it.
 - Each section of level 2 to 4 starts with a line Uses: that links each chunk
   of another section that the section needs (doc.live-set): the interface of
   the section, which its reader holds while reading it.
@@ -131,7 +129,7 @@ class ChaptersDirective(SphinxDirective):
 
 
 class CodeIndexDirective(SphinxDirective):
-    """The index of code: each file and each fragment, the chapter that defines it and the blocks that use it.
+    """The index of code: each file, and the chapter that defines it.
 
     Sphinx reads the index after every chapter, so the model holds the whole book.
     """
@@ -141,17 +139,11 @@ class CodeIndexDirective(SphinxDirective):
         docname = self.env.docname
         chapters = {document.path: document.docname for document in book.documents}
         entries = nodes.bullet_list()
-        for name, block in [*sorted(book.files.items()), *sorted(book.fragments.items())]:
+        for name, block in sorted(book.files.items()):
             item = nodes.paragraph()
             item += [nodes.literal(text=name), nodes.Text(": defined in ")]
             home = chapters[block.path]
-            identity = bcw.fragment_id(name) if bcw.is_fragment(block) else bcw.file_id(name)
-            item += bcw.citation_link("", nodes.Text(self.env.titles[home].astext()), identity, docname)
-            users = dict.fromkeys(user.target for user, _ in book.uses.get(name, []))
-            for number, user in enumerate(users):
-                item += nodes.Text(", used in " if number == 0 else ", ")
-                target = bcw.fragment_id(user) if bcw.is_fragment_name(user) else bcw.file_id(user)
-                item += bcw.citation_link("", nodes.literal(text=user), target, docname)
+            item += bcw.citation_link("", nodes.Text(self.env.titles[home].astext()), bcw.file_id(name), docname)
             item += nodes.Text(".")
             entries += nodes.list_item("", item)
         return [nodes.rubric(text="Index of code"), entries]
@@ -347,24 +339,6 @@ def swap(old, new):
     old.parent.replace(old, new)
 
 
-def link_uses(doctree, document):
-    """Put a line Uses: after each source block that uses fragments, with a link to each fragment."""
-    blocks = {block.line: block for block in document.blocks}
-    for block in list(doctree.findall(nodes.literal_block)):
-        if block.get("bcw") != "source":
-            continue
-        names = dict.fromkeys(name for _, name, _ in bcw.fragment_uses(blocks[block.line]))
-        if not names:
-            continue
-        uses = nodes.paragraph(classes=["fragment-uses"])
-        uses += nodes.Text("Uses: ")
-        for number, name in enumerate(names):
-            if number:
-                uses += nodes.Text(", ")
-            uses += bcw.citation_link("", nodes.literal(text=name), bcw.fragment_id(name), document.docname)
-        block.parent.insert(block.parent.index(block) + 1, uses)
-
-
 def link_checks(doctree, document):
     """Put a line Verifies: after each check, and name the module and the twin of an equiv check."""
     for block in list(doctree.findall(nodes.literal_block)):
@@ -427,13 +401,12 @@ def show_uses(app, doctree):
 
 
 def reshape(app, doctree):
-    """Make each chunk a container, link the uses of fragments, and move each argument to the Explanation section."""
+    """Make each chunk a container, link the checks, and move each argument to the Explanation section."""
     docname = app.env.docname
     if docname == app.config.root_doc:
         return
     document = app.env.bcw_documents[docname]
     mark_sections(doctree, document, docname)
-    link_uses(doctree, document)
     link_checks(doctree, document)
     chunks = {chunk.line: chunk for chunk in document.chunks}
     moved = []
@@ -465,8 +438,6 @@ def summary(block):
         return f"Check ({block['check']})"
     if block["bcw"] == "mutant":
         return f"Mutant of {block['target']}, which {block['options'].get('kills', '')} must catch"
-    if bcw.is_fragment_name(block["target"]):
-        return f"Fragment: {block['target']}"
     kind = "Verilog" if block["language"] == "verilog" else "Source"
     return f"{kind}: {block['target']}"
 

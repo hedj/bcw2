@@ -29,12 +29,6 @@ Pair
    module core_pair (input wire a, output wire b);
        assign b = a;
    endmodule
-   <<:core.other>>
-
-A fragment adds a second module to the same file.
-
-.. source:: :core.other
-
    module core_other (input wire c, output wire d);
        assign d = c
    endmodule
@@ -66,7 +60,7 @@ class LinemapTest:
         assert result.returncode == 0, result.stderr
         return result.stdout
 
-    def test_verilator_error_in_the_fragment_maps_to_its_chapter_line(self):
+    def test_verilator_error_maps_to_its_chapter_line(self):
         result = subprocess.run(["verilator", "--lint-only", VERILOG], capture_output=True, text=True)
         assert f"%Error: {VERILOG}:6:1: syntax error" in result.stderr
         assert f"%Error: {SOURCE}:{line(CHAPTER, 'module core_other') + 2}:1: syntax error" in \
@@ -111,56 +105,3 @@ class LinemapTest:
 
     def test_a_line_without_a_location_is_unchanged(self):
         assert self.filter("%Error: Cannot continue\n") == "%Error: Cannot continue\n"
-
-
-def test_a_range_across_two_chapters_is_kept_with_a_note(tmp_path, monkeypatch):
-    # A fragment from another chapter can put the two ends of a range in two chapters.
-    (tmp_path / "build").mkdir()
-    (tmp_path / "build" / "tangle.json").write_text(
-        '{"files": {"checks/x.sv": {"sha256": "", "lines": [["book/a/a.rst", 5], ["book/b/b.rst", 9]]}}}')
-    monkeypatch.chdir(tmp_path)
-    assert linemap.rewrite("build/checks/x.sv:1.1-2.3") == "build/checks/x.sv:1.1-2.3" + linemap.NOTE
-
-
-FRAGMENTS = """\
-:kind: reference
-
-====
-Core
-====
-
-Overview
-========
-
-Prose.
-
-Three
-=====
-
-.. source:: build/rtl/core/core_three.v
-
-   module core_three (input wire a, output wire b, output wire c);
-       <<:core.three-logic>>
-       assign c = missing_two;
-   endmodule
-
-.. source:: :core.three-logic
-
-   assign b = missing_one;
-"""
-
-
-class FragmentLinemapTest:
-    """A Verilator error inside a fragment, or after one, maps to its own chapter line."""
-
-    def test_each_error_maps_to_the_line_that_holds_it(self, tmp_path, monkeypatch):
-        for name, text in Book({"core/core.rst": FRAGMENTS}, tangle=True).files.items():
-            (tmp_path / name).parent.mkdir(parents=True, exist_ok=True)
-            (tmp_path / name).write_text(text)
-        monkeypatch.chdir(tmp_path)
-        result = subprocess.run(["verilator", "--lint-only", "build/rtl/core/core_three.v"],
-                                capture_output=True, text=True)
-        mapped = subprocess.run([sys.executable, str(ROOT / "tools" / "linemap.py")], input=result.stderr,
-                                capture_output=True, text=True).stdout
-        assert f"{SOURCE}:{line(FRAGMENTS, 'missing_one')}:" in mapped, mapped
-        assert f"{SOURCE}:{line(FRAGMENTS, 'missing_two')}:" in mapped, mapped

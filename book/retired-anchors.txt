@@ -7,3 +7,9 @@ doc.whole-twins
 doc.normative
 doc.scripted
 doc.target-values
+doc.fragment-uses
+doc.fragment-name
+doc.fragment
+doc.fragment-use
+doc.fragments-used
+doc.fragment-cycles

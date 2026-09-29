@@ -70,12 +70,8 @@ thread <em>t</em> to thread <em>t</em> + 1.</p>
 <p class="chunk-serves">Serves: <a class="reference internal" href="#core.threads"><code class="docutils literal notranslate"><span class="pre">core.threads</span></code></a></p>
 </div>
 <details><summary>Verilog: build/rtl/core/pair.v</summary><div class="highlight-verilog notranslate" id="file-build/rtl/core/pair.v"><div class="highlight"><pre><span></span><span class="k">module</span><span class="w"> </span><span class="n">pair</span><span class="w"> </span><span class="p">(</span><span class="k">input</span><span class="w"> </span><span class="kt">wire</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">output</span><span class="w"> </span><span class="kt">wire</span><span class="w"> </span><span class="n">b</span><span class="p">);</span>
-<span class="w">    </span><span class="o">&lt;&lt;:</span><span class="n">core</span><span class="p">.</span><span class="n">pair</span><span class="o">-</span><span class="kt">logic</span><span class="o">&gt;&gt;</span>
+<span class="w">    </span><span class="k">assign</span><span class="w"> </span><span class="n">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">;</span>
 <span class="k">endmodule</span>
-</pre></div>
-</div>
-</details><p class="fragment-uses">Uses: <a class="reference internal" href="#fragment-core.pair-logic"><code class="docutils literal notranslate"><span class="pre">:core.pair-logic</span></code></a></p>
-<details><summary>Fragment: :core.pair-logic</summary><div class="highlight-none notranslate" id="fragment-core.pair-logic"><div class="highlight"><pre><span></span>assign b = a;
 </pre></div>
 </div>
 </details><details><summary>Check (test)</summary><div class="highlight-verilog notranslate"><div class="highlight"><pre><span></span><span class="k">module</span><span class="w"> </span><span class="n">tb</span><span class="p">;</span>

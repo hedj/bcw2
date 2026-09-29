@@ -14,10 +14,9 @@ Each chunk of a chapter is a directive, such as
 
 At doctree-read, the extension turns each chapter into a Document of Chunks and
 Blocks. When every chapter is read, model() builds the Model of the whole book
-once: the chapter order and its parts, the fragments, the files, the uses of
-each fragment, and the values. The checks, the tangle and tools/weave.py read
-the Model. At env-check-consistency, the extension runs each check and logs
-each finding as a Sphinx warning, such as
+once: the chapter order and its parts, the files and the values. The checks,
+the tangle and tools/weave.py read the Model. At env-check-consistency, the
+extension runs each check and logs each finding as a Sphinx warning, such as
 
     book/core/core.rst:12: WARNING: [stamps] core.rotation: message
         fix: what to do
@@ -63,10 +62,6 @@ ANCHORED = RULES | {"GOAL", "TARGET"}
 VALUED = {"PARAMETER", "TARGET"}
 KINDS = ["tutorial", "how-to", "reference", "explanation"]
 ANCHOR = re.compile(r"[a-z][a-z0-9-]*(\.[a-z0-9-]+)+")
-# A fragment use: a line of a source directive that holds only a fragment name
-# between << and >>, after its indentation. A fragment name is a colon followed by
-# the form of an anchor, so that a reader tells it from an anchor.
-USE = re.compile(r"^(?P<indent>[ \t]*)<<(?P<name>:[a-z][a-z0-9-]*(?:\.[a-z0-9-]+)+)>>\s*$")
 SHALL = re.compile(r"\bshall\b", re.IGNORECASE)
 # The prose of a chunk writes each quotation as this code span, which holds no
 # word and which ste_lint skips.
@@ -377,9 +372,7 @@ def read_document(app, doctree):
                 block = Block(path, child.line, child.get("bcw"), child.get("options", {}), child.get("target"),
                               child.get("first", child.line), child.astext(), owner, child.get("check"))
                 document.blocks.append(block)
-                if is_fragment(block):
-                    label(app, docname, child, fragment_id(block.target))
-                elif named(block):
+                if named(block):
                     label(app, docname, child, file_id(block.target))
                 if owner is not None:
                     owner.blocks.append(block)
@@ -402,9 +395,9 @@ def read_document(app, doctree):
 def label(app, docname, node, name):
     """Make name the id of node, and a label that a citation can link to.
 
-    name is the anchor of a chunk, fragment-<name> for the block of the fragment
-    :<name>, or file-<path> for the block of a file. Only the first node with a name
-    gets it: doc.anchors and doc.one-block report the others.
+    name is the anchor of a chunk, or file-<path> for the block of a file. Only
+    the first node with a name gets it: doc.anchors and doc.one-block report the
+    others.
     """
     std = app.env.domains.standard_domain
     if name is not None and name not in std.anonlabels:
@@ -457,9 +450,7 @@ class Model:
     ordered: list  # the Documents in the chapter order, then the chapters that it leaves out, by name
     left: list  # the names of the chapters that the chapter order leaves out
     parts: list  # (kind, [Document]) for each kind that has chapters, in the order of KINDS, then (None, the rest)
-    fragments: dict  # the Block of each fragment name: its first block in the chapter order
     files: dict  # the Block of each file that a source writes: its first block in the chapter order
-    uses: dict  # (Block, chapter line) of each use of each fragment name, in the chapter order
     values: dict  # the value of each PARAMETER and TARGET that evaluates
     failures: dict  # (Chunk, reason) of each PARAMETER and TARGET whose value does not evaluate
     units: dict  # the unit of each PARAMETER and TARGET, or None
@@ -478,15 +469,11 @@ def build_model(documents):
     rest = [document for document in documents if document.name not in placed]
     if rest:
         parts.append((None, rest))
-    fragments, files, uses = {}, {}, {}
+    files = {}
     for document in ordered:
         for block in document.blocks:
-            if is_fragment(block):
-                fragments.setdefault(block.target, block)
-            elif writes_file(block):
+            if writes_file(block):
                 files.setdefault(block.target, block)
-            for number, name, _ in fragment_uses(block):
-                uses.setdefault(name, []).append((block, number))
     values, failures = parameter_values(documents)
     units = {}
     for document in documents:
@@ -494,7 +481,7 @@ def build_model(documents):
             if chunk.label in VALUED and chunk.anchor is not None:
                 units.setdefault(chunk.anchor, chunk.options.get("unit"))
     checks = [block for document in ordered for block in document.blocks if block.kind == "check"]
-    return Model(documents, ordered, left, parts, fragments, files, uses, values, failures, units, checks)
+    return Model(documents, ordered, left, parts, files, values, failures, units, checks)
 
 
 def model(env):
@@ -814,7 +801,7 @@ def mutation(block, book):
     source = book.files.get(block.target)
     if source is None or not block.target.endswith((".v", ".sv")):
         return None, f"{block.target} is not a Verilog file that a source directive writes"
-    lines = expand([source], book.fragments)
+    lines = block_lines(source)
     size = len(removed)
     starts = [start for start in range(len(lines) - size + 1)
               if [text.strip() for text, _, _ in lines[start:start + size]] == removed]
@@ -1272,22 +1259,7 @@ def check_param_citations(documents):
                               "cite it with the role rule, or name a PARAMETER or a TARGET")
 
 
-# Fragments
-
-
-def is_fragment_name(target):
-    """Whether the argument of a source directive is a fragment name: a colon and the form of an anchor."""
-    return target.startswith(":") and bool(ANCHOR.fullmatch(target[1:]))
-
-
-def is_fragment(block):
-    """Whether the block is a source directive that defines a fragment."""
-    return block.kind == "source" and is_fragment_name(block.target)
-
-
-def fragment_id(name):
-    """The id and label of the block of the fragment name: fragment-<name without its colon>."""
-    return "fragment-" + name[1:]
+# Files
 
 
 def file_id(target):
@@ -1300,77 +1272,19 @@ def writes_file(block):
     return block.kind == "source" and "/" in block.target
 
 
-def fragment_uses(block):
-    """(chapter line, fragment name, indentation) of each fragment use in a source directive."""
-    if block.kind != "source":
-        return []
-    return [(block.first + offset, match["name"], match["indent"])
-            for offset, text in enumerate(block.text.splitlines()) if (match := USE.match(text))]
-
-
 def named(block):
-    """The file or the fragment name that the block defines, or None."""
+    """The file that the block names, or None."""
     return block.target if block.kind == "source" else None
-
-
-def fragment_graph(model):
-    """The fragments that the block of each fragment uses, and the fragments that a file uses."""
-    graph = {name: {used for _, used, _ in fragment_uses(block)} for name, block in model.fragments.items()}
-    roots = {name for name, places in model.uses.items() for block, _ in places if writes_file(block)}
-    return graph, roots
-
-
-def reached(graph, start):
-    """The fragments that the fragments in start reach through their uses, start included."""
-    seen, stack = set(), list(start)
-    while stack:
-        name = stack.pop()
-        if name not in seen:
-            seen.add(name)
-            stack.extend(graph.get(name, ()))
-    return seen
 
 
 # implements: doc.source-targets
 def check_source_targets(documents):
     for document in documents:
         for block in document.blocks:
-            if block.kind == "source" and not (block.target.startswith("build/") or is_fragment(block)):
+            if block.kind == "source" and not block.target.startswith("build/"):
                 yield Finding(document.path, block.line, "source-targets", None,
-                              f"{block.target!r} is not a file under build/ and not a fragment name",
-                              "name a file such as build/rtl/core/x.v, or a fragment such as :core.rotation-logic")
-
-
-# implements: doc.fragment-uses
-def check_fragment_uses(model):
-    for document in model.documents:
-        for block in document.blocks:
-            for number, name, _ in fragment_uses(block):
-                if name not in model.fragments:
-                    yield Finding(document.path, number, "fragment-uses", None,
-                                  f"no source directive defines the fragment {name}",
-                                  f"define it with .. source:: {name}, or name a fragment that exists")
-
-
-# implements: doc.fragments-used
-def check_fragments_used(model):
-    graph, roots = fragment_graph(model)
-    used = reached(graph, roots)
-    for name, block in model.fragments.items():
-        if name not in used:
-            yield Finding(block.path, block.line, "fragments-used", None,
-                          f"the fragment {name} reaches no file",
-                          f"use it with a line <<{name}>> in a source directive that writes a file")
-
-
-# implements: doc.fragment-cycles
-def check_fragment_cycles(model):
-    graph = fragment_graph(model)[0]
-    for name, block in model.fragments.items():
-        if name in reached(graph, graph[name]):
-            yield Finding(block.path, block.line, "fragment-cycles", None,
-                          f"the fragment {name} reaches itself through its uses",
-                          "remove a use from the cycle")
+                              f"{block.target!r} is not a file under build/",
+                              "name a file such as build/rtl/core/x.v")
 
 
 # implements: doc.one-block
@@ -1384,7 +1298,7 @@ def check_one_block(model):
             if name in first:
                 yield Finding(document.path, block.line, "one-block", block.chunk.anchor if block.chunk else None,
                               f"{name} already has a code block, at {first[name].path}:{first[name].line}",
-                              "move this code into that block, or into a fragment that that block uses")
+                              "move this code into that block")
             else:
                 first[name] = block
 
@@ -1479,9 +1393,6 @@ def check(model, retired=(), tools=(), general=None, tests=()):
     findings += check_param_citations(documents)
     findings += check_target_parents(documents)
     findings += check_source_targets(documents)
-    findings += check_fragment_uses(model)
-    findings += check_fragments_used(model)
-    findings += check_fragment_cycles(model)
     findings += check_twin_forms(model)
     findings += check_twin_size(documents)
     findings += check_scoped_constants(documents)
@@ -1538,23 +1449,9 @@ def check_book(app, env):
 # The tangle
 
 
-def expand(blocks, defined, indent="", active=()):
-    """(text, chapter path, chapter line) of each tangled line of blocks, each after indent.
-
-    Each fragment use is replaced by the lines of its fragment, with the indentation
-    of the use added. A use of a fragment that no source defines, or that is already
-    being expanded, stays as it is: the checks report it.
-    """
-    lines = []
-    for block in blocks:
-        for offset, text in enumerate(block.text.splitlines()):
-            match = USE.match(text) if block.kind == "source" else None
-            if match and match["name"] in defined and match["name"] not in active:
-                lines += expand([defined[match["name"]]], defined, indent + match["indent"],
-                                active + (match["name"],))
-            else:
-                lines.append((indent + text if text else text, block.path, block.first + offset))
-    return lines
+def block_lines(block):
+    """(text, chapter path, chapter line) of each line of the block."""
+    return [(text, block.path, block.first + offset) for offset, text in enumerate(block.text.splitlines())]
 
 
 def write(path, text):
@@ -1569,7 +1466,7 @@ def sha256(text):
 
 
 def tangle(app, exception):
-    """Write each tangled file with its fragments in place, the constants, and build/tangle.json.
+    """Write each tangled file, the constants, and build/tangle.json.
 
     build/tangle.json holds, by the path of each tangled file in build/, the SHA-256
     of the file as the tangle wrote it and the chapter line of each of its lines.
@@ -1586,12 +1483,11 @@ def tangle(app, exception):
     book = model(app.env)
     outputs = tangle_parameters(book)
     for target, block in book.files.items():
-        outputs.append((target, [(text, [path, number]) for text, path, number in expand([block], book.fragments)]))
+        outputs.append((target, [(text, [path, number]) for text, path, number in block_lines(block)]))
     manifest = check_manifest(book)
     for entry, block in zip(manifest, book.checks):
         if entry["file"] is not None:
-            outputs.append((entry["file"], [(text, [block.path, block.first + offset])
-                                            for offset, text in enumerate(block.text.splitlines())]))
+            outputs.append((entry["file"], [(text, [path, number]) for text, path, number in block_lines(block)]))
     path = Path(root) / "build" / "tangle.json"
     last = json.loads(path.read_text(encoding="utf-8"))["files"] if path.exists() else {}
     record = {}

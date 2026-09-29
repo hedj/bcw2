@@ -4,8 +4,8 @@ make check runs it from the root of the repository, after the tangle. It reads
 build/checks.json, which the tangle writes, runs the checks in parallel, and
 prints their results in the chapter order. The top module of a test or a prove
 is the first module in its code, and the top module of an equiv is its module
-option. Each check reads build/rtl/bcw_params.sv and each Verilog file of
-build/rtl.
+option. Each check reads each package of build/rtl, a .sv file such as
+build/rtl/bcw_params.sv, and then each Verilog file of build/rtl.
 
 Before the checks, the runner compiles each C reference model of build/model
 with the C compiler, into build/run/model, and links each model into each test,
@@ -103,8 +103,8 @@ SCHEDULES = Path("build/schedules.json")
 
 
 def sources():
-    """The package of PARAMETERs, then each Verilog file of build/rtl."""
-    return ["build/rtl/bcw_params.sv"] + sorted(str(path) for path in Path("build/rtl").rglob("*.v"))
+    """Each package of build/rtl, then each Verilog file, which can call the packages."""
+    return [str(path) for suffix in ("*.sv", "*.v") for path in sorted(Path("build/rtl").rglob(suffix))]
 
 
 def constants():

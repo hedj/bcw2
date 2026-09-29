@@ -126,7 +126,6 @@ Instruction set
    :implements: core.rvc0
 
    module core_rvc0 (input wire [15:0] c, output reg [31:0] insn, output reg illegal);
-       <<:core.rv32-formats>>
        localparam OP_IMM = 7'b0010011, OP_LOAD = 7'b0000011, OP_STORE = 7'b0100011;
        wire [4:0]  rdp          = {2'b01, c[4:2]};
        wire [4:0]  r1p          = {2'b01, c[9:7]};
@@ -137,11 +136,11 @@ Instruction set
            illegal = 1'b0;
            if (c[1:0] != 2'b00) illegal = 1'b1;
            else case (c[15:13])
-               3'b000: if (c[12:5] == 8'b0) illegal = 1'b1;                   // reserved
-                       else insn = enc_i(imm_addi4spn, 5'd2, 3'b000, rdp, OP_IMM);
-               3'b010: insn = enc_i(imm_lwsw, r1p, 3'b010, rdp, OP_LOAD);    // c.lw
-               3'b110: insn = enc_s(imm_lwsw, rdp, r1p, 3'b010, OP_STORE);   // c.sw
-               default: illegal = 1'b1;                                     // F, D, reserved
+               3'b000: if (c[12:5] == 8'b0) illegal = 1'b1;                         // reserved
+                       else insn = rv32::enc_i(imm_addi4spn, 5'd2, 3'b000, rdp, OP_IMM);
+               3'b010: insn = rv32::enc_i(imm_lwsw, r1p, 3'b010, rdp, OP_LOAD);    // c.lw
+               3'b110: insn = rv32::enc_s(imm_lwsw, rdp, r1p, 3'b010, OP_STORE);   // c.sw
+               default: illegal = 1'b1;                                           // F, D, reserved
            endcase
            if (illegal) insn = 32'h00000013;
        end
@@ -209,7 +208,6 @@ Instruction set
    :implements: core.rvc1
 
    module core_rvc1 (input wire [15:0] c, output reg [31:0] insn, output reg illegal);
-       <<:core.rv32-formats>>
        localparam OP_IMM = 7'b0010011, OP_REG = 7'b0110011, OP_LUI = 7'b0110111,
                   OP_JAL = 7'b1101111, OP_BR = 7'b1100011;
        wire [4:0]  rd_full      = c[11:7];
@@ -225,30 +223,30 @@ Instruction set
            illegal = 1'b0;
            if (c[1:0] != 2'b01) illegal = 1'b1;
            else case (c[15:13])
-               3'b000: insn = enc_i(imm_ci, rd_full, 3'b000, rd_full, OP_IMM);      // c.addi
-               3'b001: insn = enc_j(imm_cj, 5'd1, OP_JAL);                          // c.jal
-               3'b010: insn = enc_i(imm_ci, 5'd0, 3'b000, rd_full, OP_IMM);         // c.li
-               3'b011: if ({c[12], c[6:2]} == 6'b0) illegal = 1'b1;                 // reserved
-                       else if (rd_full == 5'd2)                                    // c.addi16sp
-                           insn = enc_i(imm_addi16sp, 5'd2, 3'b000, 5'd2, OP_IMM);
-                       else insn = {{15{c[12]}}, c[6:2], rd_full, OP_LUI};          // c.lui
+               3'b000: insn = rv32::enc_i(imm_ci, rd_full, 3'b000, rd_full, OP_IMM);      // c.addi
+               3'b001: insn = rv32::enc_j(imm_cj, 5'd1, OP_JAL);                          // c.jal
+               3'b010: insn = rv32::enc_i(imm_ci, 5'd0, 3'b000, rd_full, OP_IMM);         // c.li
+               3'b011: if ({c[12], c[6:2]} == 6'b0) illegal = 1'b1;                       // reserved
+                       else if (rd_full == 5'd2)                                          // c.addi16sp
+                           insn = rv32::enc_i(imm_addi16sp, 5'd2, 3'b000, 5'd2, OP_IMM);
+                       else insn = {{15{c[12]}}, c[6:2], rd_full, OP_LUI};                // c.lui
                3'b100: case (c[11:10])
-                   2'b00: if (c[12]) illegal = 1'b1;                                // c.srli
-                          else insn = enc_i({6'b0, shamt}, r1p, 3'b101, r1p, OP_IMM);
-                   2'b01: if (c[12]) illegal = 1'b1;                                // c.srai
-                          else insn = enc_i({6'b010000, shamt}, r1p, 3'b101, r1p, OP_IMM);
-                   2'b10: insn = enc_i(imm_ci, r1p, 3'b111, r1p, OP_IMM);           // c.andi
-                   2'b11: if (c[12]) illegal = 1'b1;                                // RV64 only
+                   2'b00: if (c[12]) illegal = 1'b1;                                      // c.srli
+                          else insn = rv32::enc_i({6'b0, shamt}, r1p, 3'b101, r1p, OP_IMM);
+                   2'b01: if (c[12]) illegal = 1'b1;                                      // c.srai
+                          else insn = rv32::enc_i({6'b010000, shamt}, r1p, 3'b101, r1p, OP_IMM);
+                   2'b10: insn = rv32::enc_i(imm_ci, r1p, 3'b111, r1p, OP_IMM);           // c.andi
+                   2'b11: if (c[12]) illegal = 1'b1;                                      // RV64 only
                           else case (c[6:5])
-                       2'b00: insn = enc_r(7'b0100000, rdp, r1p, 3'b000, r1p, OP_REG);  // sub
-                       2'b01: insn = enc_r(7'b0000000, rdp, r1p, 3'b100, r1p, OP_REG);  // xor
-                       2'b10: insn = enc_r(7'b0000000, rdp, r1p, 3'b110, r1p, OP_REG);  // or
-                       2'b11: insn = enc_r(7'b0000000, rdp, r1p, 3'b111, r1p, OP_REG);  // and
+                       2'b00: insn = rv32::enc_r(7'b0100000, rdp, r1p, 3'b000, r1p, OP_REG);  // sub
+                       2'b01: insn = rv32::enc_r(7'b0000000, rdp, r1p, 3'b100, r1p, OP_REG);  // xor
+                       2'b10: insn = rv32::enc_r(7'b0000000, rdp, r1p, 3'b110, r1p, OP_REG);  // or
+                       2'b11: insn = rv32::enc_r(7'b0000000, rdp, r1p, 3'b111, r1p, OP_REG);  // and
                    endcase
                endcase
-               3'b101: insn = enc_j(imm_cj, 5'd0, OP_JAL);                          // c.j
-               3'b110: insn = enc_b(imm_cb, 5'd0, r1p, 3'b000, OP_BR);              // c.beqz
-               3'b111: insn = enc_b(imm_cb, 5'd0, r1p, 3'b001, OP_BR);              // c.bnez
+               3'b101: insn = rv32::enc_j(imm_cj, 5'd0, OP_JAL);                          // c.j
+               3'b110: insn = rv32::enc_b(imm_cb, 5'd0, r1p, 3'b000, OP_BR);              // c.beqz
+               3'b111: insn = rv32::enc_b(imm_cb, 5'd0, r1p, 3'b001, OP_BR);              // c.bnez
            endcase
            if (illegal) insn = 32'h00000013;
        end
@@ -294,7 +292,6 @@ Instruction set
    :implements: core.rvc2
 
    module core_rvc2 (input wire [15:0] c, output reg [31:0] insn, output reg illegal);
-       <<:core.rv32-formats>>
        localparam OP_IMM = 7'b0010011, OP_REG = 7'b0110011, OP_LOAD = 7'b0000011,
                   OP_STORE = 7'b0100011, OP_JALR = 7'b1100111;
        wire [4:0]  rd_full  = c[11:7];
@@ -307,23 +304,23 @@ Instruction set
            illegal = 1'b0;
            if (c[1:0] != 2'b10) illegal = 1'b1;
            else case (c[15:13])
-               3'b000: if (c[12]) illegal = 1'b1;                                   // RV32: shamt[5]
-                       else insn = enc_i({6'b0, shamt}, rd_full, 3'b001, rd_full, OP_IMM);
-               3'b010: if (rd_full == 5'd0) illegal = 1'b1;                         // c.lwsp
-                       else insn = enc_i(imm_lwsp, 5'd2, 3'b010, rd_full, OP_LOAD);
+               3'b000: if (c[12]) illegal = 1'b1;                                         // RV32: shamt[5]
+                       else insn = rv32::enc_i({6'b0, shamt}, rd_full, 3'b001, rd_full, OP_IMM);
+               3'b010: if (rd_full == 5'd0) illegal = 1'b1;                               // c.lwsp
+                       else insn = rv32::enc_i(imm_lwsp, 5'd2, 3'b010, rd_full, OP_LOAD);
                3'b100: if (!c[12] && rs2_full == 5'd0 && rd_full == 5'd0)
-                           illegal = 1'b1;                                          // reserved
-                       else if (!c[12] && rs2_full == 5'd0)                         // c.jr
-                           insn = enc_i(12'b0, rd_full, 3'b000, 5'd0, OP_JALR);
-                       else if (!c[12])                                             // c.mv
-                           insn = enc_r(7'b0, rs2_full, 5'd0, 3'b000, rd_full, OP_REG);
+                           illegal = 1'b1;                                                // reserved
+                       else if (!c[12] && rs2_full == 5'd0)                               // c.jr
+                           insn = rv32::enc_i(12'b0, rd_full, 3'b000, 5'd0, OP_JALR);
+                       else if (!c[12])                                                   // c.mv
+                           insn = rv32::enc_r(7'b0, rs2_full, 5'd0, 3'b000, rd_full, OP_REG);
                        else if (rs2_full == 5'd0 && rd_full == 5'd0)
-                           insn = 32'h00100073;                                     // c.ebreak
-                       else if (rs2_full == 5'd0)                                   // c.jalr
-                           insn = enc_i(12'b0, rd_full, 3'b000, 5'd1, OP_JALR);
-                       else insn = enc_r(7'b0, rs2_full, rd_full, 3'b000, rd_full, OP_REG); // c.add
-               3'b110: insn = enc_s(imm_swsp, rs2_full, 5'd2, 3'b010, OP_STORE);    // c.swsp
-               default: illegal = 1'b1;                                             // F, D
+                           insn = 32'h00100073;                                           // c.ebreak
+                       else if (rs2_full == 5'd0)                                         // c.jalr
+                           insn = rv32::enc_i(12'b0, rd_full, 3'b000, 5'd1, OP_JALR);
+                       else insn = rv32::enc_r(7'b0, rs2_full, rd_full, 3'b000, rd_full, OP_REG); // c.add
+               3'b110: insn = rv32::enc_s(imm_swsp, rs2_full, 5'd2, 3'b010, OP_STORE);    // c.swsp
+               default: illegal = 1'b1;                                                   // F, D
            endcase
            if (illegal) insn = 32'h00000013;
        end
@@ -333,27 +330,30 @@ Instruction set
    :verifies: core.rvc2
    :module: core_rvc2
 
-.. source:: :core.rv32-formats
+.. source:: build/rtl/core/rv32.sv
 
-   function [31:0] enc_i(input [11:0] imm_f, input [4:0] rs1_f,
-                         input [2:0] fn3, input [4:0] rd_f, input [6:0] op_f);
-       enc_i = {imm_f, rs1_f, fn3, rd_f, op_f};
-   endfunction
-   function [31:0] enc_s(input [11:0] imm_f, input [4:0] rs2_f, input [4:0] rs1_f,
-                         input [2:0] fn3, input [6:0] op_f);
-       enc_s = {imm_f[11:5], rs2_f, rs1_f, fn3, imm_f[4:0], op_f};
-   endfunction
-   function [31:0] enc_r(input [6:0] f7_f, input [4:0] rs2_f, input [4:0] rs1_f,
-                         input [2:0] fn3, input [4:0] rd_f, input [6:0] op_f);
-       enc_r = {f7_f, rs2_f, rs1_f, fn3, rd_f, op_f};
-   endfunction
-   function [31:0] enc_b(input [12:1] imm_f, input [4:0] rs2_f, input [4:0] rs1_f,
-                         input [2:0] fn3, input [6:0] op_f);
-       enc_b = {imm_f[12], imm_f[10:5], rs2_f, rs1_f, fn3, imm_f[4:1], imm_f[11], op_f};
-   endfunction
-   function [31:0] enc_j(input [20:1] imm_f, input [4:0] rd_f, input [6:0] op_f);
-       enc_j = {imm_f[20], imm_f[10:1], imm_f[11], imm_f[19:12], rd_f, op_f};
-   endfunction
+   // The encoders of the formats of RV32, which the expanders and the test of the core call.
+   package rv32;
+       function [31:0] enc_i(input [11:0] imm_f, input [4:0] rs1_f,
+                             input [2:0] fn3, input [4:0] rd_f, input [6:0] op_f);
+           enc_i = {imm_f, rs1_f, fn3, rd_f, op_f};
+       endfunction
+       function [31:0] enc_s(input [11:0] imm_f, input [4:0] rs2_f, input [4:0] rs1_f,
+                             input [2:0] fn3, input [6:0] op_f);
+           enc_s = {imm_f[11:5], rs2_f, rs1_f, fn3, imm_f[4:0], op_f};
+       endfunction
+       function [31:0] enc_r(input [6:0] f7_f, input [4:0] rs2_f, input [4:0] rs1_f,
+                             input [2:0] fn3, input [4:0] rd_f, input [6:0] op_f);
+           enc_r = {f7_f, rs2_f, rs1_f, fn3, rd_f, op_f};
+       endfunction
+       function [31:0] enc_b(input [12:1] imm_f, input [4:0] rs2_f, input [4:0] rs1_f,
+                             input [2:0] fn3, input [6:0] op_f);
+           enc_b = {imm_f[12], imm_f[10:5], rs2_f, rs1_f, fn3, imm_f[4:1], imm_f[11], op_f};
+       endfunction
+       function [31:0] enc_j(input [20:1] imm_f, input [4:0] rd_f, input [6:0] op_f);
+           enc_j = {imm_f[20], imm_f[10:1], imm_f[11], imm_f[19:12], rd_f, op_f};
+       endfunction
+   endpackage
 
 .. rationale::
 
@@ -1641,26 +1641,6 @@ Stop
        end
        always #5 clk = !clk;
 
-       function [31:0] enc_i(input [11:0] imm_f, input [4:0] rs1_f, input [2:0] fn3, input [4:0] rd_f,
-                             input [6:0] op_f);
-           enc_i = {imm_f, rs1_f, fn3, rd_f, op_f};
-       endfunction
-       function [31:0] enc_s(input [11:0] imm_f, input [4:0] rs2_f, input [4:0] rs1_f, input [2:0] fn3,
-                             input [6:0] op_f);
-           enc_s = {imm_f[11:5], rs2_f, rs1_f, fn3, imm_f[4:0], op_f};
-       endfunction
-       function [31:0] enc_r(input [6:0] f7_f, input [4:0] rs2_f, input [4:0] rs1_f, input [2:0] fn3,
-                             input [4:0] rd_f, input [6:0] op_f);
-           enc_r = {f7_f, rs2_f, rs1_f, fn3, rd_f, op_f};
-       endfunction
-       function [31:0] enc_b(input [12:1] imm_f, input [4:0] rs2_f, input [4:0] rs1_f, input [2:0] fn3,
-                             input [6:0] op_f);
-           enc_b = {imm_f[12], imm_f[10:5], rs2_f, rs1_f, fn3, imm_f[4:1], imm_f[11], op_f};
-       endfunction
-       function [31:0] enc_j(input [20:1] imm_f, input [4:0] rd_f, input [6:0] op_f);
-           enc_j = {imm_f[20], imm_f[10:1], imm_f[11], imm_f[19:12], rd_f, op_f};
-       endfunction
-
        int at;
        task automatic put(input [31:0] word);
            {mem[16'(at + 3)], mem[16'(at + 2)], mem[16'(at + 1)], mem[16'(at)]} = word;
@@ -1673,14 +1653,14 @@ Stop
        task automatic li(input [4:0] rd, input [31:0] value);
            logic [31:0] upper = (value + 32'h800) >> 12;
            put({upper[19:0], rd, 7'd55});
-           put(enc_i(12'(value - (upper << 12)), rd, 3'd0, rd, 7'd19));
+           put(rv32::enc_i(12'(value - (upper << 12)), rd, 3'd0, rd, 7'd19));
        endtask
        // Stores register rs at the next word of the results of the thread, and records what it should be.
        int out;
        logic [31:0] want [int];
        task automatic keep(input [4:0] rs, input [31:0] value);
            li(5'd31, 32'(out));
-           put(enc_s(12'd0, rs, 5'd31, 3'd2, 7'd35));
+           put(rv32::enc_s(12'd0, rs, 5'd31, 3'd2, 7'd35));
            want[out] = value;
            out += 4;
        endtask
@@ -1698,49 +1678,49 @@ Stop
            int here;
            at = 0; out = 32'h8000;
            li(5'd1, 32'h12345678); li(5'd2, 32'hfffffff9);
-           put(enc_r(7'd0, 5'd2, 5'd1, 3'd0, 5'd3, 7'd51));  keep(5'd3, 32'h12345678 + 32'hfffffff9);
-           put(enc_r(7'd32, 5'd2, 5'd1, 3'd0, 5'd3, 7'd51)); keep(5'd3, 32'h12345678 - 32'hfffffff9);
-           put(enc_r(7'd0, 5'd2, 5'd1, 3'd1, 5'd3, 7'd51));  keep(5'd3, 32'h12345678 << 25);
-           put(enc_r(7'd0, 5'd2, 5'd1, 3'd2, 5'd3, 7'd51));  keep(5'd3, 0);
-           put(enc_r(7'd0, 5'd2, 5'd1, 3'd3, 5'd3, 7'd51));  keep(5'd3, 1);
-           put(enc_r(7'd32, 5'd1, 5'd2, 3'd5, 5'd3, 7'd51)); keep(5'd3, 32'hffffffff);
-           put(enc_i(12'd4, 5'd2, 3'd5, 5'd3, 7'd19));       keep(5'd3, 32'h0fffffff);
-           put(enc_i({7'd32, 5'd4}, 5'd2, 3'd5, 5'd3, 7'd19)); keep(5'd3, 32'hffffffff);
-           put(enc_i(12'hff0, 5'd1, 3'd7, 5'd3, 7'd19));     keep(5'd3, 32'h12345670);
-           put(enc_r(7'd1, 5'd2, 5'd1, 3'd0, 5'd3, 7'd51));  keep(5'd3, 32'h12345678 * 32'hfffffff9);
-           put(enc_r(7'd1, 5'd2, 5'd1, 3'd1, 5'd3, 7'd51));  keep(5'd3, 32'hffffffff);
-           put(enc_r(7'd1, 5'd2, 5'd1, 3'd3, 5'd3, 7'd51));  keep(5'd3, 32'h12345677);
+           put(rv32::enc_r(7'd0, 5'd2, 5'd1, 3'd0, 5'd3, 7'd51));  keep(5'd3, 32'h12345678 + 32'hfffffff9);
+           put(rv32::enc_r(7'd32, 5'd2, 5'd1, 3'd0, 5'd3, 7'd51)); keep(5'd3, 32'h12345678 - 32'hfffffff9);
+           put(rv32::enc_r(7'd0, 5'd2, 5'd1, 3'd1, 5'd3, 7'd51));  keep(5'd3, 32'h12345678 << 25);
+           put(rv32::enc_r(7'd0, 5'd2, 5'd1, 3'd2, 5'd3, 7'd51));  keep(5'd3, 0);
+           put(rv32::enc_r(7'd0, 5'd2, 5'd1, 3'd3, 5'd3, 7'd51));  keep(5'd3, 1);
+           put(rv32::enc_r(7'd32, 5'd1, 5'd2, 3'd5, 5'd3, 7'd51)); keep(5'd3, 32'hffffffff);
+           put(rv32::enc_i(12'd4, 5'd2, 3'd5, 5'd3, 7'd19));       keep(5'd3, 32'h0fffffff);
+           put(rv32::enc_i({7'd32, 5'd4}, 5'd2, 3'd5, 5'd3, 7'd19)); keep(5'd3, 32'hffffffff);
+           put(rv32::enc_i(12'hff0, 5'd1, 3'd7, 5'd3, 7'd19));     keep(5'd3, 32'h12345670);
+           put(rv32::enc_r(7'd1, 5'd2, 5'd1, 3'd0, 5'd3, 7'd51));  keep(5'd3, 32'h12345678 * 32'hfffffff9);
+           put(rv32::enc_r(7'd1, 5'd2, 5'd1, 3'd1, 5'd3, 7'd51));  keep(5'd3, 32'hffffffff);
+           put(rv32::enc_r(7'd1, 5'd2, 5'd1, 3'd3, 5'd3, 7'd51));  keep(5'd3, 32'h12345677);
            // Store a byte and a half, and load them back signed and unsigned.
            li(5'd4, 32'h9000);
-           put(enc_s(12'd1, 5'd2, 5'd4, 3'd0, 7'd35));
-           put(enc_s(12'd2, 5'd2, 5'd4, 3'd1, 7'd35));
-           put(enc_i(12'd1, 5'd4, 3'd0, 5'd3, 7'd3));        keep(5'd3, 32'hfffffff9);
-           put(enc_i(12'd1, 5'd4, 3'd4, 5'd3, 7'd3));        keep(5'd3, 32'h000000f9);
-           put(enc_i(12'd2, 5'd4, 3'd1, 5'd3, 7'd3));        keep(5'd3, 32'hfffffff9);
-           put(enc_i(12'd2, 5'd4, 3'd5, 5'd3, 7'd3));        keep(5'd3, 32'h0000fff9);
+           put(rv32::enc_s(12'd1, 5'd2, 5'd4, 3'd0, 7'd35));
+           put(rv32::enc_s(12'd2, 5'd2, 5'd4, 3'd1, 7'd35));
+           put(rv32::enc_i(12'd1, 5'd4, 3'd0, 5'd3, 7'd3));        keep(5'd3, 32'hfffffff9);
+           put(rv32::enc_i(12'd1, 5'd4, 3'd4, 5'd3, 7'd3));        keep(5'd3, 32'h000000f9);
+           put(rv32::enc_i(12'd2, 5'd4, 3'd1, 5'd3, 7'd3));        keep(5'd3, 32'hfffffff9);
+           put(rv32::enc_i(12'd2, 5'd4, 3'd5, 5'd3, 7'd3));        keep(5'd3, 32'h0000fff9);
            // A taken branch skips an addi; a not-taken one does not.
            li(5'd3, 0);
-           put(enc_b(12'd4, 5'd2, 5'd1, 3'd1, 7'd99));
-           put(enc_i(12'd1, 5'd3, 3'd0, 5'd3, 7'd19));
-           put(enc_b(12'd4, 5'd2, 5'd1, 3'd0, 7'd99));
-           put(enc_i(12'd2, 5'd3, 3'd0, 5'd3, 7'd19));       keep(5'd3, 2);
+           put(rv32::enc_b(12'd4, 5'd2, 5'd1, 3'd1, 7'd99));
+           put(rv32::enc_i(12'd1, 5'd3, 3'd0, 5'd3, 7'd19));
+           put(rv32::enc_b(12'd4, 5'd2, 5'd1, 3'd0, 7'd99));
+           put(rv32::enc_i(12'd2, 5'd3, 3'd0, 5'd3, 7'd19));       keep(5'd3, 2);
            // jal links and jumps; auipc; compressed c.li x5, 7 and c.addi x5, 1.
            here = at;
-           put(enc_j(20'd4, 5'd6, 7'd111));
-           put(enc_i(12'd1, 5'd3, 3'd0, 5'd3, 7'd19));
-           put(enc_i(12'd0, 5'd6, 3'd0, 5'd7, 7'd19));       keep(5'd7, 32'(here + 4));
+           put(rv32::enc_j(20'd4, 5'd6, 7'd111));
+           put(rv32::enc_i(12'd1, 5'd3, 3'd0, 5'd3, 7'd19));
+           put(rv32::enc_i(12'd0, 5'd6, 3'd0, 5'd7, 7'd19));       keep(5'd7, 32'(here + 4));
            here = at;
            put({20'd1, 5'd8, 7'd23});                        keep(5'd8, 32'(here + 32'h1000));
            put16(16'h429d); put16(16'h0285);                 keep(5'd5, 8);
-           put(enc_i(12'd5, 5'd1, 3'd0, 5'd0, 7'd19));
-           put(enc_i(12'd0, 5'd0, 3'd0, 5'd3, 7'd19));       keep(5'd3, 0);
+           put(rv32::enc_i(12'd5, 5'd1, 3'd0, 5'd0, 7'd19));
+           put(rv32::enc_i(12'd0, 5'd0, 3'd0, 5'd3, 7'd19));       keep(5'd3, 0);
            put(ECALL);
        endtask
 
        task automatic divides(input [31:0] x, y);
            li(5'd1, x); li(5'd2, y);
            for (int f = 4; f < 8; f++) begin
-               put(enc_r(7'd1, 5'd2, 5'd1, 3'(f), 5'd3, 7'd51));
+               put(rv32::enc_r(7'd1, 5'd2, 5'd1, 3'(f), 5'd3, 7'd51));
                keep(5'd3, expect_div(f, x, y));
            end
        endtask
@@ -1807,7 +1787,7 @@ Stop
            if (at > 32'h6000) $fatal(1, "the code of thread 1 reaches that of thread 2");
            // Thread 2 meets an illegal instruction; thread 3 a misaligned load.
            at = 32'h6000; put(32'hffffffff);
-           at = 32'h6100; put(enc_i(12'd2, 5'd0, 3'd2, 5'd3, 7'd3));
+           at = 32'h6100; put(rv32::enc_i(12'd2, 5'd0, 3'd2, 5'd3, 7'd3));
            // Thread 4 sets a register in its second context, 9; then it starts again there and reads it.
            at = 32'h6200; li(5'd5, 32'd42); put(ECALL);
            at = 32'h6300; out = 32'hc000; keep(5'd5, 32'd42); put(ECALL); ecall4 = at - 4;
@@ -1815,9 +1795,9 @@ Stop
            // of a run with no stop.
            at = 32'h6400; out = 32'he000; li(5'd5, 32'd1000); li(5'd6, 32'd7);
            for (int k = 0; k < 16; k++) begin
-               put(enc_r(7'd1, 5'd6, 5'd5, 3'd5, 5'd7, 7'd51));
+               put(rv32::enc_r(7'd1, 5'd6, 5'd5, 3'd5, 5'd7, 7'd51));
                keep(5'd7, 32'(1000 / (7 + k)));
-               put(enc_i(12'd1, 5'd6, 3'd0, 5'd6, 7'd19));
+               put(rv32::enc_i(12'd1, 5'd6, 3'd0, 5'd6, 7'd19));
            end
            put(ECALL); ecall6 = at - 4;
            repeat (4) @(negedge clk);

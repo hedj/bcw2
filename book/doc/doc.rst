@@ -280,19 +280,13 @@ Targets
    goal that nobody has met yet, so no chunk serves a TARGET and no value names one. The tangle
    writes no TARGET.
 
-Fragments
----------
+Files
+-----
 
 .. requirement:: doc.source-targets
    :parent: doc.traceable
 
-   Where a code block is a ``source`` directive, the code block shall name a file in ``build/``
-   or a fragment name.
-
-.. requirement:: doc.fragment-uses
-   :parent: doc.traceable
-
-   Each fragment use shall name a fragment.
+   Where a code block is a ``source`` directive, the code block shall name a file in ``build/``.
 
 One reading
 ===========
@@ -489,49 +483,18 @@ Parameters
    ``build/checks.json``, so the Verilog and the twins read one value. The weave shows the value
    where the text cites it.
 
-Fragments
----------
-
-.. definition:: doc.fragment-name
-   :parent: doc.one-source
-
-   A :dfn:`fragment name` is the argument of a ``source`` directive when it is a ``:`` before
-   the form of an anchor, such as ``:core.rotation-logic``. The ``:`` sets it apart from an
-   anchor. A ``source`` directive whose argument holds a ``/`` names a file.
-
-.. definition:: doc.fragment
-   :parent: doc.one-source
-
-   A :dfn:`fragment` is the code of the ``source`` directive with a fragment name.
-
-.. definition:: doc.fragment-use
-   :parent: doc.one-source
-
-   A :dfn:`fragment use` is a line of a ``source`` directive that holds only a fragment name
-   between ``<<`` and ``>>``, after spaces. ``make tangle`` puts the fragment in place of the
-   line, with those spaces before each line of the fragment.
-
-.. requirement:: doc.fragments-used
-   :parent: doc.one-source
-
-   Each fragment shall reach a file through fragment uses.
-
-.. requirement:: doc.fragment-cycles
-   :parent: doc.one-source
-
-   No fragment shall reach itself through fragment uses.
+Files
+-----
 
 .. requirement:: doc.one-block
    :parent: doc.one-source
 
-   Where a code block names a file or a fragment name, the code block shall be the only code block
-   that names it.
+   Where a code block names a file, the code block shall be the only code block that names it.
 
 .. rationale::
 
-   A fragment lets the code of a rule stand next to the rule, while a skeleton puts a module in
-   order. ``make tangle`` writes ``build/tangle.json``, which traces each tangled line to its
-   chapter line.
+   A reader finds the whole of a file in one block. ``make tangle`` writes ``build/tangle.json``,
+   which traces each tangled line to its chapter line.
 
 Twins and stamps
 ================

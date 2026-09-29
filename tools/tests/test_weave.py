@@ -234,9 +234,8 @@ class ChecksTest:
         assert deprecations(lambda: weave(BOOK, builder)) == []
 
 
-FRAGMENTED = (CORE_CHAPTER + "\n.. source:: build/rtl/core/pair.v\n\n"
-              "   module pair (input wire a, output wire b);\n       <<:core.pair-logic>>\n   endmodule\n"
-              "\n.. source:: :core.pair-logic\n\n   assign b = a;\n")
+PAIR = ("\n.. source:: build/rtl/core/pair.v\n\n"
+        "   module pair (input wire a, output wire b);\n       assign b = a;\n   endmodule\n")
 
 
 class PdfTest:
@@ -253,7 +252,7 @@ INDEXED = INDEX + "\n.. code-index::\n"
 
 
 class CodeIndexTest:
-    """The directive code-index lists each file and each fragment, where it is defined and where it is used."""
+    """The directive code-index lists each file and where it is defined."""
 
     def test_without_the_directive_the_index_has_no_index_of_code(self, html):
         assert "Index of code" not in html.output["index.html"]
@@ -270,7 +269,7 @@ TESTED = ("\n.. check:: test\n   :verifies: core.rotation\n\n   module tb;\n    
           "\n.. check:: equiv\n   :verifies: core.rotation\n   :module: core_rotate\n   :twin: core_next\n")
 MODEL = ("\n.. source:: build/model/core/ref.c\n\n   #include <stdint.h>\n"
          "   uint32_t ref_next(uint32_t turn, uint32_t threads) { return (turn + 1) % threads; }\n")
-GOLDEN_BOOK = {**BOOK, "core/core.rst": TARGETED + FRAGMENTED[len(CORE_CHAPTER):] + TESTED + MODEL}
+GOLDEN_BOOK = {**BOOK, "core/core.rst": TARGETED + PAIR + TESTED + MODEL}
 PAGES = ["index.html", "guide/guide.html", "design/design.html", "core/core.html"]
 
 

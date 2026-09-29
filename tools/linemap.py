@@ -70,7 +70,7 @@ def rewrite(text):
         nonlocal unmapped
         path = relative(match.group("path"))
         first, last = lookup(path, int(match.group("line"))), lookup(path, int(match.group("end")))
-        if first is None or last is None or first[0] != last[0]:
+        if first is None or last is None:
             unmapped = True
             return match.group(0)
         return f"{first[0]}:{first[1]}{match.group('column')}{last[1]}"

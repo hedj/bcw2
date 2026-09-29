@@ -7,7 +7,6 @@ tangled files, or run a tool.
 
 import hashlib
 import json
-import signal
 import subprocess
 import sys
 import tempfile
@@ -380,28 +379,8 @@ def source(target, *code):
     return f"\n.. source:: {target}\n\n" + "".join(f"   {line}\n" for line in code)
 
 
-SKELETON = source("build/rtl/core/pair.v", "module pair (input wire a, output wire b);", "    <<:core.pair-logic>>",
-                  "endmodule")
-FRAGMENT = source(":core.pair-logic", "assign b = a;")
 CHAPTER = "book/core/core.rst"
-
-
-# verifies: doc.source-targets
-# verifies: doc.fragment-uses
-# verifies: doc.fragments-used
-# verifies: doc.fragment-cycles
-class FragmentTest:
-    """doc.source-targets, doc.fragment-uses, doc.fragments-used and doc.fragment-cycles"""
-
-    def test_the_first_block_of_a_fragment_in_the_chapter_order_is_the_fragment(self):
-        # A tutorial comes before a reference in the chapter order, so zeta comes before alpha.
-        zeta = chapter("Zeta", kind="tutorial", body=source(":core.pair-logic", "// zeta"))
-        alpha = chapter("Alpha", body=source(":core.pair-logic", "// alpha"))
-        book = Book({"alpha/alpha.rst": alpha, "zeta/zeta.rst": zeta})
-        assert book.tuples() == [("book/alpha/alpha.rst", line(alpha, ".. source::"), "one-block", None),
-                                 ("book/zeta/zeta.rst", line(zeta, ".. source::"), "fragments-used", None)]
-        [finding] = [finding for finding in book.findings if finding.check == "one-block"]
-        assert f"book/zeta/zeta.rst:{line(zeta, '.. source::')}" in finding.message
+ROTATE = "build/rtl/core/core_rotate.v"
 
 
 # verifies: doc.one-block
@@ -409,21 +388,24 @@ class OneBlockTest:
     """doc.one-block"""
 
     def test_the_finding_names_the_first_block(self):
-        text = GOOD + SKELETON + FRAGMENT + source(":core.pair-logic", "assign c = a;")
+        text = GOOD + source(ROTATE, "// more")
         [finding] = Book({"core/core.rst": text}).findings
-        first = line(text, ".. source:: :core.pair-logic")
-        assert finding.message == f":core.pair-logic already has a code block, at book/core/core.rst:{first}"
+        first = line(text, f".. source:: {ROTATE}")
+        assert finding.message == f"{ROTATE} already has a code block, at book/core/core.rst:{first}"
 
-    @pytest.mark.parametrize("extra, path, code", [
-        (SKELETON + FRAGMENT + source(":core.pair-logic", "assign c = a;"), "build/rtl/core/pair.v",
-         ["module pair (input wire a, output wire b);", "    assign b = a;", "endmodule"]),
-        (source("build/rtl/core/core_rotate.v", "// more"), "build/rtl/core/core_rotate.v",
-         ["module core_rotate (input wire [2:0] turn, output wire [2:0] next);", "    assign next = turn + 3'd1;",
-          "endmodule"]),
-    ], ids=["a fragment", "a file"])
-    def test_the_tangle_writes_the_first_block_only(self, extra, path, code):
-        lines = tangled(Book({"core/core.rst": GOOD + extra}, tangle=True).files, path)
-        assert [text for text, _, _ in lines] == code
+    def test_the_first_block_in_the_chapter_order_is_the_file(self):
+        # A tutorial comes before a reference in the chapter order, so zeta comes before alpha.
+        zeta = chapter("Zeta", kind="tutorial", body=source("build/rtl/pair.v", "// zeta"))
+        alpha = chapter("Alpha", body=source("build/rtl/pair.v", "// alpha"))
+        book = Book({"alpha/alpha.rst": alpha, "zeta/zeta.rst": zeta})
+        assert book.tuples() == [("book/alpha/alpha.rst", line(alpha, ".. source::"), "one-block", None)]
+        assert f"book/zeta/zeta.rst:{line(zeta, '.. source::')}" in book.findings[0].message
+
+    def test_the_tangle_writes_the_first_block_only(self):
+        lines = tangled(Book({"core/core.rst": GOOD + source(ROTATE, "// more")}, tangle=True).files, ROTATE)
+        assert [text for text, _, _ in lines] == [
+            "module core_rotate (input wire [2:0] turn, output wire [2:0] next);", "    assign next = turn + 3'd1;",
+            "endmodule"]
 
 
 # verifies: doc.labels
@@ -485,9 +467,9 @@ class ParseErrorTest:
         "a repeated option on a parameter": (None, THREADS.replace("   :unit: threads", "   :unit: threads\n"
                                                                    "   :unit: threads") + WIDTH,
                                              ".. parameter:: core.threads", "duplicate option"),
-        "a fragment inside a failed goal": (None, SKELETON + "\n.. goal:: core.aim extra\n\n   No aim.\n\n"
-                                            "   .. source:: :core.pair-logic\n\n      assign b = a;\n",
-                                            ".. goal:: core.aim", "maximum 1 argument(s) allowed"),
+        "a source inside a failed goal": (None, "\n.. goal:: core.aim extra\n\n   No aim.\n\n"
+                                          "   .. source:: build/rtl/core/pair.v\n\n      assign b = a;\n",
+                                          ".. goal:: core.aim", "maximum 1 argument(s) allowed"),
     }
 
     @pytest.mark.parametrize("case", CASES)
@@ -744,88 +726,23 @@ class TangleRecordTest:
         assert "[tangle]" not in self.tangle(tmp_path).warnings
 
 
-class FragmentTangleTest:
-    """The tangle puts each fragment in place of its use, with the indentation of the use."""
+class BackslashTest:
+    """A line that ends in a backslash goes on in the next line, in Python and in a Verilog macro. The map
+    names the chapter line of each line, so the next line maps to its own chapter line."""
 
-    def test_a_file_from_a_skeleton_and_fragments_of_two_chapters(self):
-        core = GOOD + source("build/rtl/core/pair.v", "module pair (input wire a, output wire b);",
-                             "    <<:core.pair-logic>>", "    <<:zeta.more>>", "endmodule") + FRAGMENT
-        zeta = chapter("Zeta", body="\nMore\n====\n" + source(":zeta.more", "// one", "// two"))
-        files = Book({"core/core.rst": core, "zeta/zeta.rst": zeta}, tangle=True).files
-        assert tangled(files, "build/rtl/core/pair.v") == [
-            ("module pair (input wire a, output wire b);", CHAPTER, line(core, "module pair")),
-            ("    assign b = a;", CHAPTER, line(core, "assign b = a;")),
-            ("    // one", "book/zeta/zeta.rst", line(zeta, "// one")),
-            ("    // two", "book/zeta/zeta.rst", line(zeta, "// two")),
-            ("endmodule", CHAPTER, line(core, "endmodule", after="<<:zeta.more>>"))]
-        assert not any("pair-logic" in name or "zeta.more" in name for name in files)
-
-    def test_a_fragment_inside_a_fragment_adds_its_indentation(self):
-        text = (GOOD + SKELETON.replace("<<:core.pair-logic>>", "<<:core.outer>>")
-                + source(":core.outer", "begin", "    <<:core.pair-logic>>", "end") + FRAGMENT)
-        lines = tangled(Book({"core/core.rst": text}, tangle=True).files, "build/rtl/core/pair.v")
-        assert lines[1:4] == [("    begin", CHAPTER, line(text, "begin")),
-                              ("        assign b = a;", CHAPTER, line(text, "assign b = a;")),
-                              ("    end", CHAPTER, line(text, "end", after="<<:core.pair-logic>>"))]
-
-    def test_the_indentation_makes_working_python(self):
-        text = GOOD + source("build/model/body.py", "def f(x):", "    <<:core.body>>", "", "RESULT = f(1)") + source(
-            ":core.body", "y = x + 1", "return y")
-        files = Book({"core/core.rst": text}, tangle=True).files
-        names = {}
-        exec(files["build/model/body.py"], names)
-        assert names["RESULT"] == 2
-        assert tangled(files, "build/model/body.py")[1:3] == [("    y = x + 1", CHAPTER, line(text, "y = x + 1")),
-                                                              ("    return y", CHAPTER, line(text, "return y"))]
-
-    # A line that ends in a backslash goes on in the next line, in Python and in a Verilog
-    # macro. The map names the chapter line of each line, so the next line maps to its own
-    # chapter line, also where it comes from another block or a fragment.
-    BACKSLASH = {
-        "a fragment ends in a backslash": (
-            source("build/model/b.py", "def f(x):", "    <<:core.sum>>", "        1", "    return total", "",
-                   "RESULT = f(1)") + source(":core.sum", "total = x + \\")),
-        "an outer line ends in a backslash": (
-            source("build/model/b.py", "def f(x):", "    total = x + \\", "    <<:core.one>>", "    return total", "",
-                   "RESULT = f(1)") + source(":core.one", "1")),
-    }
-
-    @pytest.mark.parametrize("case", BACKSLASH)
-    def test_the_line_after_a_backslash_maps_to_its_own_chapter_line(self, case, tmp_path):
-        text = GOOD + self.BACKSLASH[case]
+    def test_the_line_after_a_backslash_maps_to_its_own_chapter_line(self, tmp_path):
+        text = GOOD + source("build/model/b.py", "def f(x):", "    total = x + \\", "        1", "    return total", "",
+                             "RESULT = f(1)")
         files = Book({"core/core.rst": text}, tangle=True).files
         names = {}
         exec(files["build/model/b.py"], names)
         assert names["RESULT"] == 2
         lines = tangled(files, "build/model/b.py")
-        # Each line of code maps to the chapter line that holds it.
         assert all(text.splitlines()[number - 1].strip() == code.strip() for code, _, number in lines), lines
         for name, content in files.items():
             (tmp_path / name).parent.mkdir(parents=True, exist_ok=True)
             (tmp_path / name).write_text(content)
-        after = next(number for number in range(2, len(lines) + 1) if lines[number - 2][0].endswith("\\"))
-        assert linemap.lookup(str(tmp_path / "build/model/b.py"), after) == lines[after - 1][1:]
-
-    def test_a_use_of_no_fragment_stays_as_it_is(self):
-        tangled = Book({"core/core.rst": GOOD + SKELETON}, tangle=True).files["build/rtl/core/pair.v"]
-        assert "    <<:core.pair-logic>>\n" in tangled
-
-    def test_a_cycle_ends_and_leaves_the_repeated_use_as_it_is(self):
-        text = (GOOD + SKELETON + source(":core.pair-logic", "<<:core.other>>")
-                + source(":core.other", "<<:core.pair-logic>>"))
-
-        def stop(signum, frame):
-            raise TimeoutError("the tangle did not end")
-
-        previous = signal.signal(signal.SIGALRM, stop)
-        signal.alarm(30)
-        try:
-            tangled = Book({"core/core.rst": text}, tangle=True).files["build/rtl/core/pair.v"]
-        finally:
-            signal.alarm(0)
-            signal.signal(signal.SIGALRM, previous)
-        assert tangled.count("<<:core.pair-logic>>") == 1
-
+        assert linemap.lookup(str(tmp_path / "build/model/b.py"), 3) == lines[2][1:]
 
 
 class ModelTest:
@@ -846,21 +763,11 @@ class ModelTest:
         assert [(kind, [document.name for document in documents]) for kind, documents in model.parts] == [
             ("reference", ["core"]), (None, ["story"])]
 
-    def test_the_model_holds_the_fragments_the_files_and_the_uses(self):
-        text = GOOD + SKELETON + FRAGMENT
+    def test_the_model_holds_the_files(self):
+        text = GOOD + source("build/rtl/core/pair.v", "// pair")
         model = Book({"core/core.rst": text}).model
-        assert model.fragments[":core.pair-logic"].line == line(text, ".. source:: :core.pair-logic")
         assert sorted(model.files) == ["build/rtl/core/core_rotate.v", "build/rtl/core/pair.v"]
-        [(block, number)] = model.uses[":core.pair-logic"]
-        assert (block.target, number) == ("build/rtl/core/pair.v", line(text, "<<:core.pair-logic>>"))
-
-    def test_a_use_inside_a_fragment_is_a_use(self):
-        text = (GOOD + SKELETON.replace("<<:core.pair-logic>>", "<<:core.outer>>")
-                + source(":core.outer", "<<:core.pair-logic>>") + FRAGMENT)
-        uses = Book({"core/core.rst": text}).model.uses
-        assert [(block.target, number) for block, number in uses[":core.pair-logic"]] == [
-            (":core.outer", line(text, "<<:core.pair-logic>>"))]
-        assert [block.target for block, _ in uses[":core.outer"]] == ["build/rtl/core/pair.v"]
+        assert model.files["build/rtl/core/pair.v"].line == line(text, ".. source:: build/rtl/core/pair.v")
 
     def test_the_model_holds_the_checks_in_the_chapter_order(self):
         zeta = chapter("Zeta", kind="tutorial", body="\n.. check:: test\n   :verifies: core.rotation\n\n   x\n")
