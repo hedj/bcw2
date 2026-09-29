@@ -811,8 +811,8 @@ Divide
    // The divider of one thread, which only its own requests and its own write reach.
    module core_div_unit (input wire clk, rst_n, start, input wire [1:0] f3, input wire [31:0] a, b,
                          input wire [4:0] start_rd, input wire wrote,
-                         output wire [31:0] value, output wire negative, output wire [4:0] rd,
-                         output wire waiting, output wire [5:0] steps);
+                         output logic [31:0] value, output wire [4:0] rd, output wire waiting,
+                         output wire [5:0] steps);
        logic [31:0] r, q, d;
        logic [5:0] count;
        logic negate, remainder, pending;
@@ -832,7 +832,11 @@ Divide
                if (count != '0) {r, q, count} <= {r_next, q_next, count - 6'd1};
                if (wrote) pending <= 1'b0;
            end
-       assign {value, negative, rd, waiting, steps} = {remainder ? r : q, negate, dest, pending, count};
+       // The unit negates its result a cycle after each step, so that no adder follows the choice of a
+       // result in core_div: that choice held the critical path. The core reads a result two cycles
+       // after the last step, and the proof of the core checks that it reads this one.
+       always_ff @(posedge clk) value <= negate ? -(remainder ? r : q) : (remainder ? r : q);
+       assign {rd, waiting, steps} = {dest, pending, count};
    endmodule
 
 .. source:: build/rtl/core/core_div.v
@@ -847,17 +851,16 @@ Divide
                     output wire [bcw_params::CORE_THREADS-1:0][5:0] steps);
        localparam int T = bcw_params::CORE_THREADS;
        wire [31:0] value [T];
-       wire negative [T];
        wire [4:0] dest [T];
        for (genvar t = 0; t < T; t++) begin : units
            core_div_unit unit (.clk, .rst_n, .start(req && req_thread == t), .f3, .a, .b, .start_rd(req_rd),
-                               .wrote(wrote && wrote_thread == t), .value(value[t]), .negative(negative[t]),
-                               .rd(dest[t]), .waiting(wait_div[t]), .steps(steps[t]));
+                               .wrote(wrote && wrote_thread == t), .value(value[t]), .rd(dest[t]),
+                               .waiting(wait_div[t]), .steps(steps[t]));
        end
-       assign result = negative[thread] ? -value[thread] : value[thread];
+       assign result = value[thread];
        assign rd = dest[thread];
        // The port reads the result of any one thread.
-       assign look_result = negative[look_thread] ? -value[look_thread] : value[look_thread];
+       assign look_result = value[look_thread];
    endmodule
 
 .. mutant:: build/rtl/core/core_div_unit.v
@@ -867,7 +870,7 @@ Divide
    +            negate <= f3[1] ? sa : sa != sb;
 
 .. mutant:: build/rtl/core/core_div_unit.v
-   :kills: core.registers.test
+   :kills: core.depth.prove
 
    -            {r, q, d, count, pending} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd32, 1'b1};
    +            {r, q, d, count, pending} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd33, 1'b1};
@@ -1090,7 +1093,7 @@ Pipeline
        logic [TW-1:0] rot, rot_next;
        core_rotate rotate (.turn(rot), .next(rot_next));
        // The thread of the write slot of the next cycle, whose divide result the core registers a cycle
-       // before it writes it: choosing and negating that result held the critical path.
+       // before it writes it, so that choosing the result takes a cycle of its own.
        logic [TW-1:0] ahead;
        wire [TW-1:0] ahead_1, ahead_2;
        core_rotate step_1 (.turn(rot_next), .next(ahead_1));
