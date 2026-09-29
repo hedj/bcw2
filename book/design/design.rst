@@ -119,11 +119,18 @@ Security properties
    One write to the entry of a handle revokes the handle. No holder of the handle needs to be
    found, told or trusted.
 
+.. definition:: design.external-clock
+   :parent: design.auditability
+
+   An :dfn:`external clock` is an input from outside the machine that gives a protection
+   domain a measure of real time, such as the time at which data comes from another machine.
+   Such an input is work for the operating system, not for the hardware.
+
 .. goal:: design.timing-invariant
    :parent: design.auditability
 
-   No protection domain can change the observed latency of an operation in any other
-   protection domain.
+   Between protection domains that have no external clock, no protection domain can change
+   the observed latency of an operation in another.
 
 .. goal:: design.no-clock
    :parent: design.auditability
