@@ -141,6 +141,15 @@ Each file has one code block (doc.one-block). make check and each check read
 every package before the Verilog files.
 
 
+Bibliography
+------------
+
+book/bibliography.toml holds the references of the book. Each [[reference]]
+has a key, the first author and the year such as "Kahn 1974", and a text, the
+reference in rST inline markup. The directive bibliography in book/index.rst
+lists them in the order of their keys, before the index of code. The file is
+not a chapter, so the audit time leaves it out.
+
 Checks
 ------
 

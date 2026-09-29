@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from book import CORE_CHAPTER, DESIGN, GENERAL, GOOD, Book, chapter, deprecations, parameter, target
+from book import CORE_CHAPTER, DESIGN, GENERAL, GOOD, Book, chapter, deprecations, line, parameter, target
 
 INDEX = "Book\n====\n\n.. chapters::\n"
 LATEX = [("index", "book.tex", "Book", "Author", "manual")]
@@ -248,7 +248,9 @@ class PdfTest:
 
 
 
-INDEXED = INDEX + "\n.. code-index::\n"
+INDEXED = INDEX + "\n.. bibliography:: refs.toml\n\n.. code-index::\n"
+REFERENCES = ("[[reference]]\nkey = \"Kahn 1974\"\ntext = 'G. Kahn, *Information Processing 74*, 1974.'\n"
+              "\n[[reference]]\nkey = \"Davidson 1971\"\ntext = 'E. S. Davidson, *Proc. 1971*, 1971.'\n")
 
 
 class CodeIndexTest:
@@ -256,6 +258,31 @@ class CodeIndexTest:
 
     def test_without_the_directive_the_index_has_no_index_of_code(self, html):
         assert "Index of code" not in html.output["index.html"]
+
+
+class BibliographyTest:
+    """The directive bibliography lists the references of its TOML file by key, each with its own id."""
+
+    def index(self, references):
+        return weave({**BOOK, "refs.toml": references}, "html", index=INDEXED)
+
+    def test_the_references_are_in_the_order_of_their_keys_before_the_index_of_code(self):
+        book = self.index(REFERENCES)
+        assert book.tuples() == []
+        page = body(book.output["index.html"])
+        assert after(page, "Bibliography", 'id="ref-davidson-1971"', "<em>Proc. 1971</em>",
+                     'id="ref-kahn-1974"', "Index of code")
+
+    @pytest.mark.parametrize("references, message", [
+        ("[[reference]]\nkey = \"Kahn 1974\"\n", "each reference of refs.toml needs a key and a text"),
+        (REFERENCES.replace("Davidson 1971", "Kahn 1974"), "the bibliography refs.toml repeats the keys Kahn 1974"),
+        ("[[reference]\n", "the bibliography refs.toml cannot be read"),
+        ("", "the bibliography refs.toml holds no reference"),
+    ], ids=["no text", "a repeated key", "no TOML", "empty"])
+    def test_a_fault_in_the_file_is_an_error_on_the_directive(self, references, message):
+        book = self.index(references)
+        assert message in book.warnings
+        assert ("book/index.rst", line(INDEXED, ".. bibliography::"), "sphinx", None) in book.tuples()
 
 
 # The reference outputs: one book that holds each feature of the weave, woven once as HTML
@@ -269,7 +296,7 @@ TESTED = ("\n.. check:: test\n   :verifies: core.rotation\n\n   module tb;\n    
           "\n.. check:: equiv\n   :verifies: core.rotation\n   :module: core_rotate\n   :twin: core_next\n")
 MODEL = ("\n.. source:: build/model/core/ref.c\n\n   #include <stdint.h>\n"
          "   uint32_t ref_next(uint32_t turn, uint32_t threads) { return (turn + 1) % threads; }\n")
-GOLDEN_BOOK = {**BOOK, "core/core.rst": TARGETED + PAIR + TESTED + MODEL}
+GOLDEN_BOOK = {**BOOK, "core/core.rst": TARGETED + PAIR + TESTED + MODEL, "refs.toml": REFERENCES}
 PAGES = ["index.html", "guide/guide.html", "design/design.html", "core/core.html"]
 
 

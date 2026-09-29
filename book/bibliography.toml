@@ -1,0 +1,105 @@
+# The bibliography of the book, which the directive bibliography in book/index.rst lists by key.
+# Each reference has a key, "first author year", and its text in rST inline markup. This file is
+# not a chapter, so the audit time leaves it out (design.audit-time counts the chapters).
+
+# From the addendum on views to the BCW-2 proposal, revision 2.
+
+[[reference]]
+key = "Davidson 1971"
+text = 'E. S. Davidson, "The design and control of pipelined function generators," *Proc. 1971 International IEEE Conference on Systems, Networks, and Computers*, Oaxtepec, Mexico, 1971, pp. 19–21.'
+
+[[reference]]
+key = "Kogge 1981"
+text = "P. M. Kogge, *The Architecture of Pipelined Computers*. McGraw-Hill, 1981."
+
+[[reference]]
+key = "Thornton 1970"
+text = "J. E. Thornton, *Design of a Computer: The Control Data 6600*. Scott, Foresman, 1970."
+
+[[reference]]
+key = "Smith 1981"
+text = 'B. J. Smith, "Architecture and applications of the HEP multiprocessor computer system," *Real-Time Signal Processing IV*, Proc. SPIE 298, 1981, pp. 241–248.'
+
+[[reference]]
+key = "Ungerer 2003"
+text = 'T. Ungerer, B. Robič and J. Šilc, "A survey of processors with explicit multithreading," *ACM Computing Surveys*, 35(1), 2003, pp. 29–63.'
+
+[[reference]]
+key = "Edwards 2007"
+text = 'S. A. Edwards and E. A. Lee, "The case for the precision timed (PRET) machine," *Proc. 44th Design Automation Conference (DAC)*, 2007, pp. 264–265.'
+
+[[reference]]
+key = "Lickly 2008"
+text = 'B. Lickly, I. Liu, S. Kim, H. D. Patel, S. A. Edwards and E. A. Lee, "Predictable programming on a precision timed architecture," *Proc. CASES*, 2008, pp. 137–146.'
+
+[[reference]]
+key = "Larkin 1987"
+text = 'J. H. Larkin and H. A. Simon, "Why a diagram is (sometimes) worth ten thousand words," *Cognitive Science*, 11(1), 1987, pp. 65–100.'
+
+[[reference]]
+key = "Chandler 1992"
+text = 'P. Chandler and J. Sweller, "The split-attention effect as a factor in the design of instruction," *British Journal of Educational Psychology*, 62(2), 1992, pp. 233–246.'
+
+[[reference]]
+key = "Cowan 2001"
+text = 'N. Cowan, "The magical number 4 in short-term memory: a reconsideration of mental storage capacity," *Behavioral and Brain Sciences*, 24(1), 2001, pp. 87–114.'
+
+[[reference]]
+key = "Moody 2009"
+text = """D. L. Moody, "The 'physics' of notations: toward a scientific basis for constructing visual notations in software engineering," *IEEE Transactions on Software Engineering*, 35(6), 2009, pp. 756–779."""
+
+[[reference]]
+key = "Gilmore 1984"
+text = 'D. J. Gilmore and T. R. G. Green, "Comprehension and recall of miniature programs," *International Journal of Man-Machine Studies*, 21(1), 1984, pp. 31–48.'
+
+[[reference]]
+key = "Green 1996"
+text = """T. R. G. Green and M. Petre, "Usability analysis of visual programming environments: a 'cognitive dimensions' framework," *Journal of Visual Languages and Computing*, 7(2), 1996, pp. 131–174."""
+
+[[reference]]
+key = "Lamport 2012"
+text = 'L. Lamport, "How to write a 21st century proof," *Journal of Fixed Point Theory and Applications*, 11, 2012, pp. 43–63.'
+
+[[reference]]
+key = "Kelly 2004"
+text = 'T. Kelly and R. Weaver, "The Goal Structuring Notation – a safety argument notation," *Proc. DSN 2004 Workshop on Assurance Cases*, 2004.'
+
+[[reference]]
+key = "Assurance Case Working Group 2021"
+text = "Assurance Case Working Group, *Goal Structuring Notation Community Standard*, version 3, Safety-Critical Systems Club, SCSC-141C, 2021."
+
+[[reference]]
+key = "Rushby 1992"
+text = "J. Rushby, *Noninterference, Transitivity, and Channel-Control Security Policies*, Technical Report CSL-92-02, SRI International, 1992."
+
+[[reference]]
+key = "Goguen 1982"
+text = 'J. A. Goguen and J. Meseguer, "Security policies and security models," *Proc. IEEE Symposium on Security and Privacy*, 1982, pp. 11–20.'
+
+[[reference]]
+key = "Kahn 1974"
+text = 'G. Kahn, "The semantics of a simple language for parallel programming," *Information Processing 74 (Proc. IFIP Congress)*, North-Holland, 1974, pp. 471–475.'
+
+[[reference]]
+key = "Kahn 1977"
+text = 'G. Kahn and D. B. MacQueen, "Coroutines and networks of parallel processes," *Information Processing 77 (Proc. IFIP Congress)*, North-Holland, 1977, pp. 993–998.'
+
+[[reference]]
+key = "Parks 1995"
+text = "T. M. Parks, *Bounded Scheduling of Process Networks*, PhD thesis, University of California, Berkeley, 1995."
+
+[[reference]]
+key = "Dénes 1974"
+text = "J. Dénes and A. D. Keedwell, *Latin Squares and Their Applications*. Academic Press, 1974."
+
+[[reference]]
+key = "Lee 1995"
+text = 'E. A. Lee and T. M. Parks, "Dataflow process networks," *Proceedings of the IEEE*, 83(5), 1995, pp. 773–801.'
+
+[[reference]]
+key = "Selinger 2011"
+text = 'P. Selinger, "A survey of graphical languages for monoidal categories," in B. Coecke (ed.), *New Structures for Physics*, Lecture Notes in Physics 813, Springer, 2011, pp. 289–355.'
+
+[[reference]]
+key = "Ghica 2017"
+text = 'D. R. Ghica, A. Jung and A. Lopez, "Diagrammatic semantics for digital circuits," *Proc. 26th EACSL Annual Conference on Computer Science Logic (CSL)*, LIPIcs 82, 2017, pp. 24:1–24:16.'

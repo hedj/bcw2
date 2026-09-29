@@ -28,6 +28,7 @@ what bcw.py reads:
   and each PARAMETER and TARGET shows its value on its first line.
 - The directive code-index lists each file, with a link to the block that
   defines it.
+- The directive bibliography lists the references of a TOML file, by key.
 - Each section of level 2 to 4 starts with a line Uses: that links each chunk
   of another section that the section needs (doc.live-set): the interface of
   the section, which its reader holds while reading it.
@@ -47,6 +48,7 @@ what bcw.py reads:
 import html
 import json
 import re
+import tomllib
 from pathlib import Path
 
 from docutils import nodes
@@ -147,6 +149,40 @@ class CodeIndexDirective(SphinxDirective):
             item += nodes.Text(".")
             entries += nodes.list_item("", item)
         return [nodes.rubric(text="Index of code"), entries]
+
+
+class BibliographyDirective(SphinxDirective):
+    """The bibliography: each reference of the TOML file that its argument names, in the order of its keys.
+
+    Each [[reference]] of the file has a key, such as "Kahn 1974", which labels it, and a text, the
+    reference itself in rST inline markup. The file is not a chapter, so the audit time leaves it out.
+    """
+
+    required_arguments = 1
+
+    def run(self):
+        path = Path(self.env.srcdir) / self.arguments[0]
+        self.env.note_dependency(str(path))
+        try:
+            references = tomllib.loads(path.read_text(encoding="utf-8")).get("reference", [])
+        except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as error:
+            raise self.error(f"the bibliography {self.arguments[0]} cannot be read: {error}")
+        if not references:
+            raise self.error(f"the bibliography {self.arguments[0]} holds no reference")
+        keys = [reference.get("key") for reference in references]
+        for reference in references:
+            if not reference.get("key") or not reference.get("text"):
+                raise self.error(f"each reference of {self.arguments[0]} needs a key and a text: {reference}")
+        repeated = sorted({key for key in keys if keys.count(key) > 1})
+        if repeated:
+            raise self.error(f"the bibliography {self.arguments[0]} repeats the keys {', '.join(repeated)}")
+        entries = nodes.bullet_list(classes=["bibliography"])
+        for reference in sorted(references, key=lambda reference: reference["key"].casefold()):
+            text, messages = self.state.inline_text(reference["text"], self.lineno)
+            item = nodes.paragraph("", "", nodes.strong(text=reference["key"]), nodes.Text(". "), *text)
+            entry = nodes.list_item("", item, *messages, ids=[nodes.make_id("ref-" + reference["key"])])
+            entries += entry
+        return [nodes.rubric(text="Bibliography"), entries]
 
 
 class ScheduleDirective(SphinxDirective):
@@ -616,6 +652,7 @@ def setup(app):
     app.add_css_file("weave.css")
     app.add_directive("chapters", ChaptersDirective)
     app.add_directive("code-index", CodeIndexDirective)
+    app.add_directive("bibliography", BibliographyDirective)
     app.add_directive("schedule", ScheduleDirective)
     app.connect("env-before-read-docs", read_index_last)
     # After Sphinx's own numbering, which runs at the default priority of 500.
