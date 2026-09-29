@@ -263,6 +263,34 @@ The source lines that Verilator quotes under an error keep the line numbers
 of the file in build/checks.
 
 
+Timing
+------
+
+make check does not measure timing. core.timing-closure is a TARGET, and a
+measurement of the core decides it. A timing run synthesises the core and
+places and routes it, in these steps:
+
+1. Write a top module that holds core and core_regfile, and makes each port of
+   core a port of the top. Keep the ports that only the checks read: in 16
+   runs of each, a top without them gave no better result.
+2. Synthesise it with yosys: read_verilog -sv with each package of build/rtl
+   first, then each Verilog file of build/rtl/core and the top, then
+   synth_ecp5 -top top -json top.json.
+3. Place and route it once for each seed from 1 to 32, at the value of
+   core.clock, 85 MHz:
+
+       nextpnr-ecp5 --25k --package CABGA256 --json top.json --out-of-context \
+           --freq 85 --placer static --seed N
+
+4. Take the last line "Max frequency for clock" of each run, and report the
+   minimum, the median and the mean.
+
+The static placer replaces the default HeAP placer. In 64 seeds of each, its
+mean was 1.6 MHz higher (95.7 MHz, p = 0.001), 1 run in place of 5 fell below
+90 MHz, and each run took 13% less time. The spread from seed to seed is 2 to
+3 MHz, so 8 seeds cannot rank two changes that differ by about 1 MHz: 32 can.
+
+
 The twin language
 -----------------
 
