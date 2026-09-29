@@ -1132,7 +1132,7 @@ Pipeline
                 output wire commit, commit_resume, output wire [1:0] commit_cause,
                 output wire [bcw_params::CORE_TURN_WIDTH-1:0] commit_thread,
                 output wire [31:0] commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load,
-                output wire [31:0] commit_next);
+                output wire [31:0] commit_next, mul_a, mul_b);
        localparam int T = bcw_params::CORE_THREADS, TW = bcw_params::CORE_TURN_WIDTH;
        localparam int CW = bcw_params::CORE_CONTEXT_WIDTH;
        localparam logic [1:0] NONE = 2'd0, ECALL = 2'd1, ILLEGAL = 2'd2, MISALIGNED = 2'd3;
@@ -1215,7 +1215,9 @@ Pipeline
 
        // M1: send the address of the data, form the partial products, and choose the result.
        wire [35:0] ll, lh, hl, hh;
-       core_mul_part part (.f3(m1_f3[1:0]), .a(m1_a), .b(m1_b), .ll, .lh, .hl, .hh);
+       // The multiplier reads its operands through mul_a and mul_b, which the proofs see.
+       assign {mul_a, mul_b} = {m1_a, m1_b};
+       core_mul_part part (.f3(m1_f3[1:0]), .a(mul_a), .b(mul_b), .ll, .lh, .hl, .hh);
        core_store place (.size(m1_f3[1:0]), .lo(m1_addr[1:0]), .data(m1_b), .be(data_be), .wdata(data_wdata));
        assign data_addr = m1_addr;
        assign data_we = rst_n && m1_v && m1_store && m1_cause == NONE;
@@ -1307,7 +1309,7 @@ Pipeline
        wire [8:0] ra, rb, wa;
        wire port_rd_hold;
        wire [5:0] port_rd_steps;
-       wire [31:0] port_rd_result, wd, a, b, commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next;
+       wire [31:0] port_rd_result, mul_a, mul_b, wd, a, b, commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next;
        // The registers are outside the core, so that their reads and writes are ports, and the proof
        // holds the core with the real registers, whose own invariant it checks there. The port reads
        // any one thread, which the proof watches.
@@ -1351,8 +1353,8 @@ Pipeline
        always_comb if (step) assert (commit_cause == cause);
        always_comb if (done) assert (commit_next == next && we == writes);
        always_comb if (done && writes) assert (wa[4:0] == insn[11:7]);
-       // The solver cannot relate the multiply after the registers of the pipeline to a multiply
-       // here. The equiv of core.mul proves the units, and the test runs them in the pipeline.
+       // The solver cannot compare two multipliers across the registers of the pipeline. So the proof
+       // checks that the multiplier reads the operands of the thread, and the equiv of core.mul proves it.
        always_comb if (done && writes && !mul) assert (wd == value);
        always_comb if (done && (load || store)) assert (commit_addr == addr);
 
@@ -1434,6 +1436,7 @@ Pipeline
        // core.own-context: the reads, in the stage D, are in the context of the index of the thread.
        always_comb if (age >= 4'd2 && started[1])
            assert (ra[8:5] == port_rd_index && rb[8:5] == port_rd_index);
+       always_comb if (age == 4'd8 && started[4]) assert (mul_a == a_at && mul_b == b_at);
        always_comb if (age == 4'd8 && started[6])
            assert ({commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load} ==
                    {pc_at, word_at, a_at, b_at, addr_at, load_at}
@@ -1463,6 +1466,12 @@ Pipeline
 
    -    assign ra = {index[d_t], d_insn[19:15]};
    +    assign ra = {index[x_t], d_insn[19:15]};
+
+.. mutant:: build/rtl/core/core.v
+   :kills: core.depth.prove
+
+   -    assign {mul_a, mul_b} = {m1_a, m1_b};
+   +    assign {mul_a, mul_b} = {e_a, m1_b};
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
@@ -1629,6 +1638,7 @@ Thread control
        wire [1:0] commit_cause;
        wire [8:0] ra, rb, wa;
        wire [31:0] wd, a, b, commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next;
+       wire [31:0] mul_a, mul_b;
        core dut (.*);
        core_regfile regs (.*);
 
