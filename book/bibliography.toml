@@ -103,3 +103,110 @@ text = 'P. Selinger, "A survey of graphical languages for monoidal categories," 
 [[reference]]
 key = "Ghica 2017"
 text = 'D. R. Ghica, A. Jung and A. Lopez, "Diagrammatic semantics for digital circuits," *Proc. 26th EACSL Annual Conference on Computer Science Logic (CSL)*, LIPIcs 82, 2017, pp. 24:1–24:16.'
+
+# From the literature that BCW-1 cites: its reading list, exp/prior-art.md, and the standards that
+# its documents cite.
+
+[[reference]]
+key = "Lampson 1973"
+text = 'B. W. Lampson, "A note on the confinement problem," *Communications of the ACM*, 16(10), 1973, pp. 613–615.'
+
+[[reference]]
+key = "Klein 2009"
+text = 'G. Klein, K. Elphinstone, G. Heiser, J. Andronick, D. Cock, P. Derrin, D. Elkaduwe, K. Engelhardt, R. Kolanski, M. Norrish, T. Sewell, H. Tuch and S. Winwood, "seL4: formal verification of an OS kernel," *Proc. 22nd ACM Symposium on Operating Systems Principles (SOSP)*, 2009, pp. 207–220.'
+
+[[reference]]
+key = "Wahbe 1993"
+text = 'R. Wahbe, S. Lucco, T. E. Anderson and S. L. Graham, "Efficient software-based fault isolation," *Proc. 14th ACM Symposium on Operating Systems Principles (SOSP)*, 1993, pp. 203–216.'
+
+[[reference]]
+key = "Yee 2009"
+text = 'B. Yee, D. Sehr, G. Dardyk, J. B. Chen, R. Muth, T. Ormandy, S. Okasaka, N. Narula and N. Fullagar, "Native Client: a sandbox for portable, untrusted x86 native code," *Proc. IEEE Symposium on Security and Privacy*, 2009, pp. 79–93.'
+
+[[reference]]
+key = "Dennis 1966"
+text = 'J. B. Dennis and E. C. Van Horn, "Programming semantics for multiprogrammed computations," *Communications of the ACM*, 9(3), 1966, pp. 143–155.'
+
+[[reference]]
+key = "Levy 1984"
+text = "H. M. Levy, *Capability-Based Computer Systems*. Digital Press, 1984."
+
+[[reference]]
+key = "Hardy 1988"
+text = 'N. Hardy, "The confused deputy (or why capabilities might have been invented)," *ACM SIGOPS Operating Systems Review*, 22(4), 1988, pp. 36–38.'
+
+[[reference]]
+key = "Miller 2006"
+text = "M. S. Miller, *Robust Composition: Towards a Unified Approach to Access Control and Concurrency Control*, PhD thesis, Johns Hopkins University, 2006."
+
+[[reference]]
+key = "Watson 2020"
+text = "R. N. M. Watson, P. G. Neumann, J. Woodruff, M. Roe et al., *Capability Hardware Enhanced RISC Instructions: CHERI Instruction-Set Architecture (Version 8)*, Technical Report UCAM-CL-TR-951, University of Cambridge Computer Laboratory, 2020."
+
+[[reference]]
+key = "Amar 2023"
+text = 'S. Amar et al., "CHERIoT: complete memory safety for embedded devices," *Proc. 56th IEEE/ACM International Symposium on Microarchitecture (MICRO)*, 2023.'
+
+[[reference]]
+key = "Wilkes 1979"
+text = "M. V. Wilkes and R. M. Needham, *The Cambridge CAP Computer and its Operating System*. North Holland, 1979."
+
+[[reference]]
+key = "Organick 1973"
+text = "E. I. Organick, *Computer System Organization: The B5700/B6700 Series*. Academic Press, 1973."
+
+[[reference]]
+key = "Thacker 1979"
+text = 'C. P. Thacker, E. M. McCreight, B. W. Lampson, R. F. Sproull and D. R. Boggs, "Alto: a personal computer," Technical Report CSL-79-11, Xerox Palo Alto Research Center, 1979.'
+
+[[reference]]
+key = "Lampson 1980"
+text = 'B. W. Lampson and K. A. Pier, "A processor for a high-performance personal computer," *Proc. 7th Annual International Symposium on Computer Architecture (ISCA)*, 1980.'
+
+[[reference]]
+key = "Wu 1991"
+text = 'X. Wu, "An efficient antialiasing technique," *Computer Graphics (Proc. SIGGRAPH)*, 25(4), 1991, pp. 143–152.'
+
+[[reference]]
+key = "Commodore-Amiga 1991"
+text = "Commodore-Amiga, Inc., *Amiga Hardware Reference Manual*, 3rd edition. Addison-Wesley, 1991."
+
+[[reference]]
+key = "VESA CVT 2013"
+text = "Video Electronics Standards Association, *Coordinated Video Timings (CVT) Standard*, version 1.2, 2013."
+
+[[reference]]
+key = "VESA DMT 2013"
+text = "Video Electronics Standards Association, *Display Monitor Timing (DMT) Standard*, version 1.0, revision 13, 2013."
+
+[[reference]]
+key = "Foley 1990"
+text = "J. D. Foley, A. van Dam, S. K. Feiner and J. F. Hughes, *Computer Graphics: Principles and Practice*, 2nd edition. Addison-Wesley, 1990."
+
+[[reference]]
+key = "Waterman 2019"
+text = "A. Waterman and K. Asanović (eds.), *The RISC-V Instruction Set Manual, Volume I: Unprivileged ISA*, document version 20191213. RISC-V International, 2019."
+
+[[reference]]
+key = "Abrial 1996"
+text = "J.-R. Abrial, *The B-Book: Assigning Programs to Meanings*. Cambridge University Press, 1996."
+
+[[reference]]
+key = "Behm 1999"
+text = "P. Behm, P. Benoit, A. Faivre and J.-M. Meynadier, \"Météor: a successful application of B in a large project,\" *FM'99: Formal Methods*, Lecture Notes in Computer Science 1708, Springer, 1999, pp. 369–387."
+
+[[reference]]
+key = "IEC/IEEE 82079-1 2019"
+text = "IEC/IEEE 82079-1:2019, *Preparation of information for use (instructions for use) of products — Part 1: Principles and general requirements*, edition 2.0. IEC and IEEE, 2019."
+
+[[reference]]
+key = "ASD-STE100 2025"
+text = "ASD, *ASD-STE100 Simplified Technical English: International specification for the preparation of technical documentation in a controlled language*, Issue 9. AeroSpace, Security and Defence Industries Association of Europe, 2025."
+
+[[reference]]
+key = "USB 2000"
+text = "Compaq, Hewlett-Packard, Intel, Lucent, Microsoft, NEC and Philips, *Universal Serial Bus Specification*, revision 2.0, 2000."
+
+[[reference]]
+key = "USB HID 2001"
+text = "USB Implementers Forum, *Device Class Definition for Human Interface Devices (HID)*, version 1.11, 2001."
