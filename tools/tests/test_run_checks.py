@@ -14,6 +14,7 @@ import pytest
 from book import GOOD, ROOT, THREADS, Book, line
 
 RUNNER = ROOT / "tools" / "run_checks.py"
+BLOCKS = ROOT / "tools" / "smtbmc_blocks.py"
 CHAPTER = "book/core/core.rst"
 
 
@@ -239,11 +240,27 @@ class MutantTest:
         assert result.returncode == 0, result.stdout + result.stderr
         assert result.stdout.splitlines()[2] == f"{self.place(text)}: PASS: [mutant] core.rotation.test"
 
-    def test_the_mutants_of_a_check_that_fails_do_not_run(self, tmp_path):
+    def test_the_mutants_of_a_check_that_fails_are_not_reported(self, tmp_path):
         text, result = run(tmp_path, check("test", TESTBENCH.format(expected=4)) + mutant(ROTATE, PLUS_TWO))
         assert result.returncode == 1
         assert not any("[mutant]" in entry for entry in result.stdout.splitlines())
         assert result.stdout.splitlines()[-1] == "run_checks: 1 passed, 1 failed"
+
+    def test_a_mutant_of_a_proof_runs_the_base_case_through_the_blocks(self, tmp_path):
+        run(tmp_path, check("prove", PROPERTIES.format(property="next != turn"))
+            + mutant(ROTATE, SAME, kills="core.rotation.prove"))
+        work = tmp_path / "build" / "run" / "core.rotation.prove.mutant-1"
+        assert "\nmode bmc\n" in (work / "run.sby").read_text()
+        assert str(BLOCKS) in (work / "run" / "logfile.txt").read_text()
+
+    @pytest.mark.parametrize("steps, sent", [("10", "0:4:10"), ("3:10", "3:10")])
+    def test_the_blocks_check_4_steps_in_each_query(self, tmp_path, steps, sent):
+        smtbmc = tmp_path / "yosys-smtbmc"
+        smtbmc.write_text('#!/bin/sh\necho "$@"\n')
+        smtbmc.chmod(0o755)
+        result = subprocess.run([sys.executable, str(BLOCKS), "-s", "yices", "-t", steps, "design.smt2"],
+                                capture_output=True, text=True, env={"PATH": str(tmp_path)})
+        assert result.stdout.split() == ["-s", "yices", "-t", sent, "design.smt2"]
 
 
 # verifies: doc.proof-meaning
@@ -273,7 +290,7 @@ class MeaningTest:
         assert result.stdout.splitlines()[1] == (f"{CHAPTER}:{line(text, '.. check:: prove')}: FAIL: [check] "
                                                  "core.rotation.prove: the harness has no instance dut")
 
-    def test_the_mutants_of_a_proof_without_meaning_do_not_run(self, tmp_path):
+    def test_the_mutants_of_a_proof_without_meaning_are_not_reported(self, tmp_path):
         text, result = run(tmp_path, check("prove", PROPERTIES.format(property="next == next"))
                            + mutant(ROTATE, SAME, kills="core.rotation.prove"))
         assert "[mutant]" not in result.stdout

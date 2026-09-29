@@ -37,18 +37,24 @@ to its chapter line by tools/linemap.py:
     book/core/core.rst:91: FAIL: [check] core.rotation.test: the testbench stopped with exit 1
         %Error: book/core/core.rst:101: Verilog $stop
 
-After a test or a prove passes, the runner runs it once for each mutant that
-names it in its kills option, with the mutated copy of the file in place of the
-file. The check must fail: a mutant passes when the check fails, and fails when
-the check passes or the mutated file does not build. The runner reports each
-mutant at the chapter line of its directive:
+The runner runs each test or prove once more for each mutant that names it in
+its kills option, with the mutated copy of the file in place of the file. The
+check must fail: a mutant passes when the check fails, and fails when the check
+passes or the mutated file does not build. Only the base case of a proof can
+fail, so a mutant of a prove runs SymbiYosys in bmc mode, through
+tools/smtbmc_blocks.py, which checks the steps 4 at a time: one query finds a
+failure in any of 4 steps, where a query for each step first proves the earlier
+steps clean. The runner reports each mutant of a check that passes, at the
+chapter line of its directive:
 
     book/core/core.rst:95: FAIL: [mutant] core.rotation.test: the check passes with the mutant
 
-It exits 1 if a check or a mutant fails. The work of each check is in
-build/run/<name>, of the cover and the cut point of a prove in
+It exits 1 if a check or a mutant fails. Every run starts at once, the proves
+first, since they take longest: a mutant, the cover or the cut point does not
+wait for its check, and counts only if the check passes. The work of each check
+is in build/run/<name>, of the cover and the cut point of a prove in
 build/run/<name>.cover and build/run/<name>.havoc, and of each mutant in
-build/run/<name>/mutant-<n>.
+build/run/<name>.mutant-<n>.
 """
 
 import concurrent.futures
@@ -80,6 +86,7 @@ SPLIT_WIDTH = 3
 MODELS = Path("build/model")
 OBJECTS = Path("build/run/model")
 COMPILE = ["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", "-O2", "-c"]
+BLOCKS = Path(__file__).resolve().parent / "smtbmc_blocks.py"
 
 
 def sources():
@@ -123,27 +130,33 @@ def run_test(check, top, work, files, objects):
     return None
 
 
-def symbiyosys(check, top, work, files, mode, engine="smtbmc yices", steps=""):
-    """The result of SymbiYosys in the mode on the harness, after the extra yosys steps."""
+def symbiyosys(check, top, work, files, mode, engine="smtbmc yices", steps="", smtbmc=()):
+    """The result of SymbiYosys in the mode on the harness, after the extra yosys steps and
+    with the options that name its smtbmc."""
     work.parent.mkdir(parents=True, exist_ok=True)
     job = work.parent / f"{work.name}.sby"
     reads = "".join(f"read -formal {Path(path).absolute()}\n" for path in files + [check["file"]])
     job.write_text(f"[options]\nmode {mode}\ndepth {check['depth']}\n\n[engines]\n{engine}\n\n"
                    f"[script]\n{reads}prep -top {top}\n{steps}")
-    return subprocess.run(["sby", "-f", "-d", str(work), str(job)], capture_output=True, text=True)
+    return subprocess.run(["sby", *smtbmc, "-f", "-d", str(work), str(job)], capture_output=True, text=True)
 
 
 def proof_lines(result):
     return "\n".join(PROOF_PREFIX.sub("", text) for text in result.stdout.splitlines() if PROOF_LINES.search(text))
 
 
-def run_prove(check, top, work, files):
-    """None if SymbiYosys proves the properties, or (reason, output)."""
-    result = symbiyosys(check, top, work, files, "prove")
+def run_prove(check, top, work, files, mode="prove", smtbmc=()):
+    """None if SymbiYosys proves the properties in the mode, or (reason, output)."""
+    result = symbiyosys(check, top, work, files, mode, smtbmc=smtbmc)
     if result.returncode == 0:
         return None
     reason = "the proof failed" if result.returncode == 2 else "SymbiYosys stopped with an error"
     return reason, proof_lines(result)
+
+
+def run_base_case(check, top, work, files):
+    """None if no assertion fails within the depth of the check, or (reason, output)."""
+    return run_prove(check, top, work, files, "bmc", ("--smtbmc", str(BLOCKS)))
 
 
 # implements: doc.proof-meaning
@@ -362,20 +375,35 @@ def run_mutant(mutant, runner, check, top, work, files):
     return None
 
 
-def verdict(check, runners, files):
-    """(the top module of the check, None if the check passes or (reason, output))."""
+def top_of(check):
+    """The top module of the check: its module option, or the first module of its code."""
     if check["kind"] == "equiv":
-        top = check["module"]
-    else:
-        module = MODULE.search(Path(check["file"]).read_text())
-        top = module.group(1) if module else None
+        return check["module"]
+    module = MODULE.search(Path(check["file"]).read_text())
+    return module.group(1) if module else None
+
+
+def submit(pool, check, mutants, runners, files):
+    """(the run of the check, the run of its meaning or None, its mutants, the run of each)."""
+    top = top_of(check)
     if top is None:
-        return top, ("the code declares no module", "")
+        return None, None, [], []
     work = Path("build/run") / check["name"]
-    failure = runners[check["kind"]](check, top, work, files)
-    if failure is None and check["kind"] == "prove":
-        failure = run_meaning(check, top, work, files)
-    return top, failure
+    run = pool.submit(runners[check["kind"]], check, top, work, files)
+    meaning = pool.submit(run_meaning, check, top, work, files) if check["kind"] == "prove" else None
+    killers = [mutant for mutant in mutants if check["name"] in mutant["kills"]]
+    runner = run_base_case if check["kind"] == "prove" else runners[check["kind"]]
+    return run, meaning, killers, [
+        pool.submit(run_mutant, mutant, runner, check, top, work.with_name(f"{work.name}.mutant-{number}"), files)
+        for number, mutant in enumerate(killers, 1)]
+
+
+def outcome(run, meaning, killers, survivals):
+    """(the failure of the check or None, the mutants that count, their runs)."""
+    if run is None:
+        return ("the code declares no module", ""), [], []
+    failure = run.result() or (meaning.result() if meaning else None)
+    return (failure, [], []) if failure else (None, killers, survivals)
 
 
 def main():
@@ -390,18 +418,12 @@ def main():
         print(f"{chapter}:{line}: FAIL: [model] {path}: the C compiler could not build the model")
         for text in output.splitlines():
             print("    " + linemap.rewrite(text))
-    # The checks and the mutants have separate work directories, so they run in parallel.
-    # The mutants of a check run once it passes, and the results print in the chapter order.
+    # Each run has its own work directory, so every run starts at once, the proves first, since
+    # they take longest. The results print in the chapter order.
     with concurrent.futures.ProcessPoolExecutor() as pool:
-        verdicts = [pool.submit(verdict, check, runners, files) for check in checks]
-        results = []
-        for check, future in zip(checks, verdicts):
-            top, failure = future.result()
-            killers = [] if failure else [mutant for mutant in mutants if check["name"] in mutant["kills"]]
-            results.append((check, failure, killers, [
-                pool.submit(run_mutant, mutant, runners[check["kind"]], check, top,
-                            Path("build/run") / check["name"] / f"mutant-{number}", files)
-                for number, mutant in enumerate(killers, 1)]))
+        runs = {check["name"]: submit(pool, check, mutants, runners, files)
+                for check in sorted(checks, key=lambda check: check["kind"] != "prove")}
+        results = [(check, *outcome(*runs[check["name"]])) for check in checks]
         for check, failure, killers, survivals in results:
             place = f"{check['path']}:{check['line']}"
             if failure:

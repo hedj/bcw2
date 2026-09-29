@@ -180,7 +180,9 @@ the same name. build/checks.json lists each check with its kind, its options,
 its file and its chapter line.
 
 make check runs the checks in parallel with tools/run_checks.py, and prints
-their results in the chapter order.
+their results in the chapter order. Every run starts at once, the proves
+first, since they take longest: a mutant, or the cover or the cut point of a
+prove, does not wait for its check, and counts only if the check passes.
 The first module in the code of a test or a prove is its top module. Each
 check reads build/rtl/bcw_params.sv and each Verilog file of build/rtl. A
 test passes when Verilator builds the testbench and the testbench exits 0,
@@ -241,10 +243,17 @@ lines that start with + replace them:
        +    assign next = turn;
 
 make check reports a mutant whose - lines do not occur once in the file
-(doc.mutant-form). After a check passes, the runner runs it again for each of
-its mutants, with a mutated copy of the file in build/run/<name>/mutant-<n>.
-The mutant passes when the check fails. It fails when the check still passes, or when the mutated file
-does not build (doc.mutants-fail).
+(doc.mutant-form). The runner runs each check again for each of its mutants,
+with a mutated copy of the file in build/run/<name>.mutant-<n>. The mutant
+passes when the check fails. It fails when the check still passes, or when the
+mutated file does not build (doc.mutants-fail).
+
+Only the base case of a proof can fail, so a mutant of a prove runs
+SymbiYosys in bmc mode, with no induction. Its smtbmc is tools/smtbmc_blocks.py,
+which checks the steps 4 at a time: a query for one step first proves the
+earlier steps clean, and that proof took most of the time of a mutant. One
+query now asks whether an assertion fails in any of 4 steps. Every step is
+still checked, and a mutant still passes only with a trace that fails.
 
 The runner prints each result at the chapter line of its check directive.
 After a failure come the lines of the tool that tell why, with each location
