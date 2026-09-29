@@ -25,8 +25,12 @@ reuses it: with a warm cache, make test takes about a third of the time.
 3. Or run ./dev followed by one command, for example: ./dev make check
 
 The first run of ./dev puts about 2.1 GiB of tools into /nix/store (the size
-that nix path-info -S gives for the environment). Later runs take a few
-seconds. ./dev also sets the Git configuration core.hooksPath to tools/hooks,
+that nix path-info -S gives for the environment). Later runs take up to 3
+seconds, which nix spends to evaluate the flake. Inside the environment, ./dev
+runs its command at once when flake.nix and flake.lock are those of the
+environment: the environment variable BCW_ENV holds the SHA-256 of the two
+files together, as sha256sum gives it. So the pre-push hook costs no
+evaluation when make test runs it. ./dev also sets the Git configuration core.hooksPath to tools/hooks,
 so that the pre-push hook runs.
 
 A Nix from a distribution package, such as the nix package of Arch Linux or

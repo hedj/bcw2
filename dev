@@ -21,6 +21,12 @@ if [ ! -d "$store" ]; then
     exit 1
 fi
 git -C "$root" config core.hooksPath tools/hooks
+# Inside the environment of these flake files, nix would give the same environment after
+# seconds of evaluation, so the command runs at once.
+if [ $# -gt 0 ] && [ -n "${BCW_ENV:-}" ] &&
+    [ "$BCW_ENV" = "$(cat "$root/flake.nix" "$root/flake.lock" 2>/dev/null | sha256sum | cut -d ' ' -f 1)" ]; then
+    exec "$@"
+fi
 nix="nix --extra-experimental-features nix-command --extra-experimental-features flakes"
 if [ $# -eq 0 ]; then
     exec $nix develop "$root"

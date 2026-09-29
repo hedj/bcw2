@@ -54,8 +54,9 @@
             pkgs.git
             pkgs.bash
           ];
-          # The Makefile stops outside this environment.
-          BCW_ENV = "1";
+          # The Makefile stops outside this environment. BCW_ENV is the hash of the two
+          # files that fix it, so ./dev inside it runs a command at once when they match.
+          BCW_ENV = builtins.hashString "sha256" (builtins.readFile ./flake.nix + builtins.readFile ./flake.lock);
           # The makefiles that Verilator writes run each compile through OBJCACHE.
           # ccache keys each object on the compiler and the preprocessed source, so
           # a hit gives the same object as a compile. The cache is ~/.cache/ccache.
