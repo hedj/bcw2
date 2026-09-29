@@ -10,11 +10,12 @@ The environment
 
 Nix pins every tool that the book uses. flake.nix names the tools, and
 flake.lock records the release of nixpkgs that they come from. So every
-machine uses the same versions: Python 3.13, Sphinx 9.1, Verilator 5.048,
-Icarus Verilog 13.0, yosys 0.62, SymbiYosys 0.61, Yices 2.7.0, z3 4.16,
-radon 6.0.1, textstat 0.7.13 with the CMU dictionary of NLTK, nextpnr 0.10
-with ecppack of trellis for the ECP5, GCC 15.3, ccache 4.13, and TeX Live
-2025. GCC compiles the C models and the C++ that Verilator writes, so the
+machine uses the same versions: Python 3.14, Sphinx 9.1, docutils 0.23,
+Verilator 5.052, Icarus Verilog 13.0, yosys 0.69, SymbiYosys 0.69, Yices
+2.7.0, z3 4.16, radon 6.0.1, textstat 0.7.13 with the CMU dictionary of NLTK,
+nextpnr 0.11.1 with ecppack of trellis for the ECP5, GCC 15.3, ccache 4.13,
+and TeX Live 2025. They come from nixpkgs-unstable, which moves every day,
+so the release changes only when someone moves it (see "Changing a tool"). GCC compiles the C models and the C++ that Verilator writes, so the
 compiler of the host plays no part. ccache keeps each object that GCC
 compiles for Verilator in ~/.cache/ccache, so a build of the same C++
 reuses it: with a warm cache, make test takes about a third of the time.
@@ -394,8 +395,8 @@ To add a tool, add its nixpkgs package to the list "packages" in flake.nix.
 
 To move to a newer release of nixpkgs:
 
-1. Open https://channels.nixos.org/nixos-26.05, or the channel of a later
-   release. The address redirects to the folder of the newest release.
+1. Open https://channels.nixos.org/nixpkgs-unstable. The address redirects
+   to the folder of the newest release.
 2. In flake.nix, set the URL of the input nixpkgs to the file
    nixexprs.tar.xz in that folder.
 3. Run: nix --extra-experimental-features 'nix-command flakes' flake update

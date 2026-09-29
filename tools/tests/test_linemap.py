@@ -44,12 +44,13 @@ VERILOG = "build/rtl/core/core_pair.v"
 SOURCE = "book/core/core.rst"
 
 
-class LinemapTest:
-    @pytest.fixture(scope="class")
-    def tangled(self):
-        """The files that the tangle writes for CHAPTER, built once for the class."""
-        return Book({"core/core.rst": CHAPTER}, tangle=True).files
+@pytest.fixture(scope="module")
+def tangled():
+    """The files that the tangle writes for CHAPTER, built once for the module."""
+    return Book({"core/core.rst": CHAPTER}, tangle=True).files
 
+
+class LinemapTest:
     @pytest.fixture(autouse=True)
     def root(self, tangled, tmp_path, monkeypatch):
         """Each test runs in its own folder that holds the tangled files."""

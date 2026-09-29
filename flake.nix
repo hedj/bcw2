@@ -1,11 +1,11 @@
 {
   description = "The build environment of the book BCW-2 Soubou";
 
-  # One release of nixpkgs pins every tool: nixos-26.05, git revision
-  # c508844df6c28fa6dabc1b6af70f3ccbd65c5201. flake.lock records the hash of
-  # its tarball. To move to another release, change the URL and run
-  # nix flake update.
-  inputs.nixpkgs.url = "https://releases.nixos.org/nixos/26.05/nixos-26.05.10529.c508844df6c2/nixexprs.tar.xz";
+  # One release of nixpkgs pins every tool: nixpkgs-unstable 26.11pre1080803,
+  # git revision 419fe0f449b3fbe3bdd53d9840288db4509ec32e. flake.lock records
+  # the hash of its tarball. To move to another release, change the URL and
+  # run nix flake update.
+  inputs.nixpkgs.url = "https://releases.nixos.org/nixpkgs/nixpkgs-26.11pre1080803.419fe0f449b3/nixexprs.tar.xz";
 
   outputs = { self, nixpkgs }:
     let

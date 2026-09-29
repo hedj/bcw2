@@ -1116,7 +1116,7 @@ Pipeline
 
        // R: the registers arrive.
        logic e_v, e_wide, e_alt; logic [10:0] e_class; logic [1:0] e_cause; logic [TW-1:0] e_t;
-       logic [31:0] e_pc, e_imm, e_word, e_a, e_b; logic [14:7] e_insn;
+       logic [31:0] e_pc, e_imm, e_word, e_a, e_b, e_bi; logic [14:7] e_insn;
 
        // E: execute. The class bits are, in order, lui auipc jal jalr branch load store opimm op mul div.
        wire e_lui = e_class[10], e_auipc = e_class[9], e_jal = e_class[8], e_jalr = e_class[7];
@@ -1125,7 +1125,9 @@ Pipeline
        wire [2:0] f3 = e_insn[14:12];
        wire [31:0] alu_y, sum = e_a + e_imm, link = e_pc + (e_wide ? 32'd4 : 32'd2);
        wire taken, fault;
-       core_alu alu (.f3, .alt(e_alt), .a(e_a), .b(e_opimm ? e_imm : e_b), .y(alu_y));
+       // R chooses the second operand of the ALU, the immediate or the register: in E, that choice
+       // held the critical path.
+       core_alu alu (.f3, .alt(e_alt), .a(e_a), .b(e_bi), .y(alu_y));
        core_branch compare (.f3, .a(e_a), .b(e_b), .taken);
        core_misaligned align (.size(f3[1:0]), .lo(sum[1:0]), .fault);
        wire [31:0] next = e_jal || e_branch && taken ? e_pc + e_imm : e_jalr ? {sum[31:1], 1'b0} : link;
@@ -1198,6 +1200,7 @@ Pipeline
            r_cause <= ecall ? ECALL : d_bad || illegal ? ILLEGAL : NONE;
            {e_v, e_t, e_pc, e_word, e_insn, e_imm, e_wide, e_alt, e_class, e_cause, e_a, e_b}
                <= {rst_n && r_v, r_t, r_pc, r_word, r_insn, r_imm, r_wide, r_alt, r_class, r_cause, a, b};
+           e_bi <= r_class[3] ? r_imm : b;
            {m1_v, m1_t, m1_pc, m1_word, m1_a, m1_b, m1_cause, m1_rd, m1_f3, m1_addr, m1_res, m1_next}
                <= {rst_n && e_v, e_t, e_pc, e_word, e_a, e_b, e_stop, e_insn[11:7], f3, sum, alu_y, next};
            {m1_other, m1_pick} <= {e_other, e_pick};
