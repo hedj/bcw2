@@ -18,7 +18,7 @@
         # models and the C++ of Verilator, and not the compiler of the host.
         pkgs.mkShell {
           packages = [
-            (pkgs.python3.withPackages (ps: [ ps.sphinx ps.z3-solver ps.pytest ps.pytest-xdist ps.radon ps.textstat ]))
+            (pkgs.python3.withPackages (ps: [ ps.sphinx ps.z3-solver ps.pytest ps.pytest-xdist ps.radon ]))
             pkgs.verilator
             # Verilator compiles the same runtime and much the same C++ for each test,
             # so ccache keeps each object and reuses it (see OBJCACHE below).
@@ -61,9 +61,6 @@
           # ccache keys each object on the compiler and the preprocessed source, so
           # a hit gives the same object as a compile. The cache is ~/.cache/ccache.
           OBJCACHE = "ccache";
-          # textstat counts English syllables with the CMU dictionary of NLTK. This
-          # pins the dictionary, so that textstat does not download it at run time.
-          NLTK_DATA = "${pkgs.nltk-data.cmudict}";
         };
     in
     {

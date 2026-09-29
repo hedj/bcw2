@@ -16,16 +16,14 @@ Markdown file at the root. The measures count only their prose, without code blo
 and inline code:
 
 - words: the words that tools/ste_lint.py counts;
-- reading_grade: the Flesch-Kincaid grade that textstat gives. The total grade is the
-  grade of the prose of all the documents together, not the mean of their grades;
 - ste_violations and ste_advisory: the hard and the advisory findings of
   tools/ste_lint.py;
 - audit_days: the audit time of design.audit-time, the days that one engineer takes to
   check the chapters: their words and their lines of code (of code directives and
   literal blocks), AUDIT_RATE of them an hour for AUDIT_HOURS hours a day.
 
-documents holds the measures of each document, by path: its words, its lines of code,
-its reading grade and its STE findings.
+documents holds the measures of each document, by path: its words, its lines of code
+and its STE findings.
 
 The design of the system is the graph in build/design.json, which make check writes.
 An edge a -> b says that a reader needs b to understand a. The measures count the
@@ -58,7 +56,6 @@ import re
 from pathlib import Path
 
 import ste_lint
-import textstat
 from radon.complexity import cc_visit
 from radon.metrics import h_visit
 from radon.raw import analyze
@@ -131,13 +128,9 @@ def parts(path, text):
     return INLINE_CODE.sub("", FENCED.sub("", text)), code
 
 
-def grade(text):
-    return textstat.flesch_kincaid_grade(text) if text.split() else 0
-
-
 def document_measures(path, text, code_lines):
     findings, words = ste_lint.lint(text, path)
-    return {"words": words, "code_lines": code_lines, "reading_grade": grade(text),
+    return {"words": words, "code_lines": code_lines,
             "ste_violations": sum(f["level"] == "advisory-free" for f in findings),
             "ste_advisory": sum(f["level"] == "advisory" for f in findings)}
 
@@ -183,8 +176,8 @@ def design_measures(graph):
             "unverified": len(graph["unverified"])}
 
 
-ROWS = ["lines", "mccabe", "halstead_volume", "halstead_effort", "words", "reading_grade", "ste_violations",
-        "ste_advisory", "audit_days"]
+ROWS = ["lines", "mccabe", "halstead_volume", "halstead_effort", "words", "ste_violations", "ste_advisory",
+        "audit_days"]
 DESIGN_ROWS = ["interactivity_mean", "interactivity_max", "overload", "propagation_cost", "live_peak", "live_mean",
                "forward_references", "vocabulary_total", "unimplemented", "unverified"]
 
@@ -229,11 +222,8 @@ def main():
         metrics["halstead_volume"] += halstead.volume
         metrics["halstead_effort"] += halstead.effort
     paths = sorted({path.as_posix() for pattern in DOCUMENTS for path in Path(".").glob(pattern)})
-    split = {path: parts(path, Path(path).read_text()) for path in paths}
-    texts = {path: text for path, (text, _) in split.items()}
-    documents = {path: document_measures(path, text, code) for path, (text, code) in split.items()}
+    documents = {path: document_measures(path, *parts(path, Path(path).read_text())) for path in paths}
     metrics["words"] = sum(d["words"] for d in documents.values())
-    metrics["reading_grade"] = grade("\n\n".join(texts.values()))
     metrics["ste_violations"] = sum(d["ste_violations"] for d in documents.values())
     metrics["ste_advisory"] = sum(d["ste_advisory"] for d in documents.values())
     book = [d["words"] + d["code_lines"] for path, d in documents.items() if path.startswith("book/")]

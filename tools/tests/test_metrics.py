@@ -8,7 +8,6 @@ import runpy
 import sys
 from unittest import mock
 
-import textstat
 from radon.metrics import h_visit
 
 from book import ROOT
@@ -21,8 +20,8 @@ BRANCH = "def f(x):\n    if x:\n        return 1\n    return x\n"
 def run(root, *arguments):
     """What tools/metrics.py prints when it runs in root with the arguments.
 
-    It runs in this process, not in a new one, so that textstat reads its dictionary
-    of syllables once for each worker of pytest, not once for each test (0.46 s).
+    It runs in this process, not in a new one, so that a test does not start Python and
+    import radon again.
     """
     output, previous = io.StringIO(), os.getcwd()
     os.chdir(root)
@@ -73,7 +72,7 @@ class MetricsTest:
         total = h_visit(text).total
         assert measure(tmp_path, {"tools/a.py": text}) == {"lines": 2, "mccabe": 1, "halstead_volume": total.volume,
                                                            "halstead_effort": total.effort, "words": 0,
-                                                           "reading_grade": 0, "ste_violations": 0,
+                                                           "ste_violations": 0,
                                                            "ste_advisory": 0, "audit_days": 0, "documents": {},
                                                            "design": None}
 
@@ -117,7 +116,6 @@ Here is code::
 Use ``make test`` and :term:`timing closure` now.
 """
 SIMPLE = "Go now. Run.\n"
-LONG = "The consideration of international collaboration necessitates extraordinary organisational capability.\n"
 
 
 class DocumentsTest:
@@ -126,7 +124,6 @@ class DocumentsTest:
         metrics = measure(tmp_path, {"CLAUDE.md": text})
         assert metrics["words"] == 5
         assert metrics["documents"]["CLAUDE.md"]["code_lines"] == 1
-        assert metrics["reading_grade"] == textstat.flesch_kincaid_grade("Cats run fast.\n\n\n\nDogs  sleep.\n")
 
     def test_words_in_rst_leave_out_code_directives_literal_blocks_options_and_underlines(self, tmp_path):
         # Title, Cats run fast., Dogs sleep., Here is code:, Use and timing closure now.
@@ -149,17 +146,6 @@ class DocumentsTest:
         text = "Build\n=====\n\nRun this::\n\n    make test\n\nDone.\n"
         assert measure(tmp_path, {"readme.build": text})["words"] == 4
 
-    def test_the_reading_grade_is_that_of_textstat(self, tmp_path):
-        text = "The cat sat on the mat. It was a very long and complicated consideration of possibilities.\n"
-        assert measure(tmp_path, {"CLAUDE.md": text})["reading_grade"] == textstat.flesch_kincaid_grade(text)
-
-    def test_the_total_reading_grade_is_that_of_all_the_prose_together(self, tmp_path):
-        metrics = measure(tmp_path, {"A.md": SIMPLE, "B.md": LONG})
-        pooled = textstat.flesch_kincaid_grade(SIMPLE + "\n\n" + LONG)
-        mean = (textstat.flesch_kincaid_grade(SIMPLE) + textstat.flesch_kincaid_grade(LONG)) / 2
-        assert metrics["reading_grade"] == pooled
-        assert pooled != mean
-
     def test_hard_and_advisory_ste_findings_are_counted_apart(self, tmp_path):
         metrics = measure(tmp_path, {"CLAUDE.md": "Cats run; dogs sleep; birds fly. The file was written today.\n"})
         assert (metrics["ste_violations"], metrics["ste_advisory"]) == (2, 1)
@@ -168,9 +154,7 @@ class DocumentsTest:
         metrics = measure(tmp_path, {"A.md": SIMPLE, "B.md": "Cats run; dogs sleep. The file was written today.\n"})
         documents = metrics["documents"]
         assert set(documents) == {"A.md", "B.md"}
-        assert documents["A.md"] == {"words": 3, "code_lines": 0,
-                                     "reading_grade": textstat.flesch_kincaid_grade(SIMPLE),
-                                     "ste_violations": 0, "ste_advisory": 0}
+        assert documents["A.md"] == {"words": 3, "code_lines": 0, "ste_violations": 0, "ste_advisory": 0}
         for key in ("words", "ste_violations", "ste_advisory"):
             assert metrics[key] == sum(document[key] for document in documents.values())
 
@@ -259,8 +243,8 @@ class CompareTest:
 
     def test_each_scalar_measure_has_a_row(self, tmp_path):
         rows = compare(tmp_path, measure(tmp_path, {"tools/a.py": PLAIN}))
-        assert list(rows) == ["lines", "mccabe", "halstead_volume", "halstead_effort", "words", "reading_grade",
-                              "ste_violations", "ste_advisory", "audit_days", "interactivity_mean", "interactivity_max", "overload",
+        assert list(rows) == ["lines", "mccabe", "halstead_volume", "halstead_effort", "words", "ste_violations",
+                              "ste_advisory", "audit_days", "interactivity_mean", "interactivity_max", "overload",
                               "propagation_cost", "live_peak", "live_mean", "forward_references", "vocabulary_total",
                               "unimplemented", "unverified"]
 

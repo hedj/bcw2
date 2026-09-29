@@ -31,7 +31,6 @@ Measure complexity with numbers, not adjectives. Run `./dev make check`, then `.
   * **Halstead volume and effort:** summed over the files.
 * **Documents** (the prose of `book/**/*.rst`, `readme.build`, and each `*.md` file at the root, without code blocks and inline code):
   * **Word count.**
-  * **Reading level:** Flesch-Kincaid grade of all the prose together. Lower is easier.
   * **STE violations:** the hard findings of `tools/ste_lint.py`. Report its advisory findings (passive voice, compound tenses) separately.
   * **Audit time:** the days that one engineer takes to audit `book/`, its words and its lines of code at 1,200 a day (design.audit-time). The TARGET design.audit-budget is 5 days or fewer.
 * **Design** (the graph in `build/design.json`, where an edge means that a reader needs one element to understand another):
