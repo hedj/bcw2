@@ -1033,8 +1033,7 @@ Pipeline
    data: m2_
    write, which alone writes the registers: w_
 
-   rot ahead: the thread of the turn, and of the next write slot, which count cycles and no thread changes
-   div_value div_dest div_ready: the divide result of the next write slot, which only its thread reads
+   rot: the thread of the turn, which counts cycles and no thread changes
    q_we q_thread q_pc q_run q_select: the write of the port, which only the supervisor drives
 
 .. requirement:: core.step
@@ -1092,12 +1091,6 @@ Pipeline
        wire [T-1:0][bcw_params::CORE_SELECT_WIDTH-1:0] select;
        logic [TW-1:0] rot, rot_next;
        core_rotate rotate (.turn(rot), .next(rot_next));
-       // The thread of the write slot of the next cycle, whose divide result the core registers a cycle
-       // before it writes it, so that choosing the result takes a cycle of its own.
-       logic [TW-1:0] ahead;
-       wire [TW-1:0] ahead_1, ahead_2;
-       core_rotate step_1 (.turn(rot_next), .next(ahead_1));
-       core_rotate step_2 (.turn(ahead_1), .next(ahead_2));
        assign turn = rot;
 
        // F: fetch the word at the program counter of the thread of the turn.
@@ -1145,13 +1138,10 @@ Pipeline
        wire e_pick = e_class[10:7] != 4'd0;
        wire e_we = e_class[10:7] != 4'd0 || e_load || e_opimm || e_class[2] || e_mul;
        wire [31:0] div_result;
-       logic [31:0] div_value;
        wire [4:0] div_rd;
-       logic [4:0] div_dest;
-       logic div_ready;
        wire resume;
        core_div divide (.clk, .rst_n, .req(e_v && e_div && e_cause == NONE), .req_thread(e_t), .f3(f3[1:0]),
-                        .a(e_a), .b(e_b), .req_rd(e_insn[11:7]), .thread(ahead), .look_thread(port_rd_thread),
+                        .a(e_a), .b(e_b), .req_rd(e_insn[11:7]), .thread(rot_next), .look_thread(port_rd_thread),
                         .wrote(resume), .wrote_thread(rot_next), .result(div_result), .look_result(port_rd_result),
                         .rd(div_rd), .wait_div(hold), .steps);
        logic m1_v, m1_we, m1_load, m1_store, m1_mul; logic [1:0] m1_cause; logic [TW-1:0] m1_t;
@@ -1181,10 +1171,10 @@ Pipeline
        core_load extract (.f3(w_f3), .lo(w_addr[1:0]), .word(w_data), .y(loaded));
        wire retire = w_v && w_cause == NONE;
        // A thread resumes in its write slot once its divider has finished all its steps.
-       assign resume = hold[rot_next] && div_ready;
+       assign resume = hold[rot_next] && steps[rot_next] == 6'd0;
        assign we = rst_n && (retire && w_we_r || resume);
-       assign wa = resume ? {index[rot_next], div_dest} : {index[w_t], w_rd};
-       assign wd = resume ? div_value : w_load ? loaded : w_res;
+       assign wa = resume ? {index[rot_next], div_rd} : {index[w_t], w_rd};
+       assign wd = resume ? div_result : w_load ? loaded : w_res;
 
        // Each change of the state of a thread, for the proofs and the tests.
        assign {commit, commit_resume, commit_cause, commit_thread}
@@ -1201,8 +1191,6 @@ Pipeline
 
        always_ff @(posedge clk) begin
            rot <= rst_n ? rot_next : '0;
-           ahead <= rst_n ? ahead_2 : TW'(2);
-           {div_value, div_dest, div_ready} <= {div_result, div_rd, steps[ahead] == 6'd0};
            {q_we, q_thread, q_pc, q_run, q_select}
                <= {rst_n && port_we && !port_err, port_thread, port_pc, port_run, port_select};
            {x_v, x_t, x_pc} <= {rst_n && run[rot] && !hold[rot], rot, pc[rot]};
@@ -1338,12 +1326,13 @@ Pipeline
        wire mine = commit && commit_thread == watched, slot = 3'(turn + 3'd1) == watched;
        wire asked;
        logic [31:0] m_pc, set_pc;
-       logic m_run, m_hold, m_halt, set_now, set_run, ready = 1'b0, modelled = 1'b0;
+       logic m_run, m_hold, m_halt, set_now, set_run, modelled = 1'b0;
        logic [5:0] m_steps;
        logic [1:0] m_cause;
        logic m_select, set_select;
        logic [43:0] model;
        // A stop takes effect in the slot of the thread, once no divide holds it.
+       wire ready = port_rd_steps == 6'd0;
        wire halting = port_rd_halt && slot && (!port_rd_hold || ready);
        always_comb begin
            {m_pc, m_run, m_hold, m_steps, m_cause, m_select, m_halt}
@@ -1367,17 +1356,14 @@ Pipeline
                <= {rst_n && port_we && !port_err && port_thread == watched, port_run, port_pc, port_select};
            {modelled, model} <= {1'b1, m_pc, m_run, m_hold, m_steps, m_cause, m_select, m_halt};
            started <= {started[5:0], rst_n && turn == watched && port_rd_run && !port_rd_hold};
-           ready <= port_rd_steps == 6'd0;
        end
        always_comb if (modelled)
            assert ({port_rd_pc, port_rd_run, port_rd_hold, port_rd_steps, port_rd_cause, port_rd_select, port_rd_halt}
                    == model);
        always_comb if (age == 4'd8) assert ((mine && !commit_resume) == started[6]);
        always_comb if (rst_n) assert ((mine && commit_resume) == (slot && port_rd_hold && ready));
-       // A resume writes the result that the divider of the thread held a cycle before.
-       logic [31:0] result_was;
-       always_ff @(posedge clk) result_was <= port_rd_result;
-       always_comb if (rst_n) assert (!(mine && commit_resume) || wd == result_was);
+       // A resume writes the result that the divider of the thread holds.
+       always_comb if (rst_n) assert (!(mine && commit_resume) || wd == port_rd_result);
        // core.div-time: since counts the cycles from the stage E of a divide, and ties the wait to the
        // steps and the turn. The thread skips no more turns than the twin, and all of them by its resume.
        wire [2:0] turns;
@@ -1436,8 +1422,8 @@ Pipeline
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
 
-   -    assign wa = resume ? {index[rot_next], div_dest} : {index[w_t], w_rd};
-   +    assign wa = resume ? {index[rot_next], div_dest} : {index[rot], w_rd};
+   -    assign wa = resume ? {index[rot_next], div_rd} : {index[w_t], w_rd};
+   +    assign wa = resume ? {index[rot_next], div_rd} : {index[rot], w_rd};
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
@@ -1472,20 +1458,20 @@ Pipeline
 .. mutant:: build/rtl/core/core.v
    :kills: core.registers.test
 
-   -    assign resume = hold[rot_next] && div_ready;
-   +    assign resume = hold[rot_next] && (div_ready || steps[rot_next] < 6'd9);
+   -    assign resume = hold[rot_next] && steps[rot_next] == 6'd0;
+   +    assign resume = hold[rot_next] && steps[rot_next] < 6'd9;
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
 
-   -           {div_value, div_dest, div_ready} <= {div_result, div_rd, steps[ahead] == 6'd0};
-   +           {div_value, div_dest, div_ready} <= {div_result, div_rd, steps[rot_next] == 6'd0};
+   -    assign resume = hold[rot_next] && steps[rot_next] == 6'd0;
+   +    assign resume = steps[rot_next] == 6'd0;
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.registers.test
 
-   -                        .a(e_a), .b(e_b), .req_rd(e_insn[11:7]), .thread(ahead), .look_thread(port_rd_thread),
-   +                        .a(e_a), .b(e_b), .req_rd(e_insn[11:7]), .thread(ahead_2), .look_thread(port_rd_thread),
+   -                        .a(e_a), .b(e_b), .req_rd(e_insn[11:7]), .thread(rot_next), .look_thread(port_rd_thread),
+   +                        .a(e_a), .b(e_b), .req_rd(e_insn[11:7]), .thread(rot), .look_thread(port_rd_thread),
 
 .. rationale::
 
