@@ -810,9 +810,9 @@ Divide
 
    module core_div (input wire clk, rst_n, req, input wire [bcw_params::CORE_TURN_WIDTH-1:0] req_thread,
                     input wire [1:0] f3, input wire [31:0] a, b, input wire [4:0] req_rd,
-                    input wire [bcw_params::CORE_TURN_WIDTH-1:0] thread, input wire wrote,
+                    input wire [bcw_params::CORE_TURN_WIDTH-1:0] thread, look_thread, input wire wrote,
                     input wire [bcw_params::CORE_TURN_WIDTH-1:0] wrote_thread,
-                    output wire [31:0] result, output wire [4:0] rd,
+                    output wire [31:0] result, look_result, output wire [4:0] rd,
                     output wire [bcw_params::CORE_THREADS-1:0] wait_div,
                     output wire [bcw_params::CORE_THREADS-1:0][5:0] steps);
        localparam int T = bcw_params::CORE_THREADS;
@@ -841,6 +841,9 @@ Divide
        wire [31:0] value = remainder[thread] ? r[thread] : q[thread];
        assign result = negate[thread] ? -value : value;
        assign rd = dest[thread];
+       // The port reads the result of any one thread.
+       wire [31:0] seen = remainder[look_thread] ? r[look_thread] : q[look_thread];
+       assign look_result = negate[look_thread] ? -seen : seen;
    endmodule
 
 .. check:: test
@@ -848,13 +851,13 @@ Divide
 
    module tb_div;
        logic clk = 0, rst_n = 0, req = 0;
-       logic [2:0] req_thread = 0, thread = 0;
+       logic [2:0] req_thread = 0, thread = 0, look_thread = 0;
        logic [1:0] f3 = 0;
        logic [31:0] a = 0, b = 0;
        logic [4:0] req_rd = 0;
        logic wrote = 0;
        logic [2:0] wrote_thread = 0;
-       wire [31:0] result;
+       wire [31:0] result, look_result;
        wire [4:0] rd;
        wire [7:0] wait_div;
        wire [7:0][5:0] steps;
@@ -1121,7 +1124,7 @@ Pipeline
                 input wire [bcw_params::CORE_TURN_WIDTH-1:0] port_thread, input wire port_we, port_run,
                 input wire [31:0] port_pc, input wire [bcw_params::CORE_SELECT_WIDTH-1:0] port_select,
                 input wire [bcw_params::CORE_TURN_WIDTH-1:0] port_rd_thread, output wire port_rd_hold,
-                output wire [5:0] port_rd_steps,
+                output wire [5:0] port_rd_steps, output wire [31:0] port_rd_result,
                 output wire [31:0] port_rd_pc, output wire port_rd_run, output wire [1:0] port_rd_cause,
                 output wire [bcw_params::CORE_SELECT_WIDTH-1:0] port_rd_select, output wire port_err,
                 output wire [bcw_params::CORE_CONTEXT_WIDTH+4:0] ra, rb, wa, output wire we,
@@ -1203,8 +1206,9 @@ Pipeline
        logic div_ready;
        wire resume;
        core_div divide (.clk, .rst_n, .req(e_v && e_div && e_cause == NONE), .req_thread(e_t), .f3(f3[1:0]),
-                        .a(e_a), .b(e_b), .req_rd(e_insn[11:7]), .thread(ahead), .wrote(resume),
-                        .wrote_thread(rot_next), .result(div_result), .rd(div_rd), .wait_div(hold), .steps);
+                        .a(e_a), .b(e_b), .req_rd(e_insn[11:7]), .thread(ahead), .look_thread(port_rd_thread),
+                        .wrote(resume), .wrote_thread(rot_next), .result(div_result), .look_result(port_rd_result),
+                        .rd(div_rd), .wait_div(hold), .steps);
        logic m1_v, m1_we, m1_load, m1_store, m1_mul; logic [1:0] m1_cause; logic [TW-1:0] m1_t;
        logic [4:0] m1_rd; logic [2:0] m1_f3; logic [31:0] m1_pc, m1_word, m1_a, m1_b, m1_addr, m1_res, m1_next, m1_other;
        logic m1_pick;
@@ -1303,7 +1307,7 @@ Pipeline
        wire [8:0] ra, rb, wa;
        wire port_rd_hold;
        wire [5:0] port_rd_steps;
-       wire [31:0] wd, a, b, commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next;
+       wire [31:0] port_rd_result, wd, a, b, commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next;
        // The registers are outside the core, so that their reads and writes are ports, and the proof
        // holds the core with the real registers, whose own invariant it checks there. The port reads
        // any one thread, which the proof watches.
@@ -1390,6 +1394,10 @@ Pipeline
            assert ({port_rd_pc, port_rd_run, port_rd_hold, port_rd_steps, port_rd_cause, port_rd_select} == model);
        always_comb if (age == 4'd8) assert ((mine && !commit_resume) == started[6]);
        always_comb if (rst_n) assert ((mine && commit_resume) == (slot && port_rd_hold && ready));
+       // A resume writes the result that the divider of the thread held a cycle before.
+       logic [31:0] result_was;
+       always_ff @(posedge clk) result_was <= port_rd_result;
+       always_comb if (rst_n) assert (!(mine && commit_resume) || wd == result_was);
        // core.div-time: since counts the cycles from the stage E of a divide, and ties the wait to the
        // steps and the turn. The thread skips no more turns than the twin, and all of them by its resume.
        wire [2:0] turns;
@@ -1485,6 +1493,12 @@ Pipeline
 
    -           {div_value, div_dest, div_ready} <= {div_result, div_rd, steps[ahead] == 6'd0};
    +           {div_value, div_dest, div_ready} <= {div_result, div_rd, steps[rot_next] == 6'd0};
+
+.. mutant:: build/rtl/core/core.v
+   :kills: core.registers.test
+
+   -                        .a(e_a), .b(e_b), .req_rd(e_insn[11:7]), .thread(ahead), .look_thread(port_rd_thread),
+   +                        .a(e_a), .b(e_b), .req_rd(e_insn[11:7]), .thread(ahead_2), .look_thread(port_rd_thread),
 
 .. rationale::
 
@@ -1607,6 +1621,7 @@ Thread control
        logic [2:0] port_rd_thread = 0;
        logic port_rd_hold;
        logic [5:0] port_rd_steps;
+       logic [31:0] port_rd_result;
        logic port_rd_run, port_err;
        logic [1:0] port_rd_cause;
        wire [2:0] turn, commit_thread;
