@@ -57,3 +57,32 @@ details > div[class*="highlight-"],
 details > div[class*="highlight-"] pre {
     margin-top: 0;
 }
+
+/* A schedule: the thread in each stage in each cycle. The reader picks a thread,
+   and its cells take this background. */
+.schedule {
+    --schedule-mine: #fde68a;
+}
+
+.schedule table td,
+.schedule table th {
+    text-align: center;
+    padding: 0.1em 0.5em;
+}
+
+.schedule table td:first-child {
+    text-align: left;
+}
+
+.schedule .follow {
+    margin-right: 0.5em;
+    font-size: 0.9em;
+}
+
+.schedule input + label {
+    margin-right: 0.6em;
+}
+
+.schedule table p {
+    margin: 0;
+}

@@ -1092,6 +1092,18 @@ Pipeline
    While a thread runs with no divide, the core shall start an instruction of the thread in each
    turn of the thread.
 
+.. schedule:: The thread whose instruction each stage holds in each cycle of one rotation, with thread 0 fetching in cycle 0. The proof of the core shows this for any thread.
+   :threads: core.threads
+
+   fetch
+   expand
+   decode
+   read
+   execute
+   address
+   data
+   write, which alone writes the registers
+
 .. requirement:: core.step
    :parent: design.economy
 

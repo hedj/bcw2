@@ -1,7 +1,8 @@
 """The weave: the reader edition of the book, as HTML and as LaTeX for the PDF.
 
 make weave runs Sphinx with this extension and tools/bcw.py. The weave reads
-and checks nothing itself. It orders and reshapes what bcw.py reads:
+nothing itself, and checks only that a schedule fits. It orders and reshapes
+what bcw.py reads:
 
 - The index holds the directive chapters. It lists the chapters in the parts
   of bcw.model: one numbered toctree for each kind, with the kind as its
@@ -32,6 +33,14 @@ and checks nothing itself. It orders and reshapes what bcw.py reads:
 - Each section of level 2 to 4 starts with a line Uses: that links each chunk
   of another section that the section needs (doc.live-set): the interface of
   the section, which its reader holds while reading it.
+- The directive schedule draws a table of the thread whose instruction each
+  stage holds in each cycle of one rotation. Its lines name the stages in order,
+  and its option threads names the PARAMETER of the number of threads. Stage s
+  holds, in cycle c, the thread (c - s) mod that number: the thread that
+  fetched s cycles earlier, with thread 0 fetching in cycle 0. A schedule with
+  more stages than threads gives a warning and no table, since a thread would
+  then hold two stages in one cycle. The HTML lets the reader choose a thread to
+  follow; the LaTeX sets thread 0 in bold.
 """
 
 import html
@@ -39,10 +48,12 @@ import re
 from pathlib import Path
 
 from docutils import nodes
+from docutils.parsers.rst import directives
 from docutils.statemachine import StringList
 from sphinx import addnodes
 from sphinx.builders.latex.nodes import captioned_literal_block
 from sphinx.errors import NoUri
+from sphinx.util import logging
 from sphinx.util.nodes import make_refnode
 from sphinx.util.docutils import SphinxDirective
 
@@ -51,6 +62,7 @@ import bcw
 CAPTIONS = {"tutorial": "Tutorials", "how-to": "How-to guides", "reference": "Reference",
             "explanation": "Explanation"}
 LEFT_OUT = "Unordered"
+logger = logging.getLogger(__name__)
 MOVED = {"RATIONALE", "DISCUSSION"}
 
 
@@ -139,6 +151,92 @@ class CodeIndexDirective(SphinxDirective):
             item += nodes.Text(".")
             entries += nodes.list_item("", item)
         return [nodes.rubric(text="Index of code"), entries]
+
+
+class ScheduleDirective(SphinxDirective):
+    """A schedule: its caption, its stages and the PARAMETER of its threads, drawn once the values are known."""
+
+    optional_arguments = 1
+    final_argument_whitespace = True
+    has_content = True
+    option_spec = {"threads": directives.unchanged_required}
+
+    def run(self):
+        stages = [line.strip() for line in self.content if line.strip()]
+        node = nodes.container(classes=["schedule"], stages=stages, threads=self.options.get("threads", ""),
+                               caption=" ".join(self.arguments))
+        node.source, node.line = self.get_source_info()
+        return [node]
+
+
+def cell(text, classes=(), strong=False):
+    paragraph = nodes.paragraph()
+    paragraph += nodes.strong(text=text) if strong else nodes.Text(text)
+    return nodes.entry("", paragraph, classes=list(classes))
+
+
+def schedule_table(identity, stages, threads, caption, bold):
+    """The table of the owner of each stage in each cycle, with the owner bold where bold(owner)."""
+    table = nodes.table(classes=["schedule"], ids=[f"{identity}-table"])
+    table += nodes.title(text=caption)
+    group = nodes.tgroup(cols=threads + 1)
+    table += group
+    group += [nodes.colspec(colwidth=4 if column == 0 else 1) for column in range(threads + 1)]
+    group += nodes.thead("", nodes.row("", cell("stage"), *[cell(f"cycle {c}") for c in range(threads)]))
+    body = nodes.tbody()
+    for s, stage in enumerate(stages):
+        owners = [(c - s) % threads for c in range(threads)]
+        body += nodes.row("", cell(stage), *[cell(str(o), [f"t{o}"], bold(o)) for o in owners])
+    group += body
+    return table
+
+
+def follow(identity, threads):
+    """A radio button for each thread, and the style that highlights the cells of the chosen one."""
+    inputs = "".join(f'<input type="radio" name="{identity}" id="{identity}-{t}" class="t{t}"'
+                     f'{" checked" if t == 0 else ""}><label for="{identity}-{t}">{t}</label>' for t in range(threads))
+    rules = ", ".join(f"#{identity} input.t{t}:checked ~ table td.t{t}" for t in range(threads))
+    return nodes.raw("", f'<span class="follow">Follow thread</span>{inputs}<style>{rules} '
+                         "{ background: var(--schedule-mine); font-weight: bold; }</style>", format="html")
+
+
+def schedules(doctree):
+    return [box for box in doctree.findall(nodes.container) if "stages" in box]
+
+
+def schedule_problem(env, box):
+    """Why the schedule cannot be drawn, or None."""
+    threads, stages = env.bcw_values.get(box["threads"]), box["stages"]
+    if not isinstance(threads, int) or threads < 1:
+        return (f"the schedule names {box['threads'] or 'no PARAMETER'} in its option threads, which has no value "
+                "that is a positive number")
+    if not stages or len(stages) > threads:
+        return (f"the schedule has {len(stages)} stages and {threads} threads, so it needs 1 to {threads} stages: "
+                "with more, a thread would hold two stages in one cycle")
+    return None
+
+
+def check_schedules(app, env):
+    """Warn once for each schedule that does not fit, after bcw.py has found the values."""
+    for docname in sorted(env.found_docs):
+        for box in schedules(env.get_doctree(docname)):
+            problem = schedule_problem(env, box)
+            if problem:
+                logger.warning(problem, location=box)
+
+
+def draw_schedules(env, doctree, builder_format):
+    """Put the table of each schedule that fits in its place, and drop each other one."""
+    for number, box in enumerate(schedules(doctree), 1):
+        if schedule_problem(env, box):
+            box.parent.remove(box)
+            continue
+        threads, stages, identity = env.bcw_values[box["threads"]], box["stages"], f"schedule-{number}"
+        box["ids"] = [identity]
+        if builder_format == "html":
+            box += [follow(identity, threads), schedule_table(identity, stages, threads, box["caption"], lambda o: False)]
+        else:
+            box += schedule_table(identity, stages, threads, f"{box['caption']} Thread 0 is in bold.", lambda o: o == 0)
 
 
 def link(anchor, docname):
@@ -414,6 +512,7 @@ def show_values(env, doctree):
 
 def weave(app, doctree, docname):
     show_values(app.env, doctree)
+    draw_schedules(app.env, doctree, app.builder.format)
     show_uses(app, doctree)
     if app.builder.format == "html":
         weave_html(doctree)
@@ -498,9 +597,12 @@ def setup(app):
     app.add_css_file("weave.css")
     app.add_directive("chapters", ChaptersDirective)
     app.add_directive("code-index", CodeIndexDirective)
+    app.add_directive("schedule", ScheduleDirective)
     app.connect("env-before-read-docs", read_index_last)
     # After Sphinx's own numbering, which runs at the default priority of 500.
     app.connect("env-get-updated", number_through, priority=600)
     app.connect("doctree-read", reshape, priority=450)
     app.connect("doctree-resolved", weave)
+    # After bcw.py finds the values, at the default priority of 500.
+    app.connect("env-check-consistency", check_schedules, priority=600)
     return {"parallel_read_safe": False, "env_version": 1}

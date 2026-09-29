@@ -175,6 +175,56 @@ TARGETED = VALUED.replace("A thread's instructions", "The aim is :param:`core.ai
     target("core.aim", "core.threads * 2", parent="core.threads", unit="threads", text="The aim of the core.")
 
 
+def scheduled(stages, threads="core.threads"):
+    """VALUED, 8 threads, with a schedule of the stages at its end."""
+    lines = "".join(f"   {stage}\n" for stage in stages)
+    return {**BOOK, "core/core.rst": VALUED + f"\n.. schedule:: Who holds each stage.\n   :threads: {threads}\n\n{lines}"}
+
+
+def rows(page):
+    """The text of the cells of each row of the first schedule of the page."""
+    table = page[page.find('id="schedule-1"'):]
+    table = table[:table.find("</table>")]
+    return [[re.sub(r"<[^>]+>", "", entry).strip() for entry in re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.S)]
+            for row in re.findall(r"<tr[^>]*>(.*?)</tr>", table, re.S)]
+
+
+class ScheduleTest:
+    """The directive schedule draws the thread in each stage in each cycle: stage s holds thread (c - s) mod 8."""
+
+    def test_each_stage_holds_the_thread_that_fetched_that_many_cycles_before(self):
+        book = weave(scheduled(["fetch", "decode", "write"]), "html")
+        assert book.tuples() == []
+        assert rows(book.output["core/core.html"]) == [
+            ["stage", *[f"cycle {c}" for c in range(8)]],
+            ["fetch", "0", "1", "2", "3", "4", "5", "6", "7"],
+            ["decode", "7", "0", "1", "2", "3", "4", "5", "6"],
+            ["write", "6", "7", "0", "1", "2", "3", "4", "5"]]
+
+    def test_the_html_offers_each_thread_to_follow_with_thread_0_chosen(self):
+        page = weave(scheduled(["fetch", "decode"]), "html").output["core/core.html"]
+        assert re.findall(r'<input type="radio" name="schedule-1" id="schedule-1-(\d)" class="t\d"( checked)?>',
+                          page) == [("0", " checked")] + [(str(t), "") for t in range(1, 8)]
+        assert "#schedule-1 input.t5:checked ~ table td.t5" in page
+
+    def test_the_latex_sets_thread_0_in_bold_once_in_each_stage(self):
+        tex = weave(scheduled(["fetch", "decode", "write"]), "latex").output["book.tex"]
+        assert tex.count(r"\sphinxstylestrong{0}") == 3
+        assert "Who holds each stage. Thread 0 is in bold." in tex
+
+    def test_more_stages_than_threads_give_a_warning_and_no_table(self):
+        book = weave(scheduled([f"stage {s}" for s in range(9)]), "html")
+        assert [text for _, _, text in book.others()] == [
+            "the schedule has 9 stages and 8 threads, so it needs 1 to 8 stages: with more, a thread would hold "
+            "two stages in one cycle"]
+        assert 'id="schedule-1"' not in book.output["core/core.html"]
+
+    def test_a_threads_option_without_a_value_gives_a_warning(self):
+        book = weave(scheduled(["fetch"], threads="core.missing"), "html")
+        assert [text for _, _, text in book.others()] == [
+            "the schedule names core.missing in its option threads, which has no value that is a positive number"]
+
+
 class ChecksTest:
     def test_the_weave_leaves_the_checks_unchanged(self):
         assert Book({"core/core.rst": GOOD}, general=GENERAL, extensions=["bcw", "weave"]).tuples() == []
