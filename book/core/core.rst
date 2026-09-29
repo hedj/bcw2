@@ -805,6 +805,36 @@ Divide
    :verifies: core.div-step
    :module: core_div_step
 
+.. source:: build/rtl/core/core_div_unit.v
+   :implements: core.div, core.div-time
+
+   // The divider of one thread, which only its own requests and its own write reach.
+   module core_div_unit (input wire clk, rst_n, start, input wire [1:0] f3, input wire [31:0] a, b,
+                         input wire [4:0] start_rd, input wire wrote,
+                         output wire [31:0] value, output wire negative, output wire [4:0] rd,
+                         output wire waiting, output wire [5:0] steps);
+       logic [31:0] r, q, d;
+       logic [5:0] count;
+       logic negate, remainder, pending;
+       logic [4:0] dest;
+       wire [31:0] r_next, q_next;
+       wire sa = !f3[0] && a[31], sb = !f3[0] && b[31];
+       core_div_step step (.r, .q, .d, .r_next, .q_next);
+       // The thread waits from its request until the core writes the result.
+       always_ff @(posedge clk)
+           if (!rst_n) {count, pending} <= '0;
+           else if (start) begin
+               {r, q, d, count, pending} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd32, 1'b1};
+               remainder <= f3[1];
+               negate <= f3[1] ? sa : sa != sb && b != 32'd0;
+               dest <= start_rd;
+           end else begin
+               if (count != '0) {r, q, count} <= {r_next, q_next, count - 6'd1};
+               if (wrote) pending <= 1'b0;
+           end
+       assign {value, negative, rd, waiting, steps} = {remainder ? r : q, negate, dest, pending, count};
+   endmodule
+
 .. source:: build/rtl/core/core_div.v
    :implements: core.div, core.div-time
 
@@ -816,34 +846,18 @@ Divide
                     output wire [bcw_params::CORE_THREADS-1:0] wait_div,
                     output wire [bcw_params::CORE_THREADS-1:0][5:0] steps);
        localparam int T = bcw_params::CORE_THREADS;
-       logic [31:0] r [T], q [T], d [T];
-       logic [5:0] count [T];
-       logic negate [T], remainder [T], waiting [T];
-       logic [4:0] dest [T];
-       wire [31:0] r_next [T], q_next [T];
-       wire sa = !f3[0] && a[31], sb = !f3[0] && b[31];
-       for (genvar t = 0; t < T; t++) begin : step
-           core_div_step unit (.r(r[t]), .q(q[t]), .d(d[t]), .r_next(r_next[t]), .q_next(q_next[t]));
-           // A thread waits from its request until the core writes the result.
-           always_ff @(posedge clk)
-               if (!rst_n) {count[t], waiting[t]} <= '0;
-               else if (req && req_thread == t) begin
-                   {r[t], q[t], d[t], count[t], waiting[t]} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd32, 1'b1};
-                   remainder[t] <= f3[1];
-                   negate[t] <= f3[1] ? sa : sa != sb && b != 32'd0;
-                   dest[t] <= req_rd;
-               end else begin
-                   if (count[t] != '0) {r[t], q[t], count[t]} <= {r_next[t], q_next[t], count[t] - 6'd1};
-                   if (wrote && wrote_thread == t) waiting[t] <= 1'b0;
-               end
-           assign {wait_div[t], steps[t]} = {waiting[t], count[t]};
+       wire [31:0] value [T];
+       wire negative [T];
+       wire [4:0] dest [T];
+       for (genvar t = 0; t < T; t++) begin : units
+           core_div_unit unit (.clk, .rst_n, .start(req && req_thread == t), .f3, .a, .b, .start_rd(req_rd),
+                               .wrote(wrote && wrote_thread == t), .value(value[t]), .negative(negative[t]),
+                               .rd(dest[t]), .waiting(wait_div[t]), .steps(steps[t]));
        end
-       wire [31:0] value = remainder[thread] ? r[thread] : q[thread];
-       assign result = negate[thread] ? -value : value;
+       assign result = negative[thread] ? -value[thread] : value[thread];
        assign rd = dest[thread];
        // The port reads the result of any one thread.
-       wire [31:0] seen = remainder[look_thread] ? r[look_thread] : q[look_thread];
-       assign look_result = negate[look_thread] ? -seen : seen;
+       assign look_result = negative[look_thread] ? -value[look_thread] : value[look_thread];
    endmodule
 
 .. check:: test
@@ -936,17 +950,17 @@ Divide
        end
    endmodule
 
-.. mutant:: build/rtl/core/core_div.v
+.. mutant:: build/rtl/core/core_div_unit.v
    :kills: core.div.test
 
-   -                negate[t] <= f3[1] ? sa : sa != sb && b != 32'd0;
-   +                negate[t] <= f3[1] ? sa : sa != sb;
+   -            negate <= f3[1] ? sa : sa != sb && b != 32'd0;
+   +            negate <= f3[1] ? sa : sa != sb;
 
-.. mutant:: build/rtl/core/core_div.v
+.. mutant:: build/rtl/core/core_div_unit.v
    :kills: core.div.test
 
-   -                {r[t], q[t], d[t], count[t], waiting[t]} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd32, 1'b1};
-   +                {r[t], q[t], d[t], count[t], waiting[t]} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd33, 1'b1};
+   -            {r, q, d, count, pending} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd32, 1'b1};
+   +            {r, q, d, count, pending} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd33, 1'b1};
 
 .. rationale::
 
