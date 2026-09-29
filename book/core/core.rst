@@ -1234,6 +1234,32 @@ Pipeline
        end
    endmodule
 
+.. source:: build/rtl/core/core_top.v
+
+   // The core with its registers, as make timing places and routes it. It keeps each port of the
+   // core, so that synthesis leaves out none of its logic.
+   module core_top (input wire clk, rst_n, output wire [bcw_params::CORE_TURN_WIDTH-1:0] turn,
+                    output wire [31:0] fetch_addr, input wire [31:0] fetch_word,
+                    output wire [31:0] data_addr, output wire [3:0] data_be, output wire data_we,
+                    output wire [31:0] data_wdata, input wire [31:0] data_rdata,
+                    input wire [bcw_params::CORE_TURN_WIDTH-1:0] port_thread, input wire port_we, port_run,
+                    input wire port_stop, input wire [31:0] port_pc,
+                    input wire [bcw_params::CORE_SELECT_WIDTH-1:0] port_select,
+                    input wire [bcw_params::CORE_TURN_WIDTH-1:0] port_rd_thread, output wire port_rd_hold,
+                    output wire [5:0] port_rd_steps, output wire [31:0] port_rd_result, output wire port_rd_halt,
+                    output wire [31:0] port_rd_pc, output wire port_rd_run, output wire [1:0] port_rd_cause,
+                    output wire [bcw_params::CORE_SELECT_WIDTH-1:0] port_rd_select, output wire port_err,
+                    output wire commit, commit_resume, output wire [1:0] commit_cause,
+                    output wire [bcw_params::CORE_TURN_WIDTH-1:0] commit_thread,
+                    output wire [31:0] commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load,
+                    output wire [31:0] commit_next, mul_a, mul_b);
+       wire [bcw_params::CORE_CONTEXT_WIDTH+4:0] ra, rb, wa;
+       wire we;
+       wire [31:0] wd, a, b;
+       core dut (.*);
+       core_regfile regs (.*);
+   endmodule
+
 .. check:: prove
    :verifies: core.depth, core.issue, core.own-state, core.own-context, core.step, core.suspend,
               core.div-wait, core.div-time, core.index-write, core.own-contexts, core.registers,

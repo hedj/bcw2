@@ -95,6 +95,10 @@ make tangle   Writes the code of the book into build/: the Verilog into
               that the book no longer tangles is deleted, unless it changed
               after the last tangle: then make tangle keeps it and reports
               it too.
+make timing   Places and routes the core for 32 seeds with
+              tools/timing.py, and reports its maximum frequency against
+              core.clock (see Timing below). It takes about 5 minutes on 4
+              cores, so make check does not run it.
 make clean    Removes build/.
 
 Run make check after each edit to the book. Run make test after each edit
@@ -267,29 +271,24 @@ Timing
 ------
 
 make check does not measure timing. core.timing-closure is a TARGET, and a
-measurement of the core decides it. A timing run synthesises the core and
-places and routes it, in these steps:
+measurement of the core decides it. make timing runs tools/timing.py:
 
-1. Write a top module that holds core and core_regfile, and makes each port of
-   core a port of the top. Keep the ports that only the checks read: in 16
-   runs of each, a top without them gave no better result.
-2. Synthesise it with yosys: read_verilog -sv with each package of build/rtl
-   first, then each Verilog file of build/rtl/core and the top, then
-   synth_ecp5 -top top -json top.json.
-3. Place and route it once for each seed from 1 to 32, at the value of
-   core.clock, 85 MHz:
+1. It synthesises core_top, the core with its registers, with yosys. core_top
+   keeps each port of the core, also the ports that only the checks read. In
+   16 runs of each, a top without them gave no better result.
+2. It places and routes core_top with nextpnr-ecp5 for each seed from 1 to 32,
+   at the value of core.clock, with the static placer. It runs one seed on
+   each core at a time.
+3. It prints the maximum frequency of each seed, and the minimum, the median
+   and the mean. It fails if a seed does not reach core.clock.
 
-       nextpnr-ecp5 --25k --package CABGA256 --json top.json --out-of-context \
-           --freq 85 --placer static --seed N
-
-4. Take the last line "Max frequency for clock" of each run, and report the
-   minimum, the median and the mean.
+The log of each seed is build/timing/seed-<n>.log. For a quick look, run
+./dev python3 tools/timing.py --seeds 8.
 
 The static placer replaces the default HeAP placer. In 64 seeds of each, its
 mean was 1.6 MHz higher (95.7 MHz, p = 0.001), 1 run in place of 5 fell below
 90 MHz, and each run took 13% less time. The spread from seed to seed is 2 to
 3 MHz, so 8 seeds cannot rank two changes that differ by about 1 MHz: 32 can.
-
 
 The twin language
 -----------------
@@ -335,6 +334,8 @@ tools/linemap.py    Maps a location in build/ to its chapter line.
 tools/run_checks.py Runs each check directive of the book, and checks each
                     schedule against the registers of its module.
 tools/twin.py       Translates a twin in the twin language to z3.
+tools/timing.py     Places and routes core_top for each seed, for make
+                    timing.
 tools/metrics.py    Prints the lines of code, McCabe and Halstead metrics of
                     the code in tools/, without its tests. It also prints the
                     words and the ste_lint findings of the prose of the

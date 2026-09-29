@@ -6,6 +6,7 @@
 #                 check directive
 #   make weave    the reader edition, as build/html/index.html and build/latex/bcw2.pdf
 #   make test     the tests of the tools, with pytest on each core
+#   make timing   the maximum frequency of the core, over 32 seeds of place and route
 #   make clean    remove build/
 #
 # Sphinx runs tools/bcw.py on book/. It checks the book, reports each finding
@@ -31,7 +32,7 @@ ifndef BCW_ENV
 $(error the tools come from the Nix environment: run ./dev make $(MAKECMDGOALS))
 endif
 
-.PHONY: tangle check weave test clean
+.PHONY: tangle check weave test timing clean
 
 tangle:
 	$(SPHINX) 2>&1 | $(RELATIVE)
@@ -52,6 +53,9 @@ weave:
 
 test:
 	$(PY) -m pytest -n auto
+
+timing: tangle
+	$(PY) tools/timing.py 2>&1 | $(MAP)
 
 clean:
 	rm -rf build
