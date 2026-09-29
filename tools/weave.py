@@ -28,7 +28,8 @@ what bcw.py reads:
   and each PARAMETER and TARGET shows its value on its first line.
 - The directive code-index lists each file, with a link to the block that
   defines it.
-- The directive bibliography lists the references of a TOML file, by key.
+- The directive bibliography lists the references of a TOML file, by key. The
+  chapter of the kind appendix that holds it comes after every other chapter.
 - Each section of level 2 to 4 starts with a line Uses: that links each chunk
   of another section that the section needs (doc.live-set): the interface of
   the section, which its reader holds while reading it.
@@ -64,7 +65,7 @@ from sphinx.util.docutils import SphinxDirective
 import bcw
 
 CAPTIONS = {"tutorial": "Tutorials", "how-to": "How-to guides", "reference": "Reference",
-            "explanation": "Explanation"}
+            "explanation": "Explanation", "appendix": "Appendix"}
 LEFT_OUT = "Unordered"
 logger = logging.getLogger(__name__)
 MOVED = {"RATIONALE", "DISCUSSION"}
@@ -154,14 +155,15 @@ class CodeIndexDirective(SphinxDirective):
 class BibliographyDirective(SphinxDirective):
     """The bibliography: each reference of the TOML file that its argument names, in the order of its keys.
 
-    Each [[reference]] of the file has a key, such as "Kahn 1974", which labels it, and a text, the
-    reference itself in rST inline markup. The file is not a chapter, so the audit time leaves it out.
+    The argument is relative to the chapter of the directive. Each [[reference]] of the file has a
+    key, such as "Kahn 1974", which labels it, and a text, the reference itself in rST inline markup.
+    The file is not prose of a chapter, so the audit time leaves it out.
     """
 
     required_arguments = 1
 
     def run(self):
-        path = Path(self.env.srcdir) / self.arguments[0]
+        path = Path(self.env.relfn2path(self.arguments[0])[1])
         self.env.note_dependency(str(path))
         try:
             references = tomllib.loads(path.read_text(encoding="utf-8")).get("reference", [])
@@ -182,7 +184,7 @@ class BibliographyDirective(SphinxDirective):
             item = nodes.paragraph("", "", nodes.strong(text=reference["key"]), nodes.Text(". "), *text)
             entry = nodes.list_item("", item, *messages, ids=[nodes.make_id("ref-" + reference["key"])])
             entries += entry
-        return [nodes.rubric(text="Bibliography"), entries]
+        return [entries]
 
 
 class ScheduleDirective(SphinxDirective):

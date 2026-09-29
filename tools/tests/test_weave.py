@@ -248,7 +248,8 @@ class PdfTest:
 
 
 
-INDEXED = INDEX + "\n.. bibliography:: refs.toml\n\n.. code-index::\n"
+INDEXED = INDEX + "\n.. code-index::\n"
+APPENDIX = {"refs/refs.rst": ":kind: appendix\n\n==========\nReferences\n==========\n\n.. bibliography:: refs.toml\n"}
 REFERENCES = ("[[reference]]\nkey = \"Kahn 1974\"\ntext = 'G. Kahn, *Information Processing 74*, 1974.'\n"
               "\n[[reference]]\nkey = \"Davidson 1971\"\ntext = 'E. S. Davidson, *Proc. 1971*, 1971.'\n")
 
@@ -261,17 +262,21 @@ class CodeIndexTest:
 
 
 class BibliographyTest:
-    """The directive bibliography lists the references of its TOML file by key, each with its own id."""
+    """The directive bibliography lists the references of its TOML file by key, each with its own id, in
+    a chapter of the kind appendix, which comes after every other chapter."""
 
-    def index(self, references):
-        return weave({**BOOK, "refs.toml": references}, "html", index=INDEXED)
+    def woven(self, references):
+        return weave({**BOOK, **APPENDIX, "refs/refs.toml": references}, "html", index=INDEXED)
 
-    def test_the_references_are_in_the_order_of_their_keys_before_the_index_of_code(self):
-        book = self.index(REFERENCES)
+    def test_the_references_are_in_the_order_of_their_keys(self):
+        book = self.woven(REFERENCES)
         assert book.tuples() == []
-        page = body(book.output["index.html"])
-        assert after(page, "Bibliography", 'id="ref-davidson-1971"', "<em>Proc. 1971</em>",
-                     'id="ref-kahn-1974"', "Index of code")
+        page = body(book.output["refs/refs.html"])
+        assert after(page, "References", 'id="ref-davidson-1971"', "<em>Proc. 1971</em>", 'id="ref-kahn-1974"')
+
+    def test_the_appendix_comes_after_every_other_chapter_under_its_caption(self):
+        index = body(self.woven(REFERENCES).output["index.html"])
+        assert after(index, "Tutorials", "Reference", "core/core.html", "Appendix", "refs/refs.html", "Index of code")
 
     @pytest.mark.parametrize("references, message", [
         ("[[reference]]\nkey = \"Kahn 1974\"\n", "each reference of refs.toml needs a key and a text"),
@@ -280,9 +285,9 @@ class BibliographyTest:
         ("", "the bibliography refs.toml holds no reference"),
     ], ids=["no text", "a repeated key", "no TOML", "empty"])
     def test_a_fault_in_the_file_is_an_error_on_the_directive(self, references, message):
-        book = self.index(references)
+        book = self.woven(references)
         assert message in book.warnings
-        assert ("book/index.rst", line(INDEXED, ".. bibliography::"), "sphinx", None) in book.tuples()
+        assert ("book/refs/refs.rst", line(APPENDIX["refs/refs.rst"], ".. bibliography::"), "sphinx", None) in book.tuples()
 
 
 # The reference outputs: one book that holds each feature of the weave, woven once as HTML
@@ -296,8 +301,8 @@ TESTED = ("\n.. check:: test\n   :verifies: core.rotation\n\n   module tb;\n    
           "\n.. check:: equiv\n   :verifies: core.rotation\n   :module: core_rotate\n   :twin: core_next\n")
 MODEL = ("\n.. source:: build/model/core/ref.c\n\n   #include <stdint.h>\n"
          "   uint32_t ref_next(uint32_t turn, uint32_t threads) { return (turn + 1) % threads; }\n")
-GOLDEN_BOOK = {**BOOK, "core/core.rst": TARGETED + PAIR + TESTED + MODEL, "refs.toml": REFERENCES}
-PAGES = ["index.html", "guide/guide.html", "design/design.html", "core/core.html"]
+GOLDEN_BOOK = {**BOOK, "core/core.rst": TARGETED + PAIR + TESTED + MODEL, **APPENDIX, "refs/refs.toml": REFERENCES}
+PAGES = ["index.html", "guide/guide.html", "design/design.html", "core/core.html", "refs/refs.html"]
 
 
 def main_part(page):

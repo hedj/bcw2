@@ -758,6 +758,13 @@ class ModelTest:
             ("tutorial", ["zeta"]), ("reference", ["alpha", "core"])]
         assert model.left == []
 
+    def test_an_appendix_comes_after_the_chapters_of_every_other_kind(self):
+        # By name alone, the appendix aaa would come first.
+        model = Book({"core/core.rst": GOOD, "aaa/aaa.rst": chapter("Aaa", kind="appendix"),
+                      "zeta/zeta.rst": chapter("Zeta", kind="explanation")}).model
+        assert [document.name for document in model.ordered] == ["core", "zeta", "aaa"]
+        assert [kind for kind, _ in model.parts] == ["reference", "explanation", "appendix"]
+
     def test_a_chapter_of_no_known_kind_is_in_a_last_part(self):
         model = Book({"core/core.rst": GOOD, "story/story.rst": chapter("Story", kind="story")}).model
         assert [(kind, [document.name for document in documents]) for kind, documents in model.parts] == [

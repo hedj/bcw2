@@ -12,8 +12,8 @@ supports.
 
 The book holds reference text and explanation. The rules are the reference text, and the rest
 of the book explains them. Each chapter declares its Diátaxis kind in a ``:kind:`` field on its
-first line. A how-to guide is a chapter of the kind ``how-to``. The book has no how-to guides or
-tutorials yet.
+first line, or the kind ``appendix``, such as the bibliography. A how-to guide is a chapter of
+the kind ``how-to``. The book has no how-to guides or tutorials yet.
 
 The chapters are written in reStructuredText. Each GOAL and each rule is a directive, such as
 ``.. requirement:: core.rotation``, whose argument is its anchor. Its options, such as
@@ -75,7 +75,7 @@ Size and reading burden
    :parent: doc.one-engineer
 
    The :dfn:`chapter order` puts the chapters of each kind together, in the order tutorial,
-   how-to, reference and explanation. Within a kind, it puts each chapter after every other
+   how-to, reference, explanation and appendix. Within a kind, it puts each chapter after every other
    chapter of that kind that holds a parent of one of its chunks. Where two or more chapters
    can come next, the order takes the first name in alphabetical order.
 
@@ -137,7 +137,7 @@ Rules apart from explanation
    :parent: doc.rules-apart
 
    Each chapter shall start with the field ``:kind:``, whose value is ``tutorial``,
-   ``how-to``, ``reference`` or ``explanation``.
+   ``how-to``, ``reference``, ``explanation`` or ``appendix``.
 
 .. rationale::
 

@@ -144,11 +144,13 @@ every package before the Verilog files.
 Bibliography
 ------------
 
-book/bibliography.toml holds the references of the book. Each [[reference]]
-has a key, the first author and the year such as "Kahn 1974", and a text, the
-reference in rST inline markup. The directive bibliography in book/index.rst
-lists them in the order of their keys, before the index of code. The file is
-not a chapter, so the audit time leaves it out.
+book/bibliography/bibliography.toml holds the references of the book. Each
+[[reference]] has a key, the first author and the year such as "Kahn 1974", and
+a text, the reference in rST inline markup. The chapter Bibliography, of the
+kind appendix, lists them with the directive bibliography, in the order of
+their keys. The chapter order puts an appendix after every other chapter, so
+the bibliography comes just before the index of code. The TOML file is not the
+prose of a chapter, so the audit time leaves it out.
 
 Checks
 ------

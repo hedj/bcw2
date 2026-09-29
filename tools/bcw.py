@@ -60,7 +60,7 @@ RULES = {"REQUIREMENT", "PARAMETER", "DEFINITION"}
 ANCHORED = RULES | {"GOAL", "TARGET"}
 # The labels whose chunks carry a value.
 VALUED = {"PARAMETER", "TARGET"}
-KINDS = ["tutorial", "how-to", "reference", "explanation"]
+KINDS = ["tutorial", "how-to", "reference", "explanation", "appendix"]
 ANCHOR = re.compile(r"[a-z][a-z0-9-]*(\.[a-z0-9-]+)+")
 SHALL = re.compile(r"\bshall\b", re.IGNORECASE)
 # The prose of a chunk writes each quotation as this code span, which holds no

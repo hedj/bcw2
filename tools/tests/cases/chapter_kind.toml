@@ -33,6 +33,15 @@ old = ":kind: reference\n"
 new = ":kind: explanation\n"
 
 [[case]]
+name = "each kind passes [appendix]"
+only = "chapter-kind"
+findings = []
+
+[[case.replace]]
+old = ":kind: reference\n"
+new = ":kind: appendix\n"
+
+[[case]]
 name = " core.timing\\n\\n   No thread can change the timing of another thread.\\n]"
 only = "chapter-kind"
 findings = [
