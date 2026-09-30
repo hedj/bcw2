@@ -810,33 +810,28 @@ Divide
 
    // The divider of one thread, which only its own requests and its own write reach.
    module core_div_unit (input wire clk, rst_n, start, input wire [1:0] f3, input wire [31:0] a, b,
-                         input wire [4:0] start_rd, input wire wrote,
-                         output logic [31:0] value, output wire [4:0] rd, output wire waiting,
+                         input wire [4:0] start_rd, output logic [31:0] value, output wire [4:0] rd,
                          output wire [5:0] steps);
        logic [31:0] r, q, d;
        logic [5:0] count;
-       logic negate, remainder, pending;
+       logic negate, remainder;
        logic [4:0] dest;
        wire [31:0] r_next, q_next;
        wire sa = !f3[0] && a[31], sb = !f3[0] && b[31];
        core_div_step step (.r, .q, .d, .r_next, .q_next);
-       // The thread waits from its request until the core writes the result.
        always_ff @(posedge clk)
-           if (!rst_n) {count, pending} <= '0;
+           if (!rst_n) count <= '0;
            else if (start) begin
-               {r, q, d, count, pending} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd32, 1'b1};
+               {r, q, d, count} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd32};
                remainder <= f3[1];
                negate <= f3[1] ? sa : sa != sb && b != 32'd0;
                dest <= start_rd;
-           end else begin
-               if (count != '0) {r, q, count} <= {r_next, q_next, count - 6'd1};
-               if (wrote) pending <= 1'b0;
-           end
+           end else if (count != '0) {r, q, count} <= {r_next, q_next, count - 6'd1};
        // The unit negates its result a cycle after each step, so that no adder follows the choice of a
        // result in core_div: that choice held the critical path. The core reads a result two cycles
        // after the last step, and the proof of the core checks that it reads this one.
        always_ff @(posedge clk) value <= negate ? -(remainder ? r : q) : (remainder ? r : q);
-       assign {rd, waiting, steps} = {dest, pending, count};
+       assign {rd, steps} = {dest, count};
    endmodule
 
 .. source:: build/rtl/core/core_div.v
@@ -844,18 +839,15 @@ Divide
 
    module core_div (input wire clk, rst_n, req, input wire [bcw_params::CORE_TURN_WIDTH-1:0] req_thread,
                     input wire [1:0] f3, input wire [31:0] a, b, input wire [4:0] req_rd,
-                    input wire [bcw_params::CORE_TURN_WIDTH-1:0] thread, look_thread, input wire wrote,
-                    input wire [bcw_params::CORE_TURN_WIDTH-1:0] wrote_thread,
+                    input wire [bcw_params::CORE_TURN_WIDTH-1:0] thread, look_thread,
                     output wire [31:0] result, look_result, output wire [4:0] rd,
-                    output wire [bcw_params::CORE_THREADS-1:0] wait_div,
                     output wire [bcw_params::CORE_THREADS-1:0][5:0] steps);
        localparam int T = bcw_params::CORE_THREADS;
        wire [31:0] value [T];
        wire [4:0] dest [T];
        for (genvar t = 0; t < T; t++) begin : units
            core_div_unit unit (.clk, .rst_n, .start(req && req_thread == t), .f3, .a, .b, .start_rd(req_rd),
-                               .wrote(wrote && wrote_thread == t), .value(value[t]), .rd(dest[t]),
-                               .waiting(wait_div[t]), .steps(steps[t]));
+                               .value(value[t]), .rd(dest[t]), .steps(steps[t]));
        end
        assign result = value[thread];
        assign rd = dest[thread];
@@ -872,8 +864,8 @@ Divide
 .. mutant:: build/rtl/core/core_div_unit.v
    :kills: core.depth.prove
 
-   -            {r, q, d, count, pending} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd32, 1'b1};
-   +            {r, q, d, count, pending} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd33, 1'b1};
+   -            {r, q, d, count} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd32};
+   +            {r, q, d, count} <= {32'd0, sa ? -a : a, sb ? -b : b, 6'd33};
 
 .. rationale::
 
@@ -1067,9 +1059,8 @@ Pipeline
                 output wire [31:0] data_wdata, input wire [31:0] data_rdata,
                 input wire [bcw_params::CORE_TURN_WIDTH-1:0] port_thread, input wire port_we, port_run, port_stop,
                 input wire [31:0] port_pc, input wire [bcw_params::CORE_SELECT_WIDTH-1:0] port_select,
-                input wire [bcw_params::CORE_TURN_WIDTH-1:0] port_rd_thread, output wire port_rd_hold,
-                output wire [5:0] port_rd_steps, output wire [31:0] port_rd_result, output wire port_rd_halt,
-                output wire [31:0] port_rd_pc, output wire port_rd_run, output wire [1:0] port_rd_cause,
+                input wire [bcw_params::CORE_TURN_WIDTH-1:0] port_rd_thread, output wire [2:0] port_rd_state,
+                output wire [5:0] port_rd_steps, output wire [31:0] port_rd_result, output wire [31:0] port_rd_pc,
                 output wire [bcw_params::CORE_SELECT_WIDTH-1:0] port_rd_select, output wire port_err,
                 output wire [bcw_params::CORE_CONTEXT_WIDTH+4:0] ra, rb, wa, output wire we,
                 output wire [31:0] wd, input wire [31:0] a, b,
@@ -1079,14 +1070,13 @@ Pipeline
                 output wire [31:0] commit_next, mul_a, mul_b);
        localparam int T = bcw_params::CORE_THREADS, TW = bcw_params::CORE_TURN_WIDTH;
        localparam int CW = bcw_params::CORE_CONTEXT_WIDTH;
-       localparam logic [1:0] NONE = 2'd0, ECALL = 2'd1, ILLEGAL = 2'd2, MISALIGNED = 2'd3;
+       localparam logic [1:0] NONE = 2'd0, REQUEST = 2'd1, REFUSED = 2'd2;
 
        // The state of each thread, which only the stage W, the divider and the port write.
        wire [T-1:0][31:0] pc;
-       wire [T-1:0] run, halt;
-       wire [T-1:0] hold;
+       wire [T-1:0][2:0] state;
+       wire [T-1:0] fetching, waiting, suspended;
        wire [T-1:0][5:0] steps;
-       wire [T-1:0][1:0] cause;
        wire [T-1:0][CW-1:0] index;
        wire [T-1:0][bcw_params::CORE_SELECT_WIDTH-1:0] select;
        logic [TW-1:0] rot, rot_next;
@@ -1131,7 +1121,7 @@ Pipeline
        core_branch compare (.f3, .a(e_a), .b(e_b), .taken);
        core_misaligned align (.size(f3[1:0]), .lo(sum[1:0]), .fault);
        wire [31:0] next = e_jal || e_branch && taken ? e_pc + e_imm : e_jalr ? {sum[31:1], 1'b0} : link;
-       wire [1:0] e_stop = e_cause != NONE ? e_cause : (e_load || e_store) && fault ? MISALIGNED : NONE;
+       wire [1:0] e_stop = e_cause != NONE ? e_cause : (e_load || e_store) && fault ? REFUSED : NONE;
        // The choice between the ALU and the other results waits for M1, which has time to spare: after
        // the ALU, it held the critical path.
        wire [31:0] e_other = e_lui ? e_imm : e_auipc ? e_pc + e_imm : link;
@@ -1139,11 +1129,10 @@ Pipeline
        wire e_we = e_class[10:7] != 4'd0 || e_load || e_opimm || e_class[2] || e_mul;
        wire [31:0] div_result;
        wire [4:0] div_rd;
-       wire resume;
-       core_div divide (.clk, .rst_n, .req(e_v && e_div && e_cause == NONE), .req_thread(e_t), .f3(f3[1:0]),
+       wire resume, start = e_v && e_div && e_cause == NONE;
+       core_div divide (.clk, .rst_n, .req(start), .req_thread(e_t), .f3(f3[1:0]),
                         .a(e_a), .b(e_b), .req_rd(e_insn[11:7]), .thread(rot_next), .look_thread(port_rd_thread),
-                        .wrote(resume), .wrote_thread(rot_next), .result(div_result), .look_result(port_rd_result),
-                        .rd(div_rd), .wait_div(hold), .steps);
+                        .result(div_result), .look_result(port_rd_result), .rd(div_rd), .steps);
        logic m1_v, m1_we, m1_load, m1_store, m1_mul; logic [1:0] m1_cause; logic [TW-1:0] m1_t;
        logic [4:0] m1_rd; logic [2:0] m1_f3; logic [31:0] m1_pc, m1_word, m1_a, m1_b, m1_addr, m1_res, m1_next, m1_other;
        logic m1_pick;
@@ -1171,7 +1160,7 @@ Pipeline
        core_load extract (.f3(w_f3), .lo(w_addr[1:0]), .word(w_data), .y(loaded));
        wire retire = w_v && w_cause == NONE;
        // A thread resumes in its write slot once its divider has finished all its steps.
-       assign resume = hold[rot_next] && steps[rot_next] == 6'd0;
+       assign resume = waiting[rot_next] && steps[rot_next] == 6'd0;
        assign we = rst_n && (retire && w_we_r || resume);
        assign wa = resume ? {index[rot_next], div_rd} : {index[w_t], w_rd};
        assign wd = resume ? div_result : w_load ? loaded : w_res;
@@ -1182,23 +1171,22 @@ Pipeline
        assign {commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next}
            = {w_pc, w_word, w_a, w_b, w_addr, w_data, w_next};
 
-       // The port writes a thread only while it is suspended, with no divide and no port write pending.
+       // The port writes a thread only while it is suspended, with no port write pending.
        logic q_we, q_run; logic [TW-1:0] q_thread; logic [31:0] q_pc; logic [bcw_params::CORE_SELECT_WIDTH-1:0] q_select;
-       assign port_err = port_we && (run[port_thread] || hold[port_thread] || q_we && q_thread == port_thread);
-       assign {port_rd_pc, port_rd_run, port_rd_hold, port_rd_steps, port_rd_cause, port_rd_select, port_rd_halt}
-           = {pc[port_rd_thread], run[port_rd_thread], hold[port_rd_thread], steps[port_rd_thread],
-              cause[port_rd_thread], select[port_rd_thread], halt[port_rd_thread]};
+       assign port_err = port_we && (!suspended[port_thread] || q_we && q_thread == port_thread);
+       assign {port_rd_pc, port_rd_state, port_rd_steps, port_rd_select}
+           = {pc[port_rd_thread], state[port_rd_thread], steps[port_rd_thread], select[port_rd_thread]};
 
        always_ff @(posedge clk) begin
            rot <= rst_n ? rot_next : '0;
            {q_we, q_thread, q_pc, q_run, q_select}
                <= {rst_n && port_we && !port_err, port_thread, port_pc, port_run, port_select};
-           {x_v, x_t, x_pc} <= {rst_n && run[rot] && !hold[rot], rot, pc[rot]};
+           {x_v, x_t, x_pc} <= {rst_n && fetching[rot], rot, pc[rot]};
            {d_v, d_t, d_pc, d_insn, d_word, d_bad, d_wide} <= {rst_n && x_v, x_t, x_pc, x_insn, fetch_word, x_bad, x_wide};
            {r_v, r_t, r_pc, r_word, r_insn, r_imm, r_wide, r_alt} <= {rst_n && d_v, d_t, d_pc, d_word, d_insn[14:7],
                                                                       d_imm, d_wide, alt};
            r_class <= {lui, auipc, jal, jalr, branch, load, store, opimm, op, mul, div};
-           r_cause <= ecall ? ECALL : d_bad || illegal ? ILLEGAL : NONE;
+           r_cause <= ecall ? REQUEST : d_bad || illegal ? REFUSED : NONE;
            {e_v, e_t, e_pc, e_word, e_insn, e_imm, e_wide, e_alt, e_class, e_cause, e_a, e_b}
                <= {rst_n && r_v, r_t, r_pc, r_word, r_insn, r_imm, r_wide, r_alt, r_class, r_cause, a, b};
            e_bi <= r_class[3] ? r_imm : b;
@@ -1216,12 +1204,14 @@ Pipeline
        end
 
        for (genvar t = 0; t < T; t++) begin : threads
-           core_thread #(.ID(t)) thread (.clk, .rst_n, .retire(retire && w_t == t), .stop(w_v && w_t == t),
-                                         .slot(rot_next == t), .ask(port_stop && port_thread == t),
-                                         .held(hold[t]), .resumed(resume && rot_next == t), .next(w_next),
-                                         .why(w_cause), .set(q_we && q_thread == t), .set_run(q_run),
-                                         .set_pc(q_pc), .set_select(q_select), .pc(pc[t]), .run(run[t]),
-                                         .cause(cause[t]), .select(select[t]), .halt(halt[t]), .index(index[t]));
+           core_thread #(.ID(t)) thread (.clk, .rst_n, .commit(w_v && w_t == t), .why(w_cause), .slot(rot_next == t),
+                                         .ask(port_stop && port_thread == t), .start(start && e_t == t),
+                                         .done(resume && rot_next == t), .next(w_next), .set(q_we && q_thread == t),
+                                         .set_run(q_run), .set_pc(q_pc), .set_select(q_select), .pc(pc[t]),
+                                         .state(state[t]), .select(select[t]), .index(index[t]));
+           // A thread fetches while it runs or stops, waits while its divide runs, and is suspended from 4.
+           assign {fetching[t], waiting[t], suspended[t]}
+               = {state[t][2:1] == 2'b00, state[t][2:1] == 2'b01, state[t][2]};
        end
    endmodule
 
@@ -1236,9 +1226,8 @@ Pipeline
                     input wire [bcw_params::CORE_TURN_WIDTH-1:0] port_thread, input wire port_we, port_run,
                     input wire port_stop, input wire [31:0] port_pc,
                     input wire [bcw_params::CORE_SELECT_WIDTH-1:0] port_select,
-                    input wire [bcw_params::CORE_TURN_WIDTH-1:0] port_rd_thread, output wire port_rd_hold,
-                    output wire [5:0] port_rd_steps, output wire [31:0] port_rd_result, output wire port_rd_halt,
-                    output wire [31:0] port_rd_pc, output wire port_rd_run, output wire [1:0] port_rd_cause,
+                    input wire [bcw_params::CORE_TURN_WIDTH-1:0] port_rd_thread, output wire [2:0] port_rd_state,
+                    output wire [5:0] port_rd_steps, output wire [31:0] port_rd_result, output wire [31:0] port_rd_pc,
                     output wire [bcw_params::CORE_SELECT_WIDTH-1:0] port_rd_select, output wire port_err,
                     output wire commit, commit_resume, output wire [1:0] commit_cause,
                     output wire [bcw_params::CORE_TURN_WIDTH-1:0] commit_thread,
@@ -1254,7 +1243,7 @@ Pipeline
 .. check:: prove
    :verifies: core.depth, core.issue, core.own-state, core.own-context, core.step, core.suspend,
               core.div-wait, core.div-time, core.index-write, core.own-contexts, core.registers,
-              core.register-write, core.reset-quiet, core.stop
+              core.register-write, core.reset-quiet, core.stop, core.state-change
    :depth: 10
 
    module core_props (input wire clk, input wire [31:0] fetch_word, data_rdata, port_pc,
@@ -1264,11 +1253,11 @@ Pipeline
        wire [2:0] turn, commit_thread;
        wire [31:0] fetch_addr, data_addr, data_wdata, port_rd_pc;
        wire [3:0] data_be;
-       wire data_we, port_rd_run, port_err, commit, commit_resume, we;
-       wire [1:0] port_rd_cause, commit_cause;
+       wire data_we, port_err, commit, commit_resume, we;
+       wire [1:0] commit_cause;
+       wire [2:0] port_rd_state;
        wire port_rd_select;
        wire [8:0] ra, rb, wa;
-       wire port_rd_hold, port_rd_halt;
        wire [5:0] port_rd_steps;
        wire [31:0] port_rd_result, mul_a, mul_b, wd, a, b, commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load, commit_next;
        // The registers are outside the core, so that their reads and writes are ports, and the proof
@@ -1286,8 +1275,6 @@ Pipeline
        always_comb if (!rst_n) assert (!data_we && !we);
        // core.own-context: a write goes to the context of the index of its thread.
        always_comb if (we && commit_thread == watched) assert (wa[8:5] == port_rd_index);
-       logic [3:0] age = 4'd0;
-       always_ff @(posedge clk) if (age != 4'd8) age <= age + 4'd1;
 
        // Each commit equals one step of the instruction from its word, its program counter, its two
        // registers and its loaded word, by the units that the equiv checks prove.
@@ -1305,7 +1292,7 @@ Pipeline
        core_misaligned align (.size(f3[1:0]), .lo(addr[1:0]), .fault);
        core_mul multiply (.f3(f3[1:0]), .a(commit_a), .b(commit_b), .y(product));
        core_load extract (.f3, .lo(addr[1:0]), .word(commit_load), .y(loaded));
-       wire [1:0] cause = ecall ? 2'd1 : bad || illegal ? 2'd2 : (load || store) && fault ? 2'd3 : 2'd0;
+       wire [1:0] cause = ecall ? 2'd1 : bad || illegal ? 2'd2 : (load || store) && fault ? 2'd2 : 2'd0;
        wire [31:0] next = jal || branch && taken ? commit_pc + imm : jalr ? {addr[31:1], 1'b0} : link;
        wire writes = lui || auipc || jal || jalr || load || opimm || op || mul;
        wire [31:0] value = lui ? imm : auipc ? commit_pc + imm : jal || jalr ? link : load ? loaded
@@ -1326,42 +1313,38 @@ Pipeline
        wire mine = commit && commit_thread == watched, slot = 3'(turn + 3'd1) == watched;
        wire asked;
        logic [31:0] m_pc, set_pc;
-       logic m_run, m_hold, m_halt, set_now, set_run, modelled = 1'b0;
+       logic set_now, set_run, modelled = 1'b0;
        logic [5:0] m_steps;
-       logic [1:0] m_cause;
        logic m_select, set_select;
-       logic [43:0] model;
-       // A stop takes effect in the slot of the thread, once no divide holds it.
-       wire ready = port_rd_steps == 6'd0;
-       wire halting = port_rd_halt && slot && (!port_rd_hold || ready);
+       logic [41:0] model;
+       // The thread waits while its divide runs, and its divider is ready once the steps are done.
+       wire waiting = port_rd_state[2:1] == 2'b01, ready = port_rd_steps == 6'd0;
+       wire [2:0] after;
+       core_state_next change (.state(port_rd_state), .commit(mine && !commit_resume), .why(commit_cause), .slot,
+                               .ask(port_stop && port_thread == watched), .start(asked),
+                               .done(slot && waiting && ready), .write(set_now), .run(set_run), .after);
        always_comb begin
-           {m_pc, m_run, m_hold, m_steps, m_cause, m_select, m_halt}
-               = {port_rd_pc, port_rd_run, port_rd_hold, port_rd_steps, port_rd_cause, port_rd_select, port_rd_halt};
+           {m_pc, m_steps, m_select} = {port_rd_pc, port_rd_steps, port_rd_select};
            if (mine && !commit_resume && commit_cause == 2'd0) m_pc = commit_next;
-           if (mine && !commit_resume && commit_cause != 2'd0) {m_run, m_cause} = {1'b0, commit_cause};
-           else if (halting) {m_run, m_cause} = {1'b0, 2'd0};
-           m_halt = port_rd_run && (port_rd_halt || port_stop && port_thread == watched) && !halting;
-           if (asked) {m_hold, m_steps} = {1'b1, 6'd32};
-           else begin
-               if (m_steps != 6'd0) m_steps = m_steps - 6'd1;
-               if (slot && ready) m_hold = 1'b0;
-           end
-           if (set_now) {m_pc, m_run, m_select} = {set_pc, set_run, set_select};
-           if (!rst_n) {m_pc, m_run, m_hold, m_steps, m_cause, m_select, m_halt} = {32'd0, watched == 3'd0, 1'b0,
-                                                                                    6'd0, 2'd0, 1'b0, 1'b0};
+           if (asked) m_steps = 6'd32;
+           else if (m_steps != 6'd0) m_steps = m_steps - 6'd1;
+           if (set_now) {m_pc, m_select} = {set_pc, set_select};
        end
-       logic [6:0] started;
+       // The turn gives the stage of the instruction of the watched thread, so that the stage cannot
+       // disagree with the rotation: started[k] holds k + 1 cycles after the fetch.
+       logic live = 1'b0;
+       wire [2:0] phase = 3'(turn - watched);
+       wire [6:0] started = live && phase != 3'd0 ? 7'(7'd1 << (phase - 3'd1)) : 7'd0;
        always_ff @(posedge clk) begin
            {set_now, set_run, set_pc, set_select}
                <= {rst_n && port_we && !port_err && port_thread == watched, port_run, port_pc, port_select};
-           {modelled, model} <= {1'b1, m_pc, m_run, m_hold, m_steps, m_cause, m_select, m_halt};
-           started <= {started[5:0], rst_n && turn == watched && port_rd_run && !port_rd_hold};
+           {modelled, model} <= {1'b1, rst_n ? {m_pc, after, m_steps, m_select}
+                                             : {32'd0, watched == 3'd0 ? 3'd0 : 3'd4, 6'd0, 1'b0}};
+           if (!rst_n || turn == watched) live <= rst_n && port_rd_state[2:1] == 2'b00;
        end
-       always_comb if (modelled)
-           assert ({port_rd_pc, port_rd_run, port_rd_hold, port_rd_steps, port_rd_cause, port_rd_select, port_rd_halt}
-                   == model);
-       always_comb if (age == 4'd8) assert ((mine && !commit_resume) == started[6]);
-       always_comb if (rst_n) assert ((mine && commit_resume) == (slot && port_rd_hold && ready));
+       always_comb if (modelled) assert ({port_rd_pc, port_rd_state, port_rd_steps, port_rd_select} == model);
+       always_comb if (rst_n) assert ((mine && !commit_resume) == started[6]);
+       always_comb if (rst_n) assert ((mine && commit_resume) == (slot && waiting && ready));
        // A resume writes the result that the divider of the thread holds.
        always_comb if (rst_n) assert (!(mine && commit_resume) || wd == port_rd_result);
        // core.div-time: since counts the cycles from the stage E of a divide, and ties the wait to the
@@ -1370,9 +1353,9 @@ Pipeline
        core_div_time wait_time (.turns);
        logic [5:0] since;
        always_ff @(posedge clk) since <= asked ? 6'd1 : since + 6'd1;
-       always_comb assert (age <= 4'd8 && (port_rd_hold || port_rd_steps == 6'd0 || !rst_n));
+       always_comb assert (waiting || port_rd_steps == 6'd0 || !rst_n);
        wire [5:0] skipped = (since + 6'd4) / 6'(bcw_params::CORE_THREADS);
-       always_comb if (rst_n && port_rd_hold)
+       always_comb if (rst_n && waiting)
            assert (port_rd_steps == (since < 6'd33 ? 6'd33 - since : 6'd0) && turn == 3'(watched + 3'd4 + 3'(since))
                    && skipped <= 6'(turns) && (!(slot && ready) || skipped == 6'(turns)));
 
@@ -1387,7 +1370,7 @@ Pipeline
        core_expand ask_expand (.word(word_at), .insn(ask_insn), .illegal(), .wide());
        core_decode ask_decode (.insn(ask_insn), .lui(), .auipc(), .jal(), .jalr(), .branch(), .load(), .store(),
                                .opimm(), .op(), .mul(), .div(ask_div), .ecall(), .illegal(), .alt());
-       assign asked = age >= 4'd4 && started[3] && ask_div;
+       assign asked = started[3] && ask_div;
        always_ff @(posedge clk) begin
            if (turn == watched) pc_at <= port_rd_pc;
            if (started[0]) word_at <= fetch_word;
@@ -1398,10 +1381,10 @@ Pipeline
        end
        always_comb if (rst_n && turn == watched) assert (fetch_addr == port_rd_pc);
        // core.own-context: the reads, in the stage D, are in the context of the index of the thread.
-       always_comb if (age >= 4'd2 && started[1])
+       always_comb if (started[1])
            assert (ra[8:5] == port_rd_index && rb[8:5] == port_rd_index);
-       always_comb if (age == 4'd8 && started[4]) assert (mul_a == a_at && mul_b == b_at);
-       always_comb if (age == 4'd8 && started[6])
+       always_comb if (started[4]) assert (mul_a == a_at && mul_b == b_at);
+       always_comb if (started[6])
            assert ({commit_pc, commit_word, commit_a, commit_b, commit_addr, commit_load} ==
                    {pc_at, word_at, a_at, b_at, addr_at, load_at}
                    && ra_at[4:0] == insn[19:15] && rb_at[4:0] == insn[24:20]);
@@ -1446,25 +1429,25 @@ Pipeline
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
 
-   -           core_thread #(.ID(t)) thread (.clk, .rst_n, .retire(retire && w_t == t), .stop(w_v && w_t == t),
-   +           core_thread #(.ID(t)) thread (.clk, .rst_n, .retire(retire && w_t == t), .stop(w_v),
+   -           core_thread #(.ID(t)) thread (.clk, .rst_n, .commit(w_v && w_t == t), .why(w_cause), .slot(rot_next == t),
+   +           core_thread #(.ID(t)) thread (.clk, .rst_n, .commit(w_v), .why(w_cause), .slot(rot_next == t),
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
 
-   -           {x_v, x_t, x_pc} <= {rst_n && run[rot] && !hold[rot], rot, pc[rot]};
-   +           {x_v, x_t, x_pc} <= {rst_n && !hold[rot], rot, pc[rot]};
+   -           {x_v, x_t, x_pc} <= {rst_n && fetching[rot], rot, pc[rot]};
+   +           {x_v, x_t, x_pc} <= {rst_n && !waiting[rot], rot, pc[rot]};
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.registers.test
 
-   -    assign resume = hold[rot_next] && steps[rot_next] == 6'd0;
-   +    assign resume = hold[rot_next] && steps[rot_next] < 6'd9;
+   -    assign resume = waiting[rot_next] && steps[rot_next] == 6'd0;
+   +    assign resume = waiting[rot_next] && steps[rot_next] < 6'd9;
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
 
-   -    assign resume = hold[rot_next] && steps[rot_next] == 6'd0;
+   -    assign resume = waiting[rot_next] && steps[rot_next] == 6'd0;
    +    assign resume = steps[rot_next] == 6'd0;
 
 .. mutant:: build/rtl/core/core.v
@@ -1479,19 +1462,79 @@ Pipeline
    proof watches any thread, with a model of only its turns, port writes and commits. So no
    other thread can change its timing.
 
+Run state
+=========
+
+.. definition:: core.run-state
+   :parent: core.thread
+
+   The :dfn:`run state` of a thread is a number from 0 to 6. The core fetches for the thread in
+   0 and 1, and the divide of the thread runs in 2 and 3. A stop is pending in 1 and 3. The run
+   state is 4 after a stop, 5 after an ``ECALL`` and 6 after the core refuses an instruction.
+
+.. requirement:: core.state-change
+   :parent: design.auditability
+
+   The core shall give each thread its next run state from its run state and the events of the
+   cycle.
+
+   .. twin::
+      :stamp: e3520b72
+
+      def core_state_next(state, commit, why, slot, ask, start, done, write, run):
+          stop = 1 if state == 1 or state == 3 else 0
+          asked = 1 if stop == 1 or ask == 1 else 0
+          after = ((0 if run == 1 else state) if write == 1
+                   else 4 + why if commit == 1 and why != 0
+                   else 2 + asked if start == 1
+                   else (4 if stop == 1 else ask) if done == 1
+                   else 4 if slot == 1 and state == 1
+                   else 1 if ask == 1 and state == 0
+                   else 3 if ask == 1 and state == 2
+                   else state)
+          return {'after': after}
+
+.. source:: build/rtl/core/core_state_next.v
+   :implements: core.state-change
+
+   module core_state_next (input wire [2:0] state, input wire commit, input wire [1:0] why,
+                           input wire slot, ask, start, done, write, run, output logic [2:0] after);
+       wire stop = state == 3'd1 || state == 3'd3;
+       always_comb
+           if (write) after = run ? 3'd0 : state;
+           else if (commit && why != 2'd0) after = {1'b1, why};
+           else if (start) after = {2'b01, stop || ask};
+           else if (done) after = stop ? 3'd4 : {2'b00, ask};
+           else if (slot && state == 3'd1) after = 3'd4;
+           else if (ask && state == 3'd0) after = 3'd1;
+           else if (ask && state == 3'd2) after = 3'd3;
+           else after = state;
+   endmodule
+
+.. check:: equiv
+   :verifies: core.state-change
+   :module: core_state_next
+
+.. rationale::
+
+   One number holds the run state of a thread, and one function changes it. So a reader checks
+   each change in one place, and the proof of the core checks each change against the function.
+
 Suspension
 ==========
 
 .. definition:: core.suspended
-   :parent: core.thread
+   :parent: core.run-state
 
-   The core fetches nothing in the turns of a :dfn:`suspended` thread.
+   A :dfn:`suspended` thread has the run state 4, 5 or 6. The core fetches nothing in the turns
+   of a suspended thread.
 
 .. requirement:: core.suspend
    :parent: design.economy
 
    If an instruction is illegal or ``ECALL`` or has its access refused, then the core shall
-   suspend its thread with its program counter on the instruction.
+   suspend its thread with its program counter on the instruction. The run state of the thread
+   is then 5 after an ``ECALL``, and 6 after each other instruction.
 
 .. requirement:: core.div-wait
    :parent: core.div
@@ -1509,9 +1552,9 @@ Thread control
 .. definition:: core.port
    :parent: core.core
 
-   The :dfn:`port` of the core reads the program counter, the cause, the run state, the divide
-   state and the selector of a thread. It writes the program counter, the run state and the
-   selector, and it can stop the thread.
+   The :dfn:`port` of the core reads the program counter, the run state, the divide and the
+   selector of a thread. It writes the program counter and the selector, and it can start the
+   thread or stop it.
 
 .. requirement:: core.own-state
    :parent: design.timing-invariant
@@ -1525,35 +1568,33 @@ Thread control
    The port shall be the only part that writes a selector.
 
 .. source:: build/rtl/core/core_thread.v
-   :implements: core.index-write, core.own-contexts, core.stop
+   :implements: core.index-write, core.own-contexts, core.stop, core.state-change
 
-   module core_thread #(parameter int ID = 0) (input wire clk, rst_n, retire, stop, slot, ask, held, resumed,
-                   input wire [31:0] next, input wire [1:0] why, input wire set, set_run,
+   module core_thread #(parameter int ID = 0) (input wire clk, rst_n, commit, input wire [1:0] why,
+                   input wire slot, ask, start, done, input wire [31:0] next, input wire set, set_run,
                    input wire [31:0] set_pc, input wire [bcw_params::CORE_SELECT_WIDTH-1:0] set_select,
-                   output logic [31:0] pc, output logic run,
-                   output logic [1:0] cause, output logic [bcw_params::CORE_SELECT_WIDTH-1:0] select,
-                   output logic halt, output wire [bcw_params::CORE_CONTEXT_WIDTH-1:0] index);
-       // A stop that the port asked for waits for the write slot of the thread, after its last
-       // instruction, and for the end of its divide.
-       wire halting = halt && slot && (!held || resumed);
+                   output logic [31:0] pc, output logic [2:0] state,
+                   output logic [bcw_params::CORE_SELECT_WIDTH-1:0] select,
+                   output wire [bcw_params::CORE_CONTEXT_WIDTH-1:0] index);
+       wire [2:0] after;
+       core_state_next change (.state, .commit, .why, .slot, .ask, .start, .done, .write(set), .run(set_run),
+                               .after);
        assign index = {bcw_params::CORE_TURN_WIDTH'(ID), select};
        always_ff @(posedge clk)
            if (!rst_n)
-               {pc, run, cause, select, halt} <= {32'd0, ID == 0, 2'd0, bcw_params::CORE_SELECT_WIDTH'(0), 1'b0};
+               {pc, state, select} <= {32'd0, ID == 0 ? 3'd0 : 3'd4, bcw_params::CORE_SELECT_WIDTH'(0)};
            else begin
-               if (retire) pc <= next;
-               if (stop && !retire) {run, cause} <= {1'b0, why};
-               else if (halting) {run, cause} <= {1'b0, 2'd0};
-               halt <= run && (halt || ask) && !halting;
-               if (set) {pc, run, select} <= {set_pc, set_run, set_select};
+               state <= after;
+               if (commit && why == 2'd0) pc <= next;
+               if (set) {pc, select} <= {set_pc, set_select};
            end
    endmodule
 
 .. mutant:: build/rtl/core/core_thread.v
    :kills: core.depth.prove
 
-   -            if (retire) pc <= next;
-   +            if (retire) {pc, select} <= {next, set_select};
+   -            if (commit && why == 2'd0) pc <= next;
+   +            if (commit && why == 2'd0) {pc, select} <= {next, set_select};
 
 .. mutant:: build/rtl/core/core_thread.v
    :kills: core.depth.prove
@@ -1564,20 +1605,14 @@ Thread control
 .. mutant:: build/rtl/core/core_thread.v
    :kills: core.depth.prove
 
-   -    wire halting = halt && slot && (!held || resumed);
-   +    wire halting = halt && (!held || resumed);
-
-.. mutant:: build/rtl/core/core_thread.v
-   :kills: core.depth.prove
-
-   -    wire halting = halt && slot && (!held || resumed);
-   +    wire halting = halt && slot;
+   -            if (commit && why == 2'd0) pc <= next;
+   +            if (commit) pc <= next;
 
 .. mutant:: build/rtl/core/core_thread.v
    :kills: core.depth.prove, core.registers.test
 
-   -            else if (halting) {run, cause} <= {1'b0, 2'd0};
-   +            else if (halting) {pc, run, cause} <= {pc + 32'd4, 1'b0, 2'd0};
+   -            if (set) {pc, select} <= {set_pc, set_select};
+   +            if (set) pc <= set_pc;
 
 .. rationale::
 
@@ -1588,7 +1623,7 @@ Thread control
    :parent: design.auditability
 
    When the port writes a thread, the core shall accept the write only for a suspended thread
-   with no divide and no other write of the port pending.
+   with no other write of the port pending.
 
 .. requirement:: core.reset
    :parent: design.economy
@@ -1607,14 +1642,13 @@ Stop
 .. requirement:: core.stop
    :parent: design.timing-invariant
 
-   When the port stops a thread, the core shall suspend the thread with no cause before the
-   first of its turns in which no divide holds it, with its program counter on the instruction
-   of that turn.
+   When the port stops a thread, the core shall suspend the thread before the first of its turns
+   in which no divide holds it, with its program counter on the instruction of that turn.
 
 .. rationale::
 
    A stop takes effect between two instructions and after a divide, so the thread resumes as if
-   it had not stopped. No cause tells the supervisor that the port stopped it.
+   it had not stopped. The run state 4 tells the supervisor that the stop came from the port.
 
 .. check:: test
    :verifies: core.registers, core.own-context, core.step, core.suspend, core.div, core.div-wait,
@@ -1629,12 +1663,10 @@ Stop
        logic port_we = 0, port_run = 0, port_stop = 0;
        logic [31:0] port_pc = 0, port_rd_pc;
        logic port_select = 0, port_rd_select;
-       logic [2:0] port_rd_thread = 0;
-       logic port_rd_hold, port_rd_halt;
+       logic [2:0] port_rd_thread = 0, port_rd_state;
        logic [5:0] port_rd_steps;
        logic [31:0] port_rd_result;
-       logic port_rd_run, port_err;
-       logic [1:0] port_rd_cause;
+       logic port_err;
        wire [2:0] turn, commit_thread;
        wire commit, commit_resume, we;
        wire [1:0] commit_cause;
@@ -1767,12 +1799,14 @@ Stop
            port_we = 0;
        endtask
 
-       task automatic expect_stop(input [2:0] t, input [1:0] cause, input [31:0] pc);
+       // The states that a thread can end in: stopped, requesting and refused.
+       localparam logic [2:0] STOPPED = 3'd4, REQUESTING = 3'd5, REFUSED = 3'd6;
+       task automatic expect_stop(input [2:0] t, input [2:0] state, input [31:0] pc);
            port_rd_thread = t;
            #1;
-           if (port_rd_run || port_rd_cause != cause || port_rd_pc != pc) begin
-               $display("FAIL: thread %0d run=%0d cause=%0d pc=%h, want cause %0d at pc %h", t, port_rd_run,
-                        port_rd_cause, port_rd_pc, cause, pc);
+           if (port_rd_state != state || port_rd_pc != pc) begin
+               $display("FAIL: thread %0d state=%0d pc=%h, want state %0d at pc %h", t, port_rd_state,
+                        port_rd_pc, state, pc);
                fails++;
            end
        endtask
@@ -1785,12 +1819,12 @@ Stop
            port_stop = 0;
            port_rd_thread = t;
            #1;
-           while (port_rd_run) begin
+           while (!port_rd_state[2]) begin
                @(negedge clk);
                #1;
            end
-           if (port_rd_cause == 2'd1) return;
-           if (port_rd_cause != 2'd0) begin $display("FAIL: a stop left cause %0d", port_rd_cause); fails++; end
+           if (port_rd_state == REQUESTING) return;
+           if (port_rd_state != STOPPED) begin $display("FAIL: a stop left state %0d", port_rd_state); fails++; end
            start(t, port_rd_select, port_rd_pc);
        endtask
 
@@ -1836,13 +1870,13 @@ Stop
            repeat (100) @(negedge clk);
            start(3'd4, 1'b1, 32'h6300);
            repeat (400000) @(negedge clk);
-           expect_stop(3'd0, 2'd1, 32'(ecall0));
-           expect_stop(3'd1, 2'd1, 32'(ecall1));
-           expect_stop(3'd2, 2'd2, 32'h6000);
-           expect_stop(3'd3, 2'd3, 32'h6100);
-           expect_stop(3'd4, 2'd1, 32'(ecall4));
+           expect_stop(3'd0, REQUESTING, 32'(ecall0));
+           expect_stop(3'd1, REQUESTING, 32'(ecall1));
+           expect_stop(3'd2, REFUSED, 32'h6000);
+           expect_stop(3'd3, REFUSED, 32'h6100);
+           expect_stop(3'd4, REQUESTING, 32'(ecall4));
            if (!port_rd_select) begin $display("FAIL: thread 4 left its second context"); fails++; end
-           expect_stop(3'd6, 2'd1, 32'(ecall6));
+           expect_stop(3'd6, REQUESTING, 32'(ecall6));
            foreach (want[a]) if (word_at(a) != want[a]) begin
                if (fails < 20) $display("FAIL: word %h is %h, want %h", a, word_at(a), want[a]);
                fails++;
@@ -1862,11 +1896,11 @@ Stop
 .. mutant:: build/rtl/core/core.v
    :kills: core.registers.test
 
-   -    assign port_err = port_we && (run[port_thread] || hold[port_thread] || q_we && q_thread == port_thread);
-   +    assign port_err = port_we && (run[port_thread] || hold[port_thread]);
+   -    assign port_err = port_we && (!suspended[port_thread] || q_we && q_thread == port_thread);
+   +    assign port_err = port_we && !suspended[port_thread];
 
 .. mutant:: build/rtl/core/core_thread.v
    :kills: core.registers.test
 
-   -                {pc, run, cause, select, halt} <= {32'd0, ID == 0, 2'd0, bcw_params::CORE_SELECT_WIDTH'(0), 1'b0};
-   +                {pc, run, cause, select, halt} <= {32'd0, 1'b1, 2'd0, bcw_params::CORE_SELECT_WIDTH'(0), 1'b0};
+   -                {pc, state, select} <= {32'd0, ID == 0 ? 3'd0 : 3'd4, bcw_params::CORE_SELECT_WIDTH'(0)};
+   +                {pc, state, select} <= {32'd0, 3'd0, bcw_params::CORE_SELECT_WIDTH'(0)};
