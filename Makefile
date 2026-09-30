@@ -6,7 +6,7 @@
 #                 check directive
 #   make weave    the reader edition, as build/html/index.html and build/latex/bcw2.pdf
 #   make test     the tests of the tools, with pytest on each core
-#   make timing   the maximum frequency of the core, over 32 seeds of place and route
+#   make timing   the maximum frequency of the core, over 3 seeds of place and route (SEEDS=n for n)
 #   make clean    remove build/
 #
 # Sphinx runs tools/bcw.py on book/. It checks the book, reports each finding

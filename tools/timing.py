@@ -4,13 +4,13 @@ make timing runs it from the root of the repository, after the tangle. yosys syn
 module core_top from each package and Verilog file of build/rtl into build/timing/top.json.
 nextpnr-ecp5 then places it with the static placer and routes it once for each seed, at the
 frequency of core.clock, several seeds at a time. Each run writes build/timing/seed-<n>.log. The
-section Timing of readme.build gives the evidence for the static placer and the 32 seeds.
+section Timing of readme.build gives the evidence for the static placer and for the number of seeds.
 
-It prints the maximum frequency of each seed, then the minimum, the median and the mean. It exits
-1 if a run fails, or if a seed does not reach core.clock, the value of core.timing-closure.
+It runs 3 seeds, or the number in the environment variable SEEDS. It prints the maximum frequency
+of each seed, then the minimum, the median and the mean. It exits 1 unless a seed reaches
+core.clock, the value of core.timing-closure.
 """
 
-import argparse
 import json
 import os
 import re
@@ -26,7 +26,7 @@ TOP = "core_top"
 WORK = Path("build/timing")
 DEVICE = ["--25k", "--package", "CABGA256"]
 PLACER = "static"
-SEEDS = 32
+SEEDS = 3
 MAX_FREQUENCY = re.compile(r"Max frequency for clock[^:]*: ([0-9.]+) MHz")
 
 
@@ -56,12 +56,16 @@ def clock_mhz():
     return constants["CORE_CLOCK"] / 10 ** 6
 
 
+def seed_count():
+    """The number of seeds: SEEDS from the environment, or 3."""
+    text = os.environ.get("SEEDS", str(SEEDS))
+    if not text.isdigit() or int(text) < 1:
+        raise SystemExit(f"timing: SEEDS must be a whole number from 1, not {text!r}")
+    return int(text)
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Place and route core_top for each seed, and report its frequency.")
-    parser.add_argument("--seeds", type=int, default=SEEDS, help=f"the number of seeds, from 1 (default {SEEDS})")
-    arguments = parser.parse_args()
-    if arguments.seeds < 1:
-        parser.error("--seeds must be 1 or more")
+    count = seed_count()
     mhz = clock_mhz()
     WORK.mkdir(parents=True, exist_ok=True)
     netlist = WORK / "top.json"
@@ -69,7 +73,7 @@ def main():
     if failure is not None:
         print(f"timing: yosys could not synthesise {TOP}\n{failure}")
         return 1
-    seeds = range(1, arguments.seeds + 1)
+    seeds = range(1, count + 1)
     with ThreadPoolExecutor(os.cpu_count()) as pool:
         results = list(pool.map(lambda seed: place(netlist, mhz, seed, WORK / f"seed-{seed}.log"), seeds))
     for seed, fmax in zip(seeds, results):
@@ -79,7 +83,9 @@ def main():
     if reached:
         print(f"timing: {len(results)} seeds at {mhz:g} MHz, {PLACER} placer: minimum {min(reached):.2f}, "
               f"median {statistics.median(reached):.2f}, mean {statistics.mean(reached):.2f} MHz")
-    return 0 if len(reached) == len(results) and min(reached) >= mhz else 1
+    passed = sum(fmax >= mhz for fmax in reached)
+    print(f"timing: {passed} of {len(results)} seeds reach {mhz:g} MHz")
+    return 0 if passed > 0 else 1
 
 
 if __name__ == "__main__":

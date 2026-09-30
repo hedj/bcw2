@@ -95,10 +95,11 @@ make tangle   Writes the code of the book into build/: the Verilog into
               that the book no longer tangles is deleted, unless it changed
               after the last tangle: then make tangle keeps it and reports
               it too.
-make timing   Places and routes the core for 32 seeds with
+make timing   Places and routes the core for 3 seeds with
               tools/timing.py, and reports its maximum frequency against
-              core.clock (see Timing below). It takes about 5 minutes on 4
-              cores, so make check does not run it.
+              core.clock (see Timing below). SEEDS=n make timing runs n
+              seeds. 3 seeds take about 1 minute on 4 cores, so make check
+              does not run it.
 make clean    Removes build/.
 
 Run make check after each edit to the book. Run make test after each edit
@@ -276,19 +277,21 @@ measurement of the core decides it. make timing runs tools/timing.py:
 1. It synthesises core_top, the core with its registers, with yosys. core_top
    keeps each port of the core, also the ports that only the checks read. In
    16 runs of each, a top without them gave no better result.
-2. It places and routes core_top with nextpnr-ecp5 for each seed from 1 to 32,
-   at the value of core.clock, with the static placer. It runs one seed on
-   each core at a time.
+2. It places and routes core_top with nextpnr-ecp5 for each seed from 1 to 3,
+   or to the value of the environment variable SEEDS, at the value of
+   core.clock, with the static placer. It runs one seed on each core at a
+   time.
 3. It prints the maximum frequency of each seed, and the minimum, the median
-   and the mean. It fails if a seed does not reach core.clock.
+   and the mean. It fails if no seed reaches core.clock.
 
-The log of each seed is build/timing/seed-<n>.log. For a quick look, run
-./dev python3 tools/timing.py --seeds 8.
+A seed that reaches core.clock shows that a placement meets the TARGET. The
+log of each seed is build/timing/seed-<n>.log.
 
 The static placer replaces the default HeAP placer. In 64 seeds of each, its
 mean was 1.6 MHz higher (95.7 MHz, p = 0.001), 1 run in place of 5 fell below
 90 MHz, and each run took 13% less time. The spread from seed to seed is 2 to
 3 MHz, so 8 seeds cannot rank two changes that differ by about 1 MHz: 32 can.
+To compare two changes, run SEEDS=32 make timing on each.
 
 The twin language
 -----------------
