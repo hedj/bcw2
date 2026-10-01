@@ -23,6 +23,10 @@ reuses it: with a warm cache, make test takes about a third of the time.
 2. Run ./dev to open a shell in the environment.
 3. Or run ./dev followed by one command, for example: ./dev make check
 
+At the start of a Claude Code session, .claude/hooks/require-nix.sh makes
+sure that Nix is available. In a cloud container, it installs Nix 2.34.8. On
+other machines, it only reports that Nix is missing.
+
 The first run of ./dev puts about 2.1 GiB of tools into /nix/store (the size
 that nix path-info -S gives for the environment). Later runs take up to 3
 seconds, which nix spends to evaluate the flake. Inside the environment, ./dev
