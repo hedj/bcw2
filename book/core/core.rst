@@ -1264,28 +1264,18 @@ Pipeline
        core_state_next change (.state(w_rec.ctl.state), .commit(w_v), .why(w_cause), .divide(w_div || w_get), .done,
                                .write(word && w_rec.ctl.state[2]), .run(q_data[0]), .stop(word && !q_data[0]),
                                .after(w_state));
+       logic [C*32-1:0] pcs_after;
+       logic [C*PW-1:0] bases_after;
+       logic [C*(PW+1)-1:0] bounds_after;
+       logic [SW-1:0] select_after;
+       core_fields fields (.pcs(w_rec.ctl.pcs), .bases(w_rec.ctl.bases), .bounds(w_rec.ctl.bounds),
+                           .select(w_rec.ctl.select), .suspended(w_rec.ctl.state[2]), .retire, .next(w_next),
+                           .put(put && q_field[5]), .field(q_field[1:0]), .dest(q_select), .data(q_data),
+                           .own(w_t == '0), .pcs_after, .bases_after, .bounds_after, .select_after);
        always_comb begin
-           after = {w_rec.ctl, w_step};
-           after.ctl.state = w_state;
-           if (word && w_rec.ctl.state[2]) after.ctl.select = q_data[4 +: SW];
+           after = {pcs_after, bases_after, bounds_after, select_after, w_state, w_step};
            // Thread 0 waits one turn for a register: the steps of the turn take the count to 0 in its slot.
            if (retire && w_get) {after.div.count, after.div.get, after.div.dest} = {6'd7, 1'b1, w_rd};
-           // A store reaches a context that the thread does not run, or any context of a suspended thread.
-           for (int c = 0; c < C; c++) begin
-               if (retire && w_rec.ctl.select == SW'(c)) after.ctl.pcs[c] = w_next;
-               if (put && q_field[5] && q_select == SW'(c) && (w_rec.ctl.select != SW'(c) || w_rec.ctl.state[2]))
-                   case (q_field[1:0])
-                       2'd0: after.ctl.pcs[c] = q_data;
-                       2'd1: after.ctl.bases[c] = q_data[PW-1:0];
-                       2'd2: after.ctl.bounds[c] = q_data[PW:0];
-                       default: ;
-                   endcase
-           end
-           // Thread 0 has the supervisor part as the region of each of its contexts.
-           if (w_t == '0) begin
-               after.ctl.bases = '0;
-               after.ctl.bounds = {C{SUPERVISOR}};
-           end
        end
        wire [31:0] quotient = w_rec.div.remainder ? w_rec.div.r : w_rec.div.q;
        assign we = rst_n && (retire && w_we_r && !w_get || done || poke);
@@ -1376,7 +1366,7 @@ Pipeline
               core.div-wait, core.index-write, core.own-contexts, core.registers, core.register-write,
               core.reset-quiet, core.stop, core.state-change, core.own-pc, core.regions, core.address,
               core.region-check, core.size-word, core.control-write, core.div-time, core.control-read,
-              core.register-load
+              core.register-load, core.slot-fields
    :depth: 17
 
    module core_props (input wire clk, input wire [31:0] fetch_word, data_rdata);
@@ -1468,8 +1458,8 @@ Pipeline
        always_comb if (done && writes && !mul) assert (wd == value);
        always_comb if (done && (load || store)) assert (commit_addr == addr);
 
-       // core.state-change, core.own-pc, core.index-write, core.control-write, core.stop: in each slot the
-       // record of the thread takes the step of the run-state twin and of its instruction, and a word store
+       // core.state-change, core.slot-fields, core.own-pc, core.index-write, core.control-write, core.stop: in
+       // each slot the record of the thread takes the step of the twins from its instruction, and a word store
        // of thread 0 to its control block, which waits from the stage M1 of thread 0 for the slot.
        wire put_hit;
        wire [3:0] put_index;
@@ -1489,24 +1479,15 @@ Pipeline
                                .done(mine && commit_resume),
                                .write(word && in.state[2]), .run(q_data[0]), .stop(word && !q_data[0]),
                                .after(state_after));
-       control_t want;
-       always_comb begin
-           want = in;
-           want.state = state_after;
-           if (word && in.state[2]) want.select = q_data[4];
-           for (int c = 0; c < 2; c++) begin
-               if (step && commit_cause == 2'd0 && in.select == 1'(c)) want.pcs[c] = commit_next;
-               if (put && q_field[5] && q_index[0] == 1'(c) && (in.select != 1'(c) || in.state[2]))
-                   case (q_field[1:0])
-                       2'd0: want.pcs[c] = q_data;
-                       2'd1: want.bases[c] = q_data[15:0];
-                       2'd2: want.bounds[c] = q_data[16:0];
-                       default: ;
-                   endcase
-           end
-           if (watched == 3'd0) {want.bases, want.bounds} = {32'd0, {2{17'(bcw_params::MEMORY_SUPERVISOR_PART)}}};
-       end
-       always_comb if (slot) assert (out == want);
+       wire [63:0] pcs_after;
+       wire [31:0] bases_after;
+       wire [33:0] bounds_after;
+       wire select_after;
+       core_fields fields (.pcs(in.pcs), .bases(in.bases), .bounds(in.bounds), .select(in.select),
+                           .suspended(in.state[2]), .retire(step && commit_cause == 2'd0), .next(commit_next),
+                           .put(put && q_field[5]), .field(q_field[1:0]), .dest(q_index[0]), .data(q_data),
+                           .own(watched == 3'd0), .pcs_after, .bases_after, .bounds_after, .select_after);
+       always_comb if (slot) assert (out == {pcs_after, bases_after, bounds_after, select_after, state_after});
        // core.control-write: in a slot with no commit, the core writes a register only for a word store of
        // thread 0 to a register of the thread of the slot while the thread is suspended.
        always_comb if (slot && !mine)
@@ -1673,23 +1654,23 @@ Pipeline
    -               e_next.div.negate = f3[1] ? sa : sa != sb && e_b != 32'd0;
    +               e_next.div.negate = f3[1] ? sa : sa != sb;
 
-.. mutant:: build/rtl/core/core.v
+.. mutant:: build/rtl/core/core_fields.v
    :kills: core.registers.test
 
-   -               if (retire && w_rec.ctl.select == SW'(c)) after.ctl.pcs[c] = w_next;
-   +               if (w_v && w_rec.ctl.select == SW'(c)) after.ctl.pcs[c] = w_next;
+   -               if (retire && select == SW'(i)) pcs_after[32 * i +: 32] = next;
+   +               if (select == SW'(i)) pcs_after[32 * i +: 32] = next;
 
-.. mutant:: build/rtl/core/core.v
+.. mutant:: build/rtl/core/core_fields.v
    :kills: core.registers.test
 
-   -           if (word && w_rec.ctl.state[2]) after.ctl.select = q_data[4 +: SW];
-   +           if (word) after.ctl.select = q_data[4 +: SW];
+   -           select_after = put && field == 2'd3 && !own && suspended ? data[4 +: SW] : select;
+   +           select_after = put && field == 2'd3 && !own ? data[4 +: SW] : select;
 
-.. mutant:: build/rtl/core/core.v
+.. mutant:: build/rtl/core/core_fields.v
    :kills: core.registers.test
 
-   -               if (put && q_field[5] && q_select == SW'(c) && (w_rec.ctl.select != SW'(c) || w_rec.ctl.state[2]))
-   +               if (put && q_field[5] && q_select == SW'(c))
+   -               if (put && dest == SW'(i) && (select != SW'(i) || suspended))
+   +               if (put && dest == SW'(i))
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.registers.test
@@ -1902,6 +1883,83 @@ Thread control
 
    Only thread 0 writes a selector, and the index of a thread holds the number of the thread. So
    no thread can name a context of another, and the supervisor cannot give it one.
+
+Slot fields
+===========
+
+.. requirement:: core.slot-fields
+   :parent: design.auditability
+
+   The core shall give each thread its next program counters, bases, bounds and selector from
+   their values, its run state, its retired instruction and a store of thread 0 to its control
+   block, with the supervisor part as each region of thread 0.
+
+   .. twin::
+      :stamp: 9431cf4b
+
+      def core_fields(pcs, bases, bounds, select, suspended, retire, next, put,
+                      field, dest, data, own):
+          part = 2 ** MEMORY_PART_WIDTH
+          span = 2 * part
+          wide = 4294967296
+          top = MEMORY_SUPERVISOR_PART
+          open0 = put == 1 and dest == 0 and (select != 0 or suspended == 1)
+          open1 = put == 1 and dest == 1 and (select != 1 or suspended == 1)
+          pc0 = (data if open0 and field == 0
+                 else next if retire == 1 and select == 0 else pcs % wide)
+          pc1 = (data if open1 and field == 0
+                 else next if retire == 1 and select == 1 else pcs // wide)
+          base0 = data % part if open0 and field == 1 else bases % part
+          base1 = data % part if open1 and field == 1 else bases // part
+          bound0 = data % span if open0 and field == 2 else bounds % span
+          bound1 = data % span if open1 and field == 2 else bounds // span
+          word = put == 1 and field == 3 and own == 0 and suspended == 1
+          chosen = data // 16 % CORE_THREAD_CONTEXTS if word else select
+          based = 0 if own == 1 else base0 + base1 * part
+          bounded = top + top * span if own == 1 else bound0 + bound1 * span
+          return {'pcs_after': pc0 + pc1 * wide, 'bases_after': based,
+                  'bounds_after': bounded, 'select_after': chosen}
+
+.. source:: build/rtl/core/core_fields.v
+   :implements: core.slot-fields, core.own-pc, core.index-write, core.control-write, core.regions
+
+   // A store of thread 0 reaches a context that the thread does not run, or any context of a suspended
+   // thread. The ports are flat: yosys mistakes a write to one entry of an output port of two packed
+   // dimensions.
+   module core_fields (input wire [bcw_params::CORE_THREAD_CONTEXTS*32-1:0] pcs,
+                       input wire [bcw_params::CORE_THREAD_CONTEXTS*bcw_params::MEMORY_PART_WIDTH-1:0] bases,
+                       input wire [bcw_params::CORE_THREAD_CONTEXTS*(bcw_params::MEMORY_PART_WIDTH+1)-1:0] bounds,
+                       input wire [bcw_params::CORE_SELECT_WIDTH-1:0] select, input wire suspended,
+                       input wire retire, input wire [31:0] next, input wire put, input wire [1:0] field,
+                       input wire [bcw_params::CORE_SELECT_WIDTH-1:0] dest, input wire [31:0] data, input wire own,
+                       output logic [bcw_params::CORE_THREAD_CONTEXTS*32-1:0] pcs_after,
+                       output logic [bcw_params::CORE_THREAD_CONTEXTS*bcw_params::MEMORY_PART_WIDTH-1:0] bases_after,
+                       output logic [bcw_params::CORE_THREAD_CONTEXTS*(bcw_params::MEMORY_PART_WIDTH+1)-1:0] bounds_after,
+                       output logic [bcw_params::CORE_SELECT_WIDTH-1:0] select_after);
+       localparam int C = bcw_params::CORE_THREAD_CONTEXTS, PW = bcw_params::MEMORY_PART_WIDTH;
+       localparam int SW = bcw_params::CORE_SELECT_WIDTH;
+       localparam logic [PW:0] SUPERVISOR = (PW + 1)'(bcw_params::MEMORY_SUPERVISOR_PART);
+       always_comb begin
+           {pcs_after, bases_after, bounds_after} = {pcs, bases, bounds};
+           select_after = put && field == 2'd3 && !own && suspended ? data[4 +: SW] : select;
+           for (int i = 0; i < C; i++) begin
+               if (retire && select == SW'(i)) pcs_after[32 * i +: 32] = next;
+               if (put && dest == SW'(i) && (select != SW'(i) || suspended))
+                   case (field)
+                       2'd0: pcs_after[32 * i +: 32] = data;
+                       2'd1: bases_after[PW * i +: PW] = data[PW-1:0];
+                       2'd2: bounds_after[(PW + 1) * i +: PW + 1] = data[PW:0];
+                       default: ;
+                   endcase
+           end
+           // Thread 0 has the supervisor part as the region of each of its contexts.
+           if (own) {bases_after, bounds_after} = {(C * PW)'(0), {C{SUPERVISOR}}};
+       end
+   endmodule
+
+.. check:: equiv
+   :verifies: core.slot-fields
+   :module: core_fields
 
 Reset
 =====
