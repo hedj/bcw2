@@ -216,7 +216,8 @@ def input_bits(inputs, terms):
 
     yosys declares a function of the state for some bits of the inputs, in any order, even
     across ports, and writes each input port as a concat of these functions, of extracts of
-    them, and of (ite f #b1 #b0) for a bit that it holds as a Bool. With the bits in place,
+    them, of (ite f #b1 #b0) for a bit that it holds as a Bool, and of
+    (ite (= ((_ extract k k) f) #b1) #b1 #b0) for the bit k of a function. With the bits in place,
     each output is a term of the inputs alone, which z3 can compare with the twin term by
     term: through the equalities of the ports, it cannot prove a 32-bit multiply.
     """
@@ -224,7 +225,11 @@ def input_bits(inputs, terms):
     for name, var in inputs.items():
         high = var.size() - 1
         for part in parts(terms[name]):
-            if z3.is_app_of(part, z3.Z3_OP_ITE):
+            if z3.is_app_of(part, z3.Z3_OP_ITE) and z3.is_eq(part.arg(0)):
+                # Other terms can use f whole, so the bit of the input takes the place of the bit of f.
+                bit = part.arg(0).arg(0)
+                bits.setdefault(bit.arg(0), {})[bit.params()[0]] = z3.Extract(high, high, var)
+            elif z3.is_app_of(part, z3.Z3_OP_ITE):
                 pairs.append((part.arg(0), z3.Extract(high, high, var) == 1))
             elif not z3.is_bv_value(part):
                 function, top, bottom = ((part.arg(0), *part.params()) if z3.is_app_of(part, z3.Z3_OP_EXTRACT)

@@ -606,6 +606,20 @@ class EquivTest:
         text, result = run(tmp_path, extra, chapter)
         assert (result.returncode == 0) == passes, result.stdout + result.stderr
 
+    @pytest.mark.parametrize("chosen, passes", [(0, True), (1, False)])
+    def test_an_input_bit_that_yosys_holds_in_a_wider_function_is_put_back(self, tmp_path, chosen, passes):
+        # yosys writes the port dest as (ite (= ((_ extract 0 0) f) #b1) #b1 #b0), and the outputs use f
+        # in other terms too, such as (bvnot f).
+        extra, chapter = self.module(
+            "pick", "input wire [63:0] pcs, input wire dest, own, input wire [31:0] data, output logic [63:0] after",
+            "always_comb begin\n           after = pcs;\n"
+            "           for (int i = 0; i < 2; i++) if (!own && dest == 1'(i)) after[32 * i +: 32] = data;\n       end",
+            "def pick(pcs, dest, own, data):\n    low = pcs % 4294967296\n    high = pcs // 4294967296\n"
+            f"    put = high * 4294967296 + data if dest == {chosen} else data * 4294967296 + low\n"
+            "    return {'after': pcs if own == 1 else put}")
+        text, result = run(tmp_path, extra, chapter)
+        assert (result.returncode == 0) == passes, result.stdout + result.stderr
+
     # An 8-bit multiply from the partial products of its 4-bit halves.
     MUL8 = ("input wire [7:0] a, b, output wire [15:0] y",
             "assign y = 16'(a[3:0]) * b[3:0] + ((16'(a[3:0]) * b[7:4]) << 4) + ((16'(a[7:4]) * b[3:0]) << 4)\n"
