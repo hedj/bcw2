@@ -28,7 +28,14 @@ if [ $# -gt 0 ] && [ -n "${BCW_ENV:-}" ] &&
     exec "$@"
 fi
 nix="nix --extra-experimental-features nix-command --extra-experimental-features flakes"
+# nix develop makes a temporary directory, sets TMPDIR to it, and replaces itself with
+# the command, so nothing removes the directory or the files that the tools write in
+# it. The directory goes inside one that this script removes when it exits.
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+trap 'exit 130' INT TERM
 if [ $# -eq 0 ]; then
-    exec $nix develop "$root"
+    TMPDIR=$tmp $nix develop "$root"
+else
+    TMPDIR=$tmp $nix develop "$root" --command "$@"
 fi
-exec $nix develop "$root" --command "$@"
