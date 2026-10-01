@@ -1022,7 +1022,7 @@ Pipeline
    write, which alone writes the registers: w_
 
    rot: the thread of the turn, which counts cycles and no thread changes
-   q_we q_index q_field q_data: a store of thread 0 to a control block
+   q_we q_get q_index q_field q_data: a word access of thread 0 to a control block
 
 .. requirement:: core.step
    :parent: design.economy
@@ -1047,12 +1047,13 @@ Pipeline
 
 .. source:: build/rtl/core/core_record.sv
 
-   // The divider of one thread, which travels with the thread from stage to stage.
+   // The divider of one thread, which travels with the thread from stage to stage. Its count also
+   // times the wait of thread 0 for a register of a control block, which get marks.
    package core_record;
        typedef struct packed {
            logic [31:0] r, q, d;
            logic [5:0] count;
-           logic negate, remainder;
+           logic negate, remainder, get;
            logic [4:0] dest;
        } divider_t;
    endpackage
@@ -1078,7 +1079,7 @@ Pipeline
    :implements: core.depth, core.issue, core.own-state, core.step, core.suspend, core.div, core.div-wait,
                 core.div-time, core.control-write, core.control-read, core.reset, core.reset-quiet,
                 core.own-context, core.address, core.region-check, core.size-word, core.index-write,
-                core.own-contexts, core.own-pc, core.stop, core.state-change, core.regions
+                core.own-contexts, core.own-pc, core.stop, core.state-change, core.regions, core.register-load
 
    module core (input wire clk, rst_n, output wire [bcw_params::CORE_TURN_WIDTH-1:0] turn,
                 output wire [bcw_params::MEMORY_PART_WIDTH:0] fetch_addr, input wire [31:0] fetch_word,
@@ -1125,7 +1126,10 @@ Pipeline
        assign turn = rot;
        // The turn gives the thread of each stage: a stage holds the thread of the turn as many cycles ago
        // as it has stages before it, so that W holds the thread of the next turn.
-       wire [TW-1:0] d_t = rot - TW'(2), m1_t = rot - TW'(5), m2_t = rot - TW'(6), w_t = rot_next;
+       wire [TW-1:0] d_t = rot - TW'(2), r_t = rot - TW'(3), m1_t = rot - TW'(5), m2_t = rot - TW'(6), w_t = rot_next;
+       // q holds the one access of thread 0 to another thread: a store waits in it for the slot of the
+       // thread, and a load of a register takes the register into q_data.
+       logic q_we, q_get; logic [CW-1:0] q_index; logic [5:0] q_field; logic [31:0] q_data;
 
        // F: fetch the word at the program counter of the thread of the turn, in its part and region.
        wire [31:0] f_pc = f_rec.ctl.pcs[f_rec.ctl.select];
@@ -1147,9 +1151,11 @@ Pipeline
        wire d_out;
        core_region fetch_region (.offset(d_pc), .size(d_wide ? 3'd4 : 3'd2), .bound(d_rec.ctl.bounds[d_rec.ctl.select]),
                                  .out(d_out));
-       assign ra = {d_t, d_rec.ctl.select, d_insn[19:15]};
+       // A suspended thread reads nothing, so a load of thread 0 reads its register in its slot.
+       wire take = q_get && q_index[CW-1:SW] == d_t && d_rec.ctl.state[2];
+       assign ra = take ? {q_index, q_field[4:0]} : {d_t, d_rec.ctl.select, d_insn[19:15]};
        assign rb = {d_t, d_rec.ctl.select, d_insn[24:20]};
-       logic r_v, r_wide, r_alt; logic [10:0] r_class; logic [1:0] r_cause;
+       logic r_v, r_wide, r_alt, r_got; logic [10:0] r_class; logic [1:0] r_cause;
        logic [31:0] r_pc, r_imm, r_word; logic [14:7] r_insn;
 
        // R: the registers arrive.
@@ -1189,6 +1195,7 @@ Pipeline
                e_next.div.d = sb ? -e_b : e_b;
                e_next.div.count = 6'd32;
                e_next.div.remainder = f3[1];
+               e_next.div.get = 1'b0;
                e_next.div.negate = f3[1] ? sa : sa != sb && e_b != 32'd0;
                e_next.div.dest = e_insn[11:7];
            end
@@ -1200,8 +1207,9 @@ Pipeline
        // M1: send the address of the data, form the partial products, and choose the result.
        wire m1_hit;
        wire [CW-1:0] m1_index;
-       wire [1:0] m1_field;
+       wire [5:0] m1_field;
        core_control control (.addr(m1_addr[31:2]), .hit(m1_hit), .index(m1_index), .field(m1_field));
+       wire m1_get = m1_t == '0 && m1_v && m1_load && m1_cause == NONE && m1_f3 == 3'd2 && m1_hit && !m1_field[5];
        wire [35:0] ll, lh, hl, hh;
        // The multiplier reads its operands through mul_a and mul_b, which the proofs see.
        assign {mul_a, mul_b} = {m1_a, m1_b};
@@ -1209,7 +1217,7 @@ Pipeline
        core_store place (.size(m1_f3[1:0]), .lo(m1_addr[1:0]), .data(m1_b), .be(data_be), .wdata(data_wdata));
        assign data_addr = {m1_t == '0, PW'(m1_rec.ctl.bases[m1_rec.ctl.select] + m1_addr[PW-1:0])};
        assign data_we = rst_n && m1_v && m1_store && m1_cause == NONE;
-       logic m2_v, m2_we, m2_load, m2_mul, m2_div, m2_control; logic [CW-1:0] m2_index; logic [1:0] m2_field;
+       logic m2_v, m2_we, m2_load, m2_mul, m2_div, m2_control, m2_get; logic [CW-1:0] m2_index; logic [1:0] m2_field;
        logic [1:0] m2_cause;
        logic [4:0] m2_rd; logic [2:0] m2_f3;
        logic [31:0] m2_pc, m2_word, m2_a, m2_b, m2_addr, m2_res, m2_next;
@@ -1239,31 +1247,34 @@ Pipeline
                            : 32'({seen.select, 1'b0, seen.state});
        // The last word of the supervisor part reads as the size of the worker part.
        wire m2_size = m2_t == '0 && m2_addr[31:2] == 30'(bcw_params::MEMORY_SUPERVISOR_PART / 4 - 1);
-       logic w_v, w_we_r, w_load, w_div; logic [1:0] w_cause; logic [4:0] w_rd;
+       logic w_v, w_we_r, w_load, w_div, w_get; logic [1:0] w_cause; logic [4:0] w_rd;
        logic [2:0] w_f3; logic [31:0] w_pc, w_word, w_a, w_b, w_addr, w_res, w_next, w_data;
 
        // W: the one place that the state of a thread changes, in its slot: by its instruction, by the end
-       // of its divide, and by a store of thread 0 to its control block.
+       // of its wait, and by a store of thread 0 to its control block.
        wire [31:0] loaded;
        core_load extract (.f3(w_f3), .lo(w_addr[1:0]), .word(w_data), .y(loaded));
        wire retire = w_v && w_cause == NONE;
        wire done = w_rec.ctl.state[2:1] == 2'b01 && w_rec.div.count == '0;
-       logic q_we; logic [CW-1:0] q_index; logic [1:0] q_field; logic [31:0] q_data;
-       wire put = q_we && q_index[CW-1:SW] == w_t, word = put && q_field == 2'd3 && w_t != '0;
+       wire put = q_we && q_index[CW-1:SW] == w_t, word = put && q_field == 6'd35 && w_t != '0;
+       // A suspended thread writes no register, so a store of thread 0 writes its register in its slot.
+       wire poke = put && !q_field[5] && w_rec.ctl.state[2];
        wire [SW-1:0] q_select = q_index[SW-1:0];
        wire [2:0] w_state;
-       core_state_next change (.state(w_rec.ctl.state), .commit(w_v), .why(w_cause), .divide(w_div), .done,
+       core_state_next change (.state(w_rec.ctl.state), .commit(w_v), .why(w_cause), .divide(w_div || w_get), .done,
                                .write(word && w_rec.ctl.state[2]), .run(q_data[0]), .stop(word && !q_data[0]),
                                .after(w_state));
        always_comb begin
            after = {w_rec.ctl, w_step};
            after.ctl.state = w_state;
            if (word && w_rec.ctl.state[2]) after.ctl.select = q_data[4 +: SW];
+           // Thread 0 waits one turn for a register: the steps of the turn take the count to 0 in its slot.
+           if (retire && w_get) {after.div.count, after.div.get, after.div.dest} = {6'd7, 1'b1, w_rd};
            // A store reaches a context that the thread does not run, or any context of a suspended thread.
            for (int c = 0; c < C; c++) begin
                if (retire && w_rec.ctl.select == SW'(c)) after.ctl.pcs[c] = w_next;
-               if (put && q_select == SW'(c) && (w_rec.ctl.select != SW'(c) || w_rec.ctl.state[2]))
-                   case (q_field)
+               if (put && q_field[5] && q_select == SW'(c) && (w_rec.ctl.select != SW'(c) || w_rec.ctl.state[2]))
+                   case (q_field[1:0])
                        2'd0: after.ctl.pcs[c] = q_data;
                        2'd1: after.ctl.bases[c] = q_data[PW-1:0];
                        2'd2: after.ctl.bounds[c] = q_data[PW:0];
@@ -1277,9 +1288,10 @@ Pipeline
            end
        end
        wire [31:0] quotient = w_rec.div.remainder ? w_rec.div.r : w_rec.div.q;
-       assign we = rst_n && (retire && w_we_r || done);
-       assign wa = {w_t, w_rec.ctl.select, done ? w_rec.div.dest : w_rd};
-       assign wd = done ? (w_rec.div.negate ? -quotient : quotient) : w_load ? loaded : w_res;
+       assign we = rst_n && (retire && w_we_r && !w_get || done || poke);
+       assign wa = poke ? {q_index, q_field[4:0]} : {w_t, w_rec.ctl.select, done ? w_rec.div.dest : w_rd};
+       assign wd = done && !w_rec.div.get ? (w_rec.div.negate ? -quotient : quotient)
+                 : done || poke ? q_data : w_load ? loaded : w_res;
 
        // Each commit, for the proofs and the tests.
        assign {commit, commit_resume, commit_cause, commit_thread} = {w_v || done, done, done ? NONE : w_cause, w_t};
@@ -1305,15 +1317,19 @@ Pipeline
                <= rst_n ? {after, {f_rec.ctl, f_step}, {x_rec.ctl, x_step}, {d_rec.ctl, d_step}, {r_rec.ctl, r_step},
                            e_next, {m1_rec.ctl, m1_step}, {m2_rec.ctl, m2_step}}
                         : {first, stopped, stopped, stopped, stopped, stopped, stopped, stopped};
-           // A word store of thread 0 to a control block waits for the slot of its thread, which comes
-           // before the next turn of thread 0 in M1.
+           // A word access of thread 0 to a control block waits in q from its stage M1 to the next, which
+           // the slot of each thread meets once. q_data holds the word of a store, or for a load 0 or the
+           // register of a thread that is suspended in its slot, which q_data keeps for the slot of thread 0.
            if (!rst_n || m1_t == '0)
-               {q_we, q_index, q_field, q_data} <= {data_we && data_be == 4'hf && m1_hit, m1_index, m1_field, m1_b};
-           {m2_control, m2_index, m2_field} <= {m1_t == '0 && m1_hit, m1_index, m1_field};
+               {q_we, q_get} <= {data_we && data_be == 4'hf && m1_hit, rst_n && m1_get};
+           if (!rst_n || m1_t == '0 && m1_v) {q_index, q_field, q_data} <= {m1_index, m1_field, m1_get ? '0 : m1_b};
+           else if (r_got && !q_we && q_index[CW-1:SW] == r_t) q_data <= a;
+           {m2_control, m2_index, m2_field} <= {m1_t == '0 && m1_hit && m1_f3 == 3'd2, m1_index, m1_field[1:0]};
            {x_v, x_pc} <= {rst_n && f_rec.ctl.state == 3'd0, f_pc};
            {d_v, d_pc, d_insn, d_word, d_bad, d_wide} <= {rst_n && x_v, x_pc, x_insn, fetch_word, x_bad, x_wide};
            {r_v, r_pc, r_word, r_insn, r_imm, r_wide, r_alt} <= {rst_n && d_v, d_pc, d_word, d_insn[14:7],
                                                                       d_imm, d_wide, alt};
+           r_got <= rst_n && take;
            r_class <= {lui, auipc, jal, jalr, branch, load, store, opimm, op, mul, div};
            r_cause <= d_out ? REFUSED : ecall ? REQUEST : d_bad || illegal ? REFUSED : NONE;
            {e_v, e_pc, e_word, e_insn, e_imm, e_wide, e_alt, e_class, e_cause, e_a, e_b}
@@ -1326,11 +1342,12 @@ Pipeline
            {m2_v, m2_pc, m2_word, m2_a, m2_b, m2_cause, m2_rd, m2_f3, m2_addr, m2_res, m2_next}
                <= {rst_n && m1_v, m1_pc, m1_word, m1_a, m1_b, m1_cause, m1_rd, m1_f3, m1_addr,
                    m1_pick ? m1_other : m1_res, m1_next};
-           {m2_we, m2_load, m2_mul, m2_div, m2_ll, m2_lh, m2_hl, m2_hh} <= {m1_we, m1_load, m1_mul, m1_div, ll, lh, hl, hh};
+           {m2_we, m2_load, m2_mul, m2_div, m2_get, m2_ll, m2_lh, m2_hl, m2_hh}
+               <= {m1_we, m1_load, m1_mul, m1_div, m1_get, ll, lh, hl, hh};
            {w_v, w_pc, w_word, w_a, w_b, w_cause, w_rd, w_f3, w_addr, w_next, w_data}
                <= {rst_n && m2_v, m2_pc, m2_word, m2_a, m2_b, m2_cause, m2_rd, m2_f3, m2_addr, m2_next,
                    m2_control ? m2_read : m2_size ? 32'(bcw_params::MEMORY_WORKER_PART) : data_rdata};
-           {w_we_r, w_load, w_div, w_res} <= {m2_we, m2_load, m2_div, m2_mul ? product : m2_res};
+           {w_we_r, w_load, w_div, w_get, w_res} <= {m2_we, m2_load, m2_div, m2_get, m2_mul ? product : m2_res};
        end
    endmodule
 
@@ -1358,8 +1375,9 @@ Pipeline
    :verifies: core.depth, core.issue, core.own-state, core.own-context, core.step, core.suspend,
               core.div-wait, core.index-write, core.own-contexts, core.registers, core.register-write,
               core.reset-quiet, core.stop, core.state-change, core.own-pc, core.regions, core.address,
-              core.region-check, core.size-word, core.control-write, core.div-time
-   :depth: 10
+              core.region-check, core.size-word, core.control-write, core.div-time, core.control-read,
+              core.register-load
+   :depth: 17
 
    module core_props (input wire clk, input wire [31:0] fetch_word, data_rdata);
        logic rst_n = 1'b0;
@@ -1420,6 +1438,13 @@ Pipeline
                            .ecall, .illegal, .alt);
        core_imm immediate (.insn, .imm);
        wire [31:0] addr = commit_a + imm, link = commit_pc + (wide ? 32'd4 : 32'd2);
+       // A get is a word load of thread 0 from a register of a control block. It writes no register when
+       // it commits, and thread 0 waits for the register.
+       wire load_hit;
+       wire [3:0] load_index;
+       wire [5:0] load_field;
+       core_control load_decode (.addr(addr[31:2]), .hit(load_hit), .index(load_index), .field(load_field));
+       wire get = commit_thread == 3'd0 && load && f3 == 3'd2 && load_hit && !load_field[5];
        core_alu alu (.f3, .alt, .a(commit_a), .b(opimm ? imm : commit_b), .y(alu_y));
        core_branch compare (.f3, .a(commit_a), .b(commit_b), .taken);
        core_misaligned align (.size(f3[1:0]), .lo(addr[1:0]), .fault);
@@ -1431,7 +1456,7 @@ Pipeline
        wire [1:0] cause = fetch_out ? 2'd2 : ecall ? 2'd1 : bad || illegal ? 2'd2
                         : (load || store) && (fault || data_out) ? 2'd2 : 2'd0;
        wire [31:0] next = jal || branch && taken ? commit_pc + imm : jalr ? {addr[31:1], 1'b0} : link;
-       wire writes = lui || auipc || jal || jalr || load || opimm || op || mul;
+       wire writes = lui || auipc || jal || jalr || load && !get || opimm || op || mul;
        wire [31:0] value = lui ? imm : auipc ? commit_pc + imm : jal || jalr ? link : load ? loaded
                          : mul ? product : alu_y;
        wire done = step && cause == 2'd0;
@@ -1448,19 +1473,20 @@ Pipeline
        // of thread 0 to its control block, which waits from the stage M1 of thread 0 for the slot.
        wire put_hit;
        wire [3:0] put_index;
-       wire [1:0] put_field;
+       wire [5:0] put_field;
        core_control put_decode (.addr({16'd0, data_addr[15:2]}), .hit(put_hit), .index(put_index), .field(put_field));
        logic q_we;
        logic [3:0] q_index;
-       logic [1:0] q_field;
+       logic [5:0] q_field;
        logic [31:0] q_data;
        always_ff @(posedge clk)
            if (!rst_n || turn == 3'd5)
                {q_we, q_index, q_field, q_data} <= {rst_n && data_we && data_addr[16] && data_be == 4'hf && put_hit,
                                                     put_index, put_field, data_wdata};
-       wire put = q_we && q_index[3:1] == watched, word = put && q_field == 2'd3 && watched != 3'd0;
+       wire put = q_we && q_index[3:1] == watched, word = put && q_field == 6'd35 && watched != 3'd0;
        wire [2:0] state_after;
-       core_state_next change (.state(in.state), .commit(step), .why(commit_cause), .divide(div), .done(mine && commit_resume),
+       core_state_next change (.state(in.state), .commit(step), .why(commit_cause), .divide(div || get),
+                               .done(mine && commit_resume),
                                .write(word && in.state[2]), .run(q_data[0]), .stop(word && !q_data[0]),
                                .after(state_after));
        control_t want;
@@ -1470,8 +1496,8 @@ Pipeline
            if (word && in.state[2]) want.select = q_data[4];
            for (int c = 0; c < 2; c++) begin
                if (step && commit_cause == 2'd0 && in.select == 1'(c)) want.pcs[c] = commit_next;
-               if (put && q_index[0] == 1'(c) && (in.select != 1'(c) || in.state[2]))
-                   case (q_field)
+               if (put && q_field[5] && q_index[0] == 1'(c) && (in.select != 1'(c) || in.state[2]))
+                   case (q_field[1:0])
                        2'd0: want.pcs[c] = q_data;
                        2'd1: want.bases[c] = q_data[15:0];
                        2'd2: want.bounds[c] = q_data[16:0];
@@ -1481,6 +1507,10 @@ Pipeline
            if (watched == 3'd0) {want.bases, want.bounds} = {32'd0, {2{17'(bcw_params::MEMORY_SUPERVISOR_PART)}}};
        end
        always_comb if (slot) assert (out == want);
+       // core.control-write: in a slot with no commit, the core writes a register only for a word store of
+       // thread 0 to a register of the thread of the slot while the thread is suspended.
+       always_comb if (slot && !mine)
+           assert (we == (put && !q_field[5] && in.state[2]) && (!we || wa == {q_index, q_field[4:0]} && wd == q_data));
        // core.own-state: between two slots the record of the thread does not change. core.issue,
        // core.div-wait: a thread that leaves its slot running commits in its next slot, and one that
        // leaves it in another run state does not.
@@ -1488,19 +1518,26 @@ Pipeline
        logic known = 1'b0;
        always_ff @(posedge clk) if (slot) {was, known} <= {out, 1'b1};
        always_comb if (slot && known) assert (in == was && step == (was.state == 3'd0));
-       // core.div-time: since counts the cycles from the commit of a divide of the thread, which loaded 32
-       // steps two cycles earlier. The thread waits until its divider has taken them all, and resumes in
-       // its slot after the number of turns that the twin gives.
+       // core.div-time, core.register-load: since counts the cycles from the commit of a divide or a get of
+       // the thread. A divide loaded 32 steps two cycles earlier: the thread waits until its divider has
+       // taken them all, and resumes in its slot after the number of turns that the twin gives. A get
+       // resumes after one turn.
        wire [2:0] turns;
        core_div_time wait_time (.turns);
        logic [5:0] since;
-       always_ff @(posedge clk)
-           since <= slot && step && div && commit_cause == 2'd0 ? 6'd1 : since == 6'd63 ? since : since + 6'd1;
+       logic long;
+       wire waits = slot && step && (div || get) && commit_cause == 2'd0;
+       always_ff @(posedge clk) begin
+           since <= waits ? 6'd1 : since == 6'd63 ? since : since + 6'd1;
+           if (waits) long <= div;
+       end
        wire waiting = in.state[2:1] == 2'b01;
        always_comb if (slot && step && div && commit_cause == 2'd0) assert (commit_steps == 6'd30);
        always_comb if (slot)
-           assert (!waiting || since[2:0] == 3'd0 && commit_steps == (since < 6'd30 ? 6'd30 - since : 6'd0)
-                               && commit_resume == (commit_steps == 6'd0) && (!commit_resume || since == 6'(8 * turns)));
+           assert (!waiting || since[2:0] == 3'd0
+                               && (long ? commit_steps == (since < 6'd30 ? 6'd30 - since : 6'd0)
+                                          && commit_resume == (commit_steps == 6'd0) && (!commit_resume || since == 6'(8 * turns))
+                                        : commit_resume && since == 6'd8));
 
        // core.step: each commit carries the word that arrived for it, the addresses of its reads, the
        // registers that came back, the operands of the multiplier, the address of its access and its
@@ -1518,9 +1555,7 @@ Pipeline
        end
        // core.size-word: the last word of the supervisor part, at its full address, reads as the size of
        // the worker part. A word of a control block is the word of another thread, which the test checks.
-       wire load_hit;
-       core_control load_decode (.addr(addr[31:2]), .hit(load_hit), .index(), .field());
-       wire [31:0] loaded_at = watched == 3'd0 && load_hit ? commit_load
+       wire [31:0] loaded_at = watched == 3'd0 && load_hit && f3 == 3'd2 ? commit_load
                              : watched == 3'd0 && addr[31:2] == 30'(bcw_params::MEMORY_SUPERVISOR_PART / 4 - 1)
                              ? 32'(bcw_params::MEMORY_WORKER_PART) : load_at;
        // core.address: the part is that of the thread, and each address is the base plus the offset.
@@ -1530,6 +1565,28 @@ Pipeline
                    && fetch_at == {watched == 3'd0, 16'(commit_base + commit_pc[15:0])}
                    && addr_at == {watched == 3'd0, 16'(commit_base + commit_addr[15:0])}
                    && ra_at == {index, insn[19:15]} && rb_at == {index, insn[24:20]});
+
+       // core.control-read, core.register-load: from the commit of a get, the proof waits for the phase 3
+       // of the thread of the register, in the 8 cycles from the stage M2 of the get. In the cycle before,
+       // the core reads the register if the thread is suspended. Thread 0 resumes in its next slot and
+       // writes the register that came back, or 0.
+       logic g_pend = 1'b0, g_due = 1'b0, g_seen = 1'b0;
+       logic [3:0] g_index;
+       logic [4:0] g_reg, g_rd;
+       logic [31:0] g_value;
+       wire g_now = rst_n && commit && !commit_resume && commit_cause == 2'd0 && get;
+       wire [3:0] g_at = g_now ? load_index : g_index;
+       wire [4:0] g_of = g_now ? load_field[4:0] : g_reg;
+       wire g_read = (g_now || g_pend) && g_at[3:1] == watched && phase == 3'd3 && known;
+       always_ff @(posedge clk) begin
+           if (g_now) {g_index, g_reg, g_rd, g_seen} <= {load_index, load_field[4:0], insn[11:7], 1'b0};
+           if (g_read) {g_value, g_seen} <= {was.state[2] ? a : 32'd0, 1'b1};
+           g_pend <= g_now || g_pend && turn != 3'd6;
+           g_due <= g_now || g_due && turn != 3'd7;
+       end
+       always_comb if (g_read && was.state[2]) assert (ra_at == {g_at, g_of});
+       always_comb if (g_due && turn == 3'd7)
+           assert (commit && commit_resume && we && wa[4:0] == g_rd && (!g_seen || wd == g_value));
    endmodule
 
 .. mutant:: build/rtl/core/core.v
@@ -1565,20 +1622,20 @@ Pipeline
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
 
-   -    assign we = rst_n && (retire && w_we_r || done);
-   +    assign we = retire && w_we_r || done;
+   -    assign we = rst_n && (retire && w_we_r && !w_get || done || poke);
+   +    assign we = retire && w_we_r && !w_get || done || poke;
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
 
-   -    assign wa = {w_t, w_rec.ctl.select, done ? w_rec.div.dest : w_rd};
-   +    assign wa = {rot, w_rec.ctl.select, done ? w_rec.div.dest : w_rd};
+   -    assign wa = poke ? {q_index, q_field[4:0]} : {w_t, w_rec.ctl.select, done ? w_rec.div.dest : w_rd};
+   +    assign wa = poke ? {q_index, q_field[4:0]} : {rot, w_rec.ctl.select, done ? w_rec.div.dest : w_rd};
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
 
-   -    assign ra = {d_t, d_rec.ctl.select, d_insn[19:15]};
-   +    assign ra = {m1_t, d_rec.ctl.select, d_insn[19:15]};
+   -    assign ra = take ? {q_index, q_field[4:0]} : {d_t, d_rec.ctl.select, d_insn[19:15]};
+   +    assign ra = take ? {q_index, q_field[4:0]} : {m1_t, d_rec.ctl.select, d_insn[19:15]};
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.depth.prove
@@ -1631,14 +1688,32 @@ Pipeline
 .. mutant:: build/rtl/core/core.v
    :kills: core.registers.test
 
-   -               if (put && q_select == SW'(c) && (w_rec.ctl.select != SW'(c) || w_rec.ctl.state[2]))
-   +               if (put && q_select == SW'(c))
+   -               if (put && q_field[5] && q_select == SW'(c) && (w_rec.ctl.select != SW'(c) || w_rec.ctl.state[2]))
+   +               if (put && q_field[5] && q_select == SW'(c))
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.registers.test
 
-   -    wire put = q_we && q_index[CW-1:SW] == w_t, word = put && q_field == 2'd3 && w_t != '0;
-   +    wire put = q_we && q_index[CW-1:SW] == w_t, word = put && q_field == 2'd3;
+   -    wire put = q_we && q_index[CW-1:SW] == w_t, word = put && q_field == 6'd35 && w_t != '0;
+   +    wire put = q_we && q_index[CW-1:SW] == w_t, word = put && q_field == 6'd35;
+
+.. mutant:: build/rtl/core/core.v
+   :kills: core.registers.test
+
+   -    wire poke = put && !q_field[5] && w_rec.ctl.state[2];
+   +    wire poke = put && !q_field[5];
+
+.. mutant:: build/rtl/core/core.v
+   :kills: core.registers.test
+
+   -    wire take = q_get && q_index[CW-1:SW] == d_t && d_rec.ctl.state[2];
+   +    wire take = q_get && q_index[CW-1:SW] == d_t;
+
+.. mutant:: build/rtl/core/core.v
+   :kills: core.registers.test
+
+   -           else if (r_got && !q_we && q_index[CW-1:SW] == r_t) q_data <= a;
+   +           else if (r_got && !q_we && q_index[CW-1:SW] == r_t) q_data <= b;
 
 .. mutant:: build/rtl/core/core.v
    :kills: core.registers.test
@@ -1743,39 +1818,39 @@ Control blocks
 .. definition:: core.control-block
    :parent: memory.supervisor
 
-   The :dfn:`control block` of a thread is a set of words in the supervisor part: the word of the
-   thread, which holds its selector and starts or stops it, and the program counter, base and bound
-   of each of its contexts.
+   The :dfn:`control block` of a context is a set of words in the supervisor part: the 32
+   registers of the context, its program counter, base and bound, and the word of its thread, which
+   holds the selector of the thread and starts or stops it. Thread 0 reaches a control block with
+   word loads and word stores.
 
 .. requirement:: core.control-map
    :parent: design.auditability
 
-   The core shall place each control block at the end of the supervisor part.
+   The core shall place the control blocks at the end of the supervisor part, in the order of the
+   contexts.
 
    .. twin::
-      :stamp: 8d5c0028
+      :stamp: 5463303b
 
       def core_control(addr):
-          top = MEMORY_SUPERVISOR_PART // 4
-          contexts = 1 if addr // 64 == top // 64 - 2 and addr % 4 != 3 else 0
-          threads = 1 if addr // 8 == top // 8 - 8 else 0
-          return {'hit': 1 if contexts == 1 or threads == 1 else 0,
-                  'index': addr // 4 % 16 if contexts == 1 else addr % 8 * 2,
-                  'field': addr % 4 if contexts == 1 else 3}
+          top = MEMORY_SUPERVISOR_PART // 256
+          block = addr // 64
+          word = addr % 64
+          inside = 1 if block >= top - CORE_CONTEXTS and block < top else 0
+          return {'hit': 1 if inside == 1 and word < 36 else 0,
+                  'index': block % CORE_CONTEXTS, 'field': word}
 
 .. source:: build/rtl/core/core_control.v
    :implements: core.control-map
 
-   // The address is that of a word: its bits 1 and 0 name no word.
+   // The address is that of a word: its bits 1 and 0 name no word. The block of a context has 64
+   // words: its registers, its program counter, base and bound, and the word of its thread.
    module core_control (input wire [31:2] addr, output wire hit,
-                        output wire [bcw_params::CORE_CONTEXT_WIDTH-1:0] index, output wire [1:0] field);
-       localparam int CW = bcw_params::CORE_CONTEXT_WIDTH, TW = bcw_params::CORE_TURN_WIDTH;
-       localparam int TOP = bcw_params::MEMORY_SUPERVISOR_PART;
-       wire contexts = addr[31:8] == 24'(TOP / 256 - 2) && addr[3:2] != 2'd3;
-       wire threads = addr[31:5] == 27'(TOP / 32 - 8);
-       assign hit = contexts || threads;
-       assign index = contexts ? addr[4 +: CW] : {addr[2 +: TW], bcw_params::CORE_SELECT_WIDTH'(0)};
-       assign field = contexts ? addr[3:2] : 2'd3;
+                        output wire [bcw_params::CORE_CONTEXT_WIDTH-1:0] index, output wire [5:0] field);
+       localparam int CW = bcw_params::CORE_CONTEXT_WIDTH;
+       localparam int FIRST = bcw_params::MEMORY_SUPERVISOR_PART / 256 / bcw_params::CORE_CONTEXTS - 1;
+       assign hit = addr[31:8+CW] == (24-CW)'(FIRST) && addr[7:2] < 6'd36;
+       assign {index, field} = addr[8+CW-1:2];
    endmodule
 
 .. check:: equiv
@@ -1785,13 +1860,29 @@ Control blocks
 .. requirement:: core.control-write
    :parent: design.auditability
 
-   If a store of thread 0 reaches the word of thread 0 or the selector or context in use of a
-   thread that is not suspended, then the core shall ignore the store.
+   If a store of thread 0 reaches the word of thread 0 or a register or the selector or context in
+   use of a thread that is not suspended, then the core shall ignore the store.
 
 .. requirement:: core.control-read
    :parent: design.auditability
 
-   When thread 0 loads a word of a control block, the core shall give the value of the word.
+   When thread 0 loads a word of a control block, the core shall give the value of the word, or 0
+   for a register of a thread that is not suspended when the core reads it.
+
+Register access
+===============
+
+.. requirement:: core.register-load
+   :parent: design.timing-invariant
+
+   When thread 0 loads a register of a control block, the core shall fetch nothing in the next
+   turn of thread 0, for any thread and any register.
+
+.. rationale::
+
+   Thread 0 reaches the registers of a thread only in the slots of that thread, which a suspended
+   thread does not use. A load of a register waits one turn for every thread, so its time depends
+   on nothing else.
 
 Thread control
 ==============
@@ -1878,8 +1969,9 @@ Stop
 
        // A program goes at its offset at in the region that starts at the physical address region.
        int at, region;
-       // The word and the program counter that the supervisor reads from each worker at the end.
-       logic [31:0] word_end [8], pc_end [8];
+       int ecall0, ecall1, ecall4, ecall8, ecall6, refused5;
+       // The word, the program counter and register x5 that the supervisor reads from each worker at the end.
+       logic [31:0] word_end [8], pc_end [8], x5_end [8];
        task automatic put(input [31:0] word);
            {mem[17'(region + at + 3)], mem[17'(region + at + 2)], mem[17'(region + at + 1)],
             mem[17'(region + at)]} = word;
@@ -1929,7 +2021,7 @@ Stop
            put(rv32::enc_r(7'd1, 5'd2, 5'd1, 3'd1, 5'd3, 7'd51));  keep(5'd3, 32'hffffffff);
            put(rv32::enc_r(7'd1, 5'd2, 5'd1, 3'd3, 5'd3, 7'd51));  keep(5'd3, 32'h12345677);
            // Store a byte and a half, and load them back signed and unsigned.
-           li(5'd4, 32'h3800);
+           li(5'd4, 32'h2800);
            put(rv32::enc_s(12'd1, 5'd2, 5'd4, 3'd0, 7'd35));
            put(rv32::enc_s(12'd2, 5'd2, 5'd4, 3'd1, 7'd35));
            put(rv32::enc_i(12'd1, 5'd4, 3'd0, 5'd3, 7'd3));        keep(5'd3, 32'hfffffff9);
@@ -1987,26 +2079,33 @@ Stop
            endcase
        endfunction
 
-       // The port starts a thread in a context, and sets the program counter of the context if pc_we.
-       // The port starts a thread in a context, and sets the program counter and region of the context
-       // if context_we.
-       // Thread 0, the supervisor, stores a word to a control block, sets the program counter and region
-       // of a context, writes the selector and the run bit of a thread, and waits for a run state.
-       localparam int CONTEXTS = 32'h3e00, THREADS = 32'h3f00;
+       // Thread 0, the supervisor, stores and loads a word of a control block, sets the program counter
+       // and region of a context, writes the selector and the run bit of a thread, and waits for a run
+       // state. The block of a context holds its registers, then its program counter, base and bound,
+       // then the word of its thread.
+       localparam int PC = 128, WORD = 140;
+       function automatic int block(input int index);
+           return 32'h3000 + 256 * index;
+       endfunction
        task automatic poke(input [31:0] addr, input [31:0] value);
            li(5'd29, value); li(5'd30, addr);
            put(rv32::enc_s(12'd0, 5'd29, 5'd30, 3'd2, 7'd35));
        endtask
+       // Loads the word at addr into x29.
+       task automatic peek(input [31:0] addr);
+           li(5'd30, addr); put(rv32::enc_i(12'd0, 5'd30, 3'd2, 5'd29, 7'd3));
+       endtask
        task automatic set_context(input [3:0] index, input [31:0] pc, base, bound);
-           poke(CONTEXTS + 16 * index, pc); poke(CONTEXTS + 16 * index + 4, base); poke(CONTEXTS + 16 * index + 8, bound);
+           poke(block(int'(index)) + PC, pc); poke(block(int'(index)) + PC + 4, base);
+           poke(block(int'(index)) + PC + 8, bound);
        endtask
        task automatic control(input [2:0] t, input select, input run);
-           poke(THREADS + 4 * t, {27'd0, select, 3'd0, run});
+           poke(block(2 * t) + WORD, {27'd0, select, 3'd0, run});
        endtask
        // Thread 0 loads the word of thread t into x29 until its bits in mask are value.
        task automatic await(input [2:0] t, input [31:0] mask, input [31:0] value);
            int here;
-           li(5'd30, THREADS + 4 * t); li(5'd28, mask); li(5'd27, value);
+           li(5'd30, block(2 * t) + WORD); li(5'd28, mask); li(5'd27, value);
            here = at;
            put(rv32::enc_i(12'd0, 5'd30, 3'd2, 5'd29, 7'd3));
            put(rv32::enc_r(7'd0, 5'd28, 5'd29, 3'd7, 5'd29, 7'd51));
@@ -2014,16 +2113,20 @@ Stop
        endtask
 
        // The supervisor sets the regions and starts the workers. A store to the selector or the bound of
-       // running thread 1 has no effect; one to context 8, which thread 4 does not select, has.
+       // running thread 1 has no effect; one to context 8, which thread 4 does not select, has. So has a
+       // store to a register of stopped thread 7, but not one to a register of running thread 1 or of
+       // thread 0, and a load of a register of either gives 0.
        // Then it stops thread 6 at pseudo-random points and starts it again, until thread 6 requests.
-       // Last, it stops thread 4 in its loop, runs context 8 to its ECALL, and selects 9 again.
+       // Then it stops thread 4 in its loop, runs context 8 to its ECALL, gives the request the result
+       // x10, and runs context 8 to its second ECALL. Last, it selects 9 again.
        task automatic supervisor();
            int loop, check;
            // Each worker is stopped at reset, and the supervisor cannot stop itself.
            for (int t = 1; t < 8; t++) begin
-               li(5'd30, THREADS + 4 * t); put(rv32::enc_i(12'd0, 5'd30, 3'd2, 5'd29, 7'd3)); keep(5'd29, 32'h4);
+               peek(block(2 * t) + WORD); keep(5'd29, 32'h4);
            end
            control(3'd0, 1'b0, 1'b0);
+           poke(block(14) + 4 * 5, 32'h1234); peek(block(14) + 4 * 5); keep(5'd29, 32'h1234);
            set_context(4'd2, 0, 32'h0000, 32'h5000); set_context(4'd4, 0, 32'h5000, 32'h4000);
            set_context(4'd6, 0, 32'h5100, 32'h100); set_context(4'd9, 0, 32'h5200, 32'h200);
            set_context(4'd10, 0, 32'h5600, 32'h100); set_context(4'd12, 0, 32'h5800, 32'h800);
@@ -2031,9 +2134,11 @@ Stop
            control(3'd1, 1'b0, 1'b1); control(3'd2, 1'b0, 1'b1); control(3'd3, 1'b0, 1'b1);
            control(3'd4, 1'b1, 1'b1); control(3'd5, 1'b0, 1'b1); control(3'd7, 1'b0, 1'b1);
            control(3'd6, 1'b0, 1'b1);
-           control(3'd1, 1'b1, 1'b1); poke(CONTEXTS + 16 * 2 + 8, 32'd0);
+           control(3'd1, 1'b1, 1'b1); poke(block(2) + PC + 8, 32'd0);
            set_context(4'd8, 0, 32'h5400, 32'h200);
+           poke(block(2) + 4 * 20, 32'h99); peek(block(2) + 4 * 31); keep(5'd29, 32'd0);
            li(5'd20, 32'h1234567); li(5'd21, 20); li(5'd23, 1103515245); li(5'd24, 12345);
+           poke(block(0) + 4 * 26, 32'h77); peek(block(0) + 4 * 20); keep(5'd29, 32'd0); keep(5'd26, 32'd0);
            loop = at;
            put(rv32::enc_r(7'd1, 5'd23, 5'd20, 3'd0, 5'd20, 7'd51));
            put(rv32::enc_r(7'd0, 5'd24, 5'd20, 3'd0, 5'd20, 7'd51));
@@ -2057,23 +2162,24 @@ Stop
            await(3'd4, 32'd7, 32'd4);
            control(3'd4, 1'b0, 1'b1);
            await(3'd4, 32'd7, 32'd5);
+           poke(block(8) + 4 * 10, 32'h55); poke(block(8) + PC, 32'(ecall8 + 4));
+           control(3'd4, 1'b0, 1'b1);
+           await(3'd4, 32'd7, 32'd5);
            control(3'd4, 1'b1, 1'b1);
            // Thread 4 runs its loop again, in context 9.
-           li(5'd30, THREADS + 16);
-           put(rv32::enc_i(12'd0, 5'd30, 3'd2, 5'd29, 7'd3));
+           peek(block(8) + WORD);
            put(rv32::enc_i(12'h1f, 5'd29, 3'd7, 5'd29, 7'd19));   keep(5'd29, 32'h10);
-           // Last, the word and the program counter of each worker once it has suspended, and the second
-           // context of thread 2, which the store of thread 2 did not reach.
+           // Last, the word, the program counter and x5 of each worker once it has suspended, the second
+           // context of thread 2, which the store of thread 2 did not reach, and x20 of thread 1.
            for (int t = 1; t < 8; t++) begin
                await(3'(t), 32'd4, 32'd4);
                put(rv32::enc_i(12'd0, 5'd30, 3'd2, 5'd29, 7'd3)); keep(5'd29, word_end[t]);
-               li(5'd30, CONTEXTS + 16 * (2 * t + (t == 4 ? 1 : 0)));
-               put(rv32::enc_i(12'd0, 5'd30, 3'd2, 5'd29, 7'd3)); keep(5'd29, pc_end[t]);
+               peek(block(2 * t + (t == 4 ? 1 : 0)) + PC); keep(5'd29, pc_end[t]);
+               peek(block(2 * t + (t == 4 ? 1 : 0)) + 4 * 5); keep(5'd29, x5_end[t]);
            end
-           li(5'd30, CONTEXTS + 16 * 5); put(rv32::enc_i(12'd0, 5'd30, 3'd2, 5'd29, 7'd3)); keep(5'd29, 32'd0);
+           peek(block(5) + PC); keep(5'd29, 32'd0);
+           peek(block(2) + 4 * 20); keep(5'd29, 32'd0);
        endtask
-
-       int ecall0, ecall1, ecall4, ecall8, ecall6, refused5;
 
        // core.issue, core.div-wait, core.div-time: thread 1 never stops, so it commits in each of its turns,
        // and it resumes from each divide a fixed number of turns later. Thread 0 ends at its ECALL.
@@ -2098,7 +2204,7 @@ Stop
            foreach (mem[i]) mem[i] = 0;
            program1(); ecall1 = at - 4;
            if (at > 32'h4000) $fatal(1, "the code of thread 1 reaches its results");
-           // Thread 2 stores to the control block of context 5, which reaches only its own memory, then meets
+           // Thread 2 stores to an address of a control block, which reaches only its own memory, then meets
            // an illegal instruction; thread 3 a misaligned load.
            region = 32'h5000; at = 0; li(5'd5, 32'd4); li(5'd6, 32'h3e50);
            put(rv32::enc_s(12'd0, 5'd5, 5'd6, 3'd2, 7'd35)); put(32'hffffffff);
@@ -2111,6 +2217,7 @@ Stop
            put(rv32::enc_b(12'hffe, 5'd0, 5'd6, 3'd1, 7'd99));
            out = 32'h100; keep(5'd5, 32'd42); keep(5'd6, 32'd0); put(ECALL); ecall4 = at - 4;
            region = 32'h5400; at = 0; out = 32'h100; li(5'd5, 32'd7); keep(5'd5, 32'd7); put(ECALL); ecall8 = at - 4;
+           keep(5'd10, 32'h55); put(ECALL);
            // Thread 5 loads the last word of its region, then the word past it.
            region = 32'h5600; at = 0; li(5'd9, 32'hfc);
            put(rv32::enc_i(12'd0, 5'd9, 3'd2, 5'd3, 7'd3));
@@ -2132,8 +2239,10 @@ Stop
            // thread 4.
            word_end = '{0, 5, 6, 6, 32'h15, 6, 5, 6};
            pc_end = '{0, ecall1, 32'h14, 0, ecall4, refused5, ecall6, 32'he};
-           region = 32'h10000; at = 0; out = 32'h3000;
+           x5_end = '{0, 0, 4, 0, 42, 0, 1000, 32'h1234};
+           region = 32'h10000; at = 0; out = 32'h2000;
            supervisor(); program0(); ecall0 = at - 4;
+           if (at > 32'h2000) $fatal(1, "the code of thread 0 reaches its results");
            repeat (4) @(negedge clk);
            rst_n = 1;
            repeat (400000) @(negedge clk);
