@@ -20,7 +20,14 @@ if [ ! -d "$store" ]; then
     echo "dev: the Nix store $store does not exist. If Nix came from a distribution package, create the store and start the Nix daemon: see \"The environment\" in readme.build." >&2
     exit 1
 fi
-git -C "$root" config core.hooksPath tools/hooks
+# Several ./dev can start at once, and git config locks .git/config to write it. So each one
+# writes only a value that differs, and a write that fails is good if another wrote the value.
+hooks() { git -C "$root" config core.hooksPath || true; }
+if [ "$(hooks)" != tools/hooks ] && ! error=$(git -C "$root" config core.hooksPath tools/hooks 2>&1) &&
+    [ "$(hooks)" != tools/hooks ]; then
+    echo "$error" >&2
+    exit 1
+fi
 # Inside the environment of these flake files, nix would give the same environment after
 # seconds of evaluation, so the command runs at once.
 if [ $# -gt 0 ] && [ -n "${BCW_ENV:-}" ] &&
