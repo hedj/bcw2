@@ -7,7 +7,7 @@ findings = [
 ]
 
 [[case.replace]]
-old = "**Thread.** An unlabelled bold paragraph is prose.\n\n"
+old = "**Thread.** An unlabelled bold paragraph is prose.\n"
 new = '''
 **Thread.** An unlabelled bold paragraph is prose.
 
@@ -44,7 +44,7 @@ name = "a third level section starts a new section"
 findings = []
 
 [[case.replace]]
-old = "**Thread.** An unlabelled bold paragraph is prose.\n\n"
+old = "**Thread.** An unlabelled bold paragraph is prose.\n"
 new = '''
 **Thread.** An unlabelled bold paragraph is prose.
 
@@ -64,7 +64,7 @@ findings = [
 ]
 
 [[case.replace]]
-old = "**Thread.** An unlabelled bold paragraph is prose.\n\n"
+old = "**Thread.** An unlabelled bold paragraph is prose.\n"
 new = '''
 **Thread.** An unlabelled bold paragraph is prose.
 
@@ -93,7 +93,14 @@ C
 
 [[case]]
 name = "a second argument in a section with a goal is a finding"
-append = '''
+findings = [
+    {check = "argument-budget", at = ".. discussion::", occurrence = 2},
+]
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = '''
+   No thread can change the timing of another thread.
 
 .. discussion::
 
@@ -103,21 +110,22 @@ append = '''
 
    Two.
 '''
-findings = [
-    {check = "argument-budget", at = ".. discussion::", occurrence = 2},
-]
 
 [[case]]
 name = "an argument of 41 words in a section with a goal is a finding"
-append = '''
+findings = [
+    {check = "argument-budget", at = ".. rationale::"},
+]
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = '''
+   No thread can change the timing of another thread.
 
 .. rationale::
 
    word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word word end.
 '''
-findings = [
-    {check = "argument-budget", at = ".. rationale::", occurrence = 2},
-]
 
 [[case]]
 name = "a section without a rule or a goal has no budget"

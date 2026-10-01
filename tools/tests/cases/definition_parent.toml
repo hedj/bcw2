@@ -3,12 +3,18 @@
 [[case]]
 name = "a definition with two parents is a finding on the option line"
 findings = [
-    {check = "definition-parent", anchor = "core.turn", at = ":parent: core.core, core.timing"},
+    {check = "definition-parent", anchor = "core.core", at = ":parent: core.timing, core.turn"},
 ]
 
 [[case.replace]]
-old = "   :parent: core.core\n"
-new = "   :parent: core.core, core.timing\n"
+old = '''
+.. definition:: core.core
+   :parent: core.timing
+'''
+new = '''
+.. definition:: core.core
+   :parent: core.timing, core.turn
+'''
 
 [[case]]
 name = "a requirement can have two parents"

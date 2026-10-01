@@ -1,0 +1,112 @@
+# verifies: doc.dependencies-first
+
+[[case]]
+name = "a chapter whose dependencies come first passes"
+only = "dependencies-first"
+findings = []
+
+[[case]]
+name = "a defined term before its definition is a finding on the directive of the chunk that uses it"
+only = "dependencies-first"
+findings = [
+    {check = "dependencies-first", anchor = "core.turn", at = ".. definition:: core.turn"},
+]
+
+[[case.replace]]
+old = "   A :dfn:`turn` is a thread's cycle in the rotation.\n"
+new = "   A :dfn:`turn` is a cycle of the core.\n"
+
+[[case]]
+name = "a parent after its chunk is a finding"
+only = "dependencies-first"
+append = '''
+
+.. goal:: core.sub
+   :parent: core.timing
+
+   Threads stay apart.
+'''
+findings = [
+    {check = "dependencies-first", anchor = "core.rotation", at = ".. requirement:: core.rotation"},
+]
+
+[[case.replace]]
+old = '''
+.. requirement:: core.rotation
+   :parent: core.timing
+'''
+new = '''
+.. requirement:: core.rotation
+   :parent: core.sub
+'''
+
+[[case]]
+name = "a citation of a later chunk is a finding"
+only = "dependencies-first"
+findings = [
+    {check = "dependencies-first", anchor = "core.turn", at = ".. definition:: core.turn"},
+]
+
+[[case.replace]]
+old = "   A :dfn:`turn` is a thread's cycle in the rotation.\n"
+new = "   A :dfn:`turn` is a thread's cycle in the rotation, as :rule:`core.rotation` says.\n"
+
+[[case]]
+name = "a value that names a later parameter is a finding"
+only = "dependencies-first"
+append = '''
+
+.. parameter:: core.width
+   :parent: core.core
+   :value: clog2(core.count)
+   :unit: bits
+
+   The width of the index of a thread.
+
+.. parameter:: core.count
+   :parent: core.core
+   :value: 8
+
+   The number of threads.
+'''
+findings = [
+    {check = "dependencies-first", anchor = "core.width", at = ".. parameter:: core.width"},
+]
+
+[[case]]
+name = "a parent in a later section is a finding"
+text = '''
+:kind: reference
+
+====
+Core
+====
+
+Overview
+========
+
+Text.
+
+Rotation
+========
+
+.. definition:: core.core
+
+   The :dfn:`core` runs each thread.
+
+.. requirement:: core.rotation
+   :parent: core.timing
+
+   The core shall give each thread a cycle.
+
+Goals
+=====
+
+.. goal:: core.timing
+
+   No thread can change the timing of another thread.
+'''
+only = "dependencies-first"
+findings = [
+    {check = "dependencies-first", anchor = "core.rotation", at = ".. requirement:: core.rotation"},
+]

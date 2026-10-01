@@ -28,17 +28,17 @@ class GoodTest:
         document = Book({"core/core.rst": GOOD}).documents[0]
         assert (document.path, document.name, document.kind) == ("book/core/core.rst", "core", "reference")
         assert [(chunk.line, chunk.label, chunk.anchor) for chunk in document.chunks] == [
-    (line(GOOD, ".. requirement::"), "REQUIREMENT", "core.rotation"),
-    (line(GOOD, ".. rationale::"), "RATIONALE", None),
-    (line(GOOD, ".. open::"), "OPEN", None),
+    (line(GOOD, ".. goal::"), "GOAL", "core.timing"),
     (line(GOOD, ".. definition:: core.turn"), "DEFINITION", "core.turn"),
     (line(GOOD, ".. definition:: core.core"), "DEFINITION", "core.core"),
-    (line(GOOD, ".. goal::"), "GOAL", "core.timing")]
-        rotation = document.chunks[0]
+    (line(GOOD, ".. requirement::"), "REQUIREMENT", "core.rotation"),
+    (line(GOOD, ".. rationale::"), "RATIONALE", None),
+    (line(GOOD, ".. open::"), "OPEN", None)]
+        rotation = document.chunks[3]
         assert rotation.lines == [(line(GOOD, "The core shall"), "The core shall give the turn after"),
                                   (line(GOOD, "thread *t* to"), "thread *t* to thread *t* + 1.")]
         assert rotation.english == ENGLISH
-        assert rotation.option_lines == {"parent": line(GOOD, ":parent: core.timing")}
+        assert rotation.option_lines == {"parent": line(GOOD, ":parent: core.timing", after=".. requirement::")}
         assert [chunk.term for chunk in document.chunks if chunk.term] == ["turn", "core"]
         assert [(block.kind, block.line, block.target, block.chunk and block.chunk.anchor)
                 for block in document.blocks] == [
@@ -46,7 +46,7 @@ class GoodTest:
     ("source", line(GOOD, ".. source::"), "build/rtl/core/core_rotate.v", None),
     ("check", line(GOOD, ".. check:: equiv"), None, None)]
         assert document.sections == [(line(GOOD, "Core"), 1, "Core"), (line(GOOD, "Overview"), 2, "Overview"),
-                                     (line(GOOD, "Rotation"), 2, "Rotation"), (line(GOOD, "Goals"), 2, "Goals")]
+                                     (line(GOOD, "Goals"), 2, "Goals"), (line(GOOD, "Rotation"), 2, "Rotation")]
 
 
 class LabelsTest:

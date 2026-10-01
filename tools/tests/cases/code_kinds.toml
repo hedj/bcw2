@@ -7,7 +7,7 @@ findings = [
 ]
 
 [[case.replace]]
-old = "**Thread.** An unlabelled bold paragraph is prose.\n\n"
+old = "**Thread.** An unlabelled bold paragraph is prose.\n"
 new = '''
 **Thread.** An unlabelled bold paragraph is prose.
 
@@ -25,7 +25,7 @@ findings = [
 ]
 
 [[case.replace]]
-old = "**Thread.** An unlabelled bold paragraph is prose.\n\n"
+old = "**Thread.** An unlabelled bold paragraph is prose.\n"
 new = '''
 **Thread.** An unlabelled bold paragraph is prose.
 
@@ -43,7 +43,7 @@ findings = [
 ]
 
 [[case.replace]]
-old = "**Thread.** An unlabelled bold paragraph is prose.\n\n"
+old = "**Thread.** An unlabelled bold paragraph is prose.\n"
 new = '''
 **Thread.** An unlabelled bold paragraph is prose.
 

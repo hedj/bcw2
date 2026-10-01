@@ -41,8 +41,24 @@ Overview
 
 The core runs every thread through one pipeline.
 
+Goals
+=====
+
+.. goal:: core.timing
+
+   No thread can change the timing of another thread.
+
 Rotation
 ========
+
+.. definition:: core.turn
+
+   A :dfn:`turn` is a thread's cycle in the rotation.
+
+.. definition:: core.core
+   :parent: core.timing
+
+   The :dfn:`core` runs the threads in turn.
 
 .. requirement:: core.rotation
    :parent: core.timing
@@ -73,24 +89,7 @@ Rotation
 
 .. open:: The thread count is not settled.
 
-.. definition:: core.turn
-   :parent: core.core
-
-   A :dfn:`turn` is a thread's cycle in the rotation.
-
-.. definition:: core.core
-   :parent: core.timing
-
-   The :dfn:`core` runs the threads in turn.
-
 **Thread.** An unlabelled bold paragraph is prose.
-
-Goals
-=====
-
-.. goal:: core.timing
-
-   No thread can change the timing of another thread.
 """
 
 # The general words of the GOAL and the rules of GOOD. The labels, the defined

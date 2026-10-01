@@ -916,21 +916,24 @@ def check_references(documents, anchors, tools):
 
 
 # implements: doc.reaches-goal
-def check_reaches_goal(documents):
-    first = {}
-    for document in documents:
-        for chunk in document.chunks:
-            if chunk.anchor is not None:
-                first.setdefault(chunk.anchor, chunk)
+def check_reaches_goal(book):
+    order = reading(book)
+    first = {anchor: chunk for anchor, (_, chunk) in order.items()}
+    users = {}
+    for user, name, kind in needs(book, order):
+        if kind == "term":
+            users.setdefault(name, set()).add(user)
+    reached = goal_reachers(first, users)
     for anchor, chunk in first.items():
-        if chunk.label == "GOAL":
+        if anchor in reached:
             continue
         if not parents(chunk):
-            yield Finding(chunk.path, chunk.line, "reaches-goal", anchor,
-                          "the chunk has no parent", "name the goal or rule that it serves in :parent:")
+            yield Finding(chunk.path, chunk.line, "reaches-goal", anchor, "the chunk has no parent",
+                          "name the goal or rule that it serves in :parent:, or, for a DEFINITION, use its "
+                          "defined term in a chunk that reaches a GOAL")
             continue
-        seen, stack, reached, unknown, cycle = set(), parents(chunk), False, False, False
-        while stack and not reached:
+        seen, stack, unknown, cycle = set(), parents(chunk), False, False
+        while stack:
             name = stack.pop()
             if name == anchor:
                 cycle = True
@@ -939,15 +942,45 @@ def check_reaches_goal(documents):
                 node = first.get(name)
                 if node is None:
                     unknown = True
-                elif node.label == "GOAL":
-                    reached = True
                 else:
                     stack.extend(parents(node))
-        if not reached and not unknown:
+        if not unknown:
             message = "the chunk reaches itself through its parents" if cycle else \
                 "the chunk reaches no GOAL through its parents"
             yield Finding(chunk.path, chunk.option_line("parent"), "reaches-goal", anchor, message,
                           "name a parent that reaches a GOAL")
+
+
+def goal_reachers(first, users):
+    """The anchors that reach a GOAL: a GOAL, a chunk with a parent that reaches one, and a DEFINITION without
+    a parent whose defined term a chunk that reaches one uses."""
+    reached = {anchor for anchor, chunk in first.items() if chunk.label == "GOAL"}
+    grown = True
+    while grown:
+        grown = False
+        for anchor, chunk in first.items():
+            if anchor in reached:
+                continue
+            via = parents(chunk) or (users.get(anchor, ()) if chunk.label == "DEFINITION" else ())
+            if any(name in reached for name in via):
+                reached.add(anchor)
+                grown = True
+    return reached
+
+
+# implements: doc.dependencies-first
+def check_dependencies_first(book):
+    first = reading(book)
+    position = {anchor: index for index, anchor in enumerate(first)}
+    later = {}
+    for anchor, name, _ in needs(book, first):
+        if position[name] > position[anchor]:
+            later.setdefault(anchor, set()).add(name)
+    for anchor, names in later.items():
+        _, chunk = first[anchor]
+        yield Finding(chunk.path, chunk.line, "dependencies-first", anchor,
+                      f"the chunk needs {', '.join(sorted(names, key=position.get))}, which the reading order "
+                      "puts later", "move each dependency before the chunk, or the chunk after them")
 
 
 def defined_terms(documents):
@@ -1384,7 +1417,8 @@ def check(model, retired=(), tools=(), general=None, tests=()):
     findings += check_check_kinds(documents)
     findings += check_verified(documents, tests)
     findings += check_references(documents, set(seen), [*tools, *tests])
-    findings += check_reaches_goal(documents)
+    findings += check_reaches_goal(model)
+    findings += check_dependencies_first(model)
     findings += check_ears(documents)
     findings += check_vocabulary(documents)
     findings += check_chapters_ordered(model)

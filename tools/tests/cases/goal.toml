@@ -2,13 +2,17 @@
 
 [[case]]
 name = "a twin inside a goal is a finding"
-append = '''
+findings = [
+    {check = "stamps", anchor = "core.timing", at = ".. twin::"},
+]
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = '''
+   No thread can change the timing of another thread.
 
    .. twin::
 
       def f(x):
           return x
 '''
-findings = [
-    {check = "stamps", anchor = "core.timing", at = ".. twin::", occurrence = 2},
-]

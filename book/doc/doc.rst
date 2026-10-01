@@ -31,7 +31,47 @@ DISCUSSION to an Explanation section at the end of its chapter.
 ``book/general-words.txt`` lists the words that need no definition. ``make check`` also prints
 the number of rules with more than two parents, because a long list of parents says little.
 
-Each later section states one goal, then the terms and the rules that serve it.
+The next section defines the terms that the goals use. Each later section states one goal,
+then the terms and the rules that serve it.
+
+Terms
+=====
+
+.. definition:: doc.chunk
+
+   A :dfn:`chunk` is a directive of ``tools/bcw.py`` that carries a label, with the text
+   inside it. Its label is the name of the directive in upper case: GOAL, REQUIREMENT,
+   PARAMETER, DEFINITION, RATIONALE, DISCUSSION, TARGET or OPEN. The English of a chunk is the
+   text of its own paragraphs.
+
+.. definition:: doc.rule
+
+   A :dfn:`rule` is a chunk labelled REQUIREMENT, PARAMETER or DEFINITION.
+
+.. definition:: doc.anchor
+
+   An :dfn:`anchor` is two or more parts joined by dots, such as ``core.rotation``. Each part
+   holds lower-case letters, digits and hyphens, and the first part starts with a letter. A
+   chunk carries its anchor as the argument of its directive.
+
+.. definition:: doc.citation
+
+   A :dfn:`citation` is a use of the role ``rule`` or the role ``param``, which names an anchor.
+
+.. definition:: doc.reference
+
+   A :dfn:`reference` is an entry in a ``parent``, ``implements`` or ``verifies`` option, an
+   ``implements:`` comment in ``tools/``, a ``verifies:`` comment in ``tools/tests/``, or a
+   citation.
+
+.. definition:: doc.chapter
+
+   A :dfn:`chapter` is a reStructuredText file in ``book/`` other than ``book/index.rst``. The
+   name of a chapter is the name of its file without ``.rst``.
+
+.. definition:: doc.twin
+
+   A :dfn:`twin` is a ``twin`` directive.
 
 Size and reading burden
 =======================
@@ -47,19 +87,6 @@ Size and reading burden
 
    A :dfn:`section` is the text after a heading of level 2, 3 or 4, up to the next heading of
    those levels.
-
-.. requirement:: doc.argument-budget
-   :parent: doc.one-engineer, doc.rules-apart
-
-   Where a section holds a chunk that carries an anchor, the section shall hold at most one
-   RATIONALE or
-   DISCUSSION, of 40 words or fewer.
-
-.. definition:: doc.chapter
-   :parent: doc.one-engineer
-
-   A :dfn:`chapter` is a reStructuredText file in ``book/`` other than ``book/index.rst``. The
-   name of a chapter is the name of its file without ``.rst``.
 
 .. requirement:: doc.chapter-path
    :parent: doc.one-engineer
@@ -99,19 +126,6 @@ Rules apart from explanation
    A reader can tell at once which text is a rule, which is explanation, and which is an open
    question or a record.
 
-.. definition:: doc.chunk
-   :parent: doc.rules-apart
-
-   A :dfn:`chunk` is a directive of ``tools/bcw.py`` that carries a label, with the text
-   inside it. Its label is the name of the directive in upper case: GOAL, REQUIREMENT,
-   PARAMETER, DEFINITION, RATIONALE, DISCUSSION, TARGET or OPEN. The English of a chunk is the
-   text of its own paragraphs.
-
-.. definition:: doc.rule
-   :parent: doc.rules-apart
-
-   A :dfn:`rule` is a chunk labelled REQUIREMENT, PARAMETER or DEFINITION.
-
 .. requirement:: doc.labels
    :parent: doc.rules-apart
 
@@ -127,6 +141,13 @@ Rules apart from explanation
 
    A :dfn:`code block` is a block of code in a chapter, such as a literal block after ``::``
    or a ``code-block`` directive.
+
+.. requirement:: doc.argument-budget
+   :parent: doc.one-engineer, doc.rules-apart
+
+   Where a section holds a chunk that carries an anchor, the section shall hold at most one
+   RATIONALE or
+   DISCUSSION, of 40 words or fewer.
 
 .. requirement:: doc.code-kinds
    :parent: doc.rules-apart
@@ -169,13 +190,6 @@ Terms and marking
 
    Each chunk shall carry only the allowed options of its label.
 
-.. definition:: doc.anchor
-   :parent: doc.traceable
-
-   An :dfn:`anchor` is two or more parts joined by dots, such as ``core.rotation``. Each part
-   holds lower-case letters, digits and hyphens, and the first part starts with a letter. A
-   chunk carries its anchor as the argument of its directive.
-
 .. requirement:: doc.anchors
    :parent: doc.traceable
 
@@ -191,13 +205,6 @@ Trace
    Where a rule is a REQUIREMENT, the rule shall appear in the ``implements`` option of a
    ``source`` directive or in an ``implements:`` comment, or carry ``impl`` with the value
    ``none``.
-
-.. definition:: doc.reference
-   :parent: doc.traceable
-
-   A :dfn:`reference` is an entry in a ``parent``, ``implements`` or ``verifies`` option, an
-   ``implements:`` comment in ``tools/``, a ``verifies:`` comment in ``tools/tests/``, or a
-   citation.
 
 .. definition:: doc.check
    :parent: doc.traceable
@@ -222,11 +229,6 @@ Trace
    directive or in a ``verifies:`` comment in ``tools/tests/``, or carry ``verify`` with the value
    ``none``.
 
-.. definition:: doc.citation
-   :parent: doc.traceable
-
-   A :dfn:`citation` is a use of the role ``rule`` or the role ``param``, which names an anchor.
-
 .. requirement:: doc.references
    :parent: doc.traceable
 
@@ -236,7 +238,8 @@ Trace
    :parent: doc.traceable
 
    Where a chunk carries an anchor and is not a GOAL, the chunk shall reach a GOAL through its
-   parents.
+   parents, or through a chunk that uses the words that it defines if it is a DEFINITION without a
+   parent.
 
 .. requirement:: doc.definition-parent
    :parent: doc.traceable
@@ -344,6 +347,12 @@ Words
    A :dfn:`general word` is a word that ``book/general-words.txt`` lists, in upper or lower
    case.
 
+.. definition:: doc.quotation
+   :parent: doc.one-reading
+
+   A :dfn:`quotation` is an inline literal, such as ``Q8.4``, or a citation. The rules on
+   words and sentences ignore the text inside it.
+
 .. definition:: doc.known-word
    :parent: doc.one-reading
 
@@ -361,12 +370,6 @@ Words
    :parent: doc.one-reading
 
    No general word shall be a defined term, with or without the ending of a known word.
-
-.. definition:: doc.quotation
-   :parent: doc.one-reading
-
-   A :dfn:`quotation` is an inline literal, such as ``Q8.4``, or a citation. The rules on
-   words and sentences ignore the text inside it.
 
 .. definition:: doc.dotted-word
    :parent: doc.one-reading
@@ -401,6 +404,12 @@ Live set
    The :dfn:`live set` of a chunk holds each earlier chunk of its section that is a
    dependency of it or of a later chunk of the section, and each chunk of another section that
    is a dependency of it or of a later chunk of its section.
+
+.. requirement:: doc.dependencies-first
+   :parent: doc.one-engineer
+
+   Each dependency shall stand before the chunk that needs it, in the chapter order and then in
+   the order of the chapter.
 
 .. requirement:: doc.live-peak
    :parent: doc.one-engineer
@@ -503,11 +512,6 @@ Twins and stamps
    :parent: design.auditability
 
    The English of a rule and its formal twin cannot drift apart without a check failing.
-
-.. definition:: doc.twin
-   :parent: doc.read-is-checked
-
-   A :dfn:`twin` is a ``twin`` directive.
 
 .. definition:: doc.twin-language
    :parent: doc.read-is-checked

@@ -13,3 +13,4 @@ doc.fragment
 doc.fragment-use
 doc.fragments-used
 doc.fragment-cycles
+core.thread

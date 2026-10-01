@@ -35,12 +35,23 @@ Core
 [[case]]
 name = "a third level section does not end the overview"
 findings = [
+    {check = "overview-first", anchor = "core.timing", at = ".. goal:: core.timing"},
+    {check = "overview-first", anchor = "core.turn", at = ".. definition:: core.turn"},
+    {check = "overview-first", anchor = "core.core", at = ".. definition:: core.core"},
     {check = "overview-first", anchor = "core.rotation", at = ".. requirement:: core.rotation"},
     {check = "overview-first", at = ".. rationale::"},
     {check = "overview-first", at = ".. open:: The thread count is not settled."},
-    {check = "overview-first", anchor = "core.turn", at = ".. definition:: core.turn"},
-    {check = "overview-first", anchor = "core.core", at = ".. definition:: core.core"},
 ]
+
+[[case.replace]]
+old = '''
+Goals
+=====
+'''
+new = '''
+Goals
+-----
+'''
 
 [[case.replace]]
 old = '''

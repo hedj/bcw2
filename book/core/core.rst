@@ -18,11 +18,6 @@ Rotation
 
    The :dfn:`core` is the part of the machine that issues the instructions of every thread.
 
-.. definition:: core.thread
-   :parent: core.core
-
-   A :dfn:`thread` is a stream of instructions with its own registers and program counter.
-
 .. definition:: core.turn
    :parent: core.core
 
@@ -1737,7 +1732,7 @@ Run state
 =========
 
 .. definition:: core.run-state
-   :parent: core.thread
+   :parent: design.thread
 
    The :dfn:`run state` of a thread is a number from 0 to 6. The core fetches for the thread in
    0, and the divide of the thread runs in 2 and 3. A stop is pending in 3. The run state is 4

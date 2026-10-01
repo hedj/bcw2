@@ -22,7 +22,7 @@ from book import (CORE_CHAPTER, DESIGN, GENERAL, GOOD, STAMP, THREADS, WIDTH, Bo
 
 ROTATION = ".. requirement:: core.rotation\n   :parent: core.timing\n"
 IMPLEMENTS = "   :implements: core.rotation\n"
-TURN = ".. definition:: core.turn\n   :parent: core.core\n"
+TURN = ".. definition:: core.turn\n"
 CORE = ".. definition:: core.core\n   :parent: core.timing\n"
 SENTENCE = "The core shall give the turn after\n   thread *t* to thread *t* + 1."
 
@@ -63,13 +63,22 @@ class ReferencesTest:
 class ReachesGoalTest:
     """doc.reaches-goal"""
 
-    CYCLE = GOOD.replace(CORE, CORE.replace("core.timing", "core.turn"))
+    CYCLE = GOOD.replace(CORE, CORE.replace("core.timing", "core.turn")).replace(TURN, TURN + "   :parent: core.core\n")
+    ORPHAN = "\n.. definition:: core.orphan\n\n   An :dfn:`orphan` has no parent.\n"
 
     def test_the_message_names_the_fault(self):
         assert self.messages(self.CYCLE) == ["the chunk reaches itself through its parents"] * 2
-        short = GOOD.replace(CORE, ".. definition:: core.core\n")
+        short = GOOD.replace(CORE, CORE.replace("core.timing", "core.orphan")) + self.ORPHAN
         assert self.messages(short) == ["the chunk reaches no GOAL through its parents",
                                         "the chunk has no parent"]
+
+    def test_a_definition_without_a_parent_reaches_a_goal_through_a_chunk_that_uses_its_term(self):
+        # core.turn has no parent, and core.rotation, which reaches core.timing, uses its term.
+        assert self.messages(GOOD) == []
+        assert self.messages(GOOD.replace("give the turn after", "give the cycle after")) == []
+        unused = GOOD.replace("give the turn after", "give the cycle after").replace(
+            "runs the threads in turn.", "runs the threads.")
+        assert self.messages(unused) == ["the chunk has no parent"]
 
     def messages(self, text):
         return [f.message for f in Book({"core/core.rst": text}).findings if f.check == "reaches-goal"]
@@ -245,7 +254,7 @@ class CitationLinkTest:
     def test_each_anchored_chunk_carries_its_anchor_as_its_id(self):
         book = Book({"core/core.rst": GOOD})
         ids = [node["ids"] for node in book.resolved["core/core"].findall(bcw.chunk)]
-        assert ids == [["core.rotation"], [], [], ["core.turn"], ["core.core"], ["core.timing"]]
+        assert ids == [["core.timing"], ["core.turn"], ["core.core"], ["core.rotation"], [], []]
 
 
 # verifies: doc.parameter-values
@@ -487,8 +496,9 @@ class ParseErrorTest:
         text = GOOD.replace(".. rationale::", ".. reason::").replace(TURN, TURN + "   :colour: red\n")
         book = Book({"core/core.rst": text})
         assert "bcw: 2 errors in the chapters, so no check ran" in book.warnings
-        assert book.tuples() == [("", None, "sphinx", None), ("book/core/core.rst", line(text, ".. reason::"), "sphinx", None),
-                                 ("book/core/core.rst", line(text, ".. definition:: core.turn"), "sphinx", None)]
+        assert book.tuples() == [("", None, "sphinx", None),
+                                 ("book/core/core.rst", line(text, ".. definition:: core.turn"), "sphinx", None),
+                                 ("book/core/core.rst", line(text, ".. reason::"), "sphinx", None)]
 
 
 class TangleTest:
@@ -569,19 +579,19 @@ class DesignGraphTest:
         rotation, goals = line(GOOD, "Rotation"), line(GOOD, "Goals")
         # Each node carries the title line of its section and the size of its live set.
         assert self.design(GOOD)["nodes"] == [
-            {"anchor": "core.rotation", "label": "REQUIREMENT", "chapter": "core", "position": 0, "section": rotation,
-             "live": 1},
+            {"anchor": "core.timing", "label": "GOAL", "chapter": "core", "position": 0, "section": goals, "live": 0},
             {"anchor": "core.turn", "label": "DEFINITION", "chapter": "core", "position": 1, "section": rotation,
              "live": 1},
             {"anchor": "core.core", "label": "DEFINITION", "chapter": "core", "position": 2, "section": rotation,
              "live": 2},
-            {"anchor": "core.timing", "label": "GOAL", "chapter": "core", "position": 3, "section": goals, "live": 0}]
+            {"anchor": "core.rotation", "label": "REQUIREMENT", "chapter": "core", "position": 3, "section": rotation,
+             "live": 3}]
 
     def test_a_chunk_needs_its_parents_and_the_defined_terms_that_it_uses_but_not_its_own(self):
         assert self.design(GOOD)["edges"] == [
             ["core.core", "core.timing", "parent"], ["core.core", "core.turn", "term"],
             ["core.rotation", "core.core", "term"], ["core.rotation", "core.timing", "parent"],
-            ["core.rotation", "core.turn", "term"], ["core.turn", "core.core", "parent"]]
+            ["core.rotation", "core.turn", "term"]]
 
     def test_a_chunk_needs_what_it_cites_and_what_its_value_names(self):
         text = GOOD.replace("runs the threads in turn.", "runs the threads in turn, as :rule:`core.rotation` says.")

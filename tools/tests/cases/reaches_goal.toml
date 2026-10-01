@@ -15,6 +15,7 @@ new = ".. requirement:: core.rotation\n"
 
 [[case]]
 name = "a cycle is a finding on the parent line of each chunk in it"
+only = "reaches-goal"
 findings = [
     {check = "reaches-goal", anchor = "core.turn", at = ":parent: core.core"},
     {check = "reaches-goal", anchor = "core.core", at = ":parent: core.turn"},
@@ -30,10 +31,14 @@ new = '''
    :parent: core.turn
 '''
 
+[[case.replace]]
+old = ".. definition:: core.turn\n"
+new = ".. definition:: core.turn\n   :parent: core.core\n"
+
 [[case]]
 name = "a chain that stops short of a goal is a finding"
+only = "reaches-goal"
 findings = [
-    {check = "reaches-goal", anchor = "core.turn", at = ":parent: core.core"},
     {check = "reaches-goal", anchor = "core.core", at = ":parent: core.orphan"},
     {check = "reaches-goal", anchor = "core.orphan", at = ".. definition:: core.orphan"},
 ]
@@ -60,14 +65,18 @@ new = '''
 
 [[case]]
 name = "a goal can serve another goal"
-append = '''
+findings = []
+
+[[case.replace]]
+old = "   No thread can change the timing of another thread.\n"
+new = '''
+   No thread can change the timing of another thread.
 
 .. goal:: core.sub
    :parent: core.timing
 
    Threads stay apart.
 '''
-findings = []
 
 [[case.replace]]
 old = '''
@@ -93,4 +102,47 @@ old = '''
 new = '''
 .. definition:: core.core
    :parent: core.nothing
+'''
+
+[[case]]
+name = "a definition without a parent reaches a goal through a chunk that uses its term"
+findings = []
+
+[[case]]
+name = "a definition without a parent whose term no chunk uses is a finding on its directive"
+only = "reaches-goal"
+findings = [
+    {check = "reaches-goal", anchor = "core.orphan", at = ".. definition:: core.orphan"},
+]
+
+[[case.replace]]
+old = "   The :dfn:`core` runs the threads in turn.\n"
+new = '''
+   The :dfn:`core` runs the threads in turn.
+
+.. definition:: core.orphan
+
+   An :dfn:`orphan` has no parent.
+'''
+
+[[case]]
+name = "a definition without a parent that only an unreached chunk uses is a finding"
+only = "reaches-goal"
+findings = [
+    {check = "reaches-goal", anchor = "core.orphan", at = ".. definition:: core.orphan"},
+    {check = "reaches-goal", anchor = "core.user", at = ".. definition:: core.user"},
+]
+
+[[case.replace]]
+old = "   The :dfn:`core` runs the threads in turn.\n"
+new = '''
+   The :dfn:`core` runs the threads in turn.
+
+.. definition:: core.orphan
+
+   An :dfn:`orphan` has no parent.
+
+.. definition:: core.user
+
+   A :dfn:`user` holds an orphan.
 '''

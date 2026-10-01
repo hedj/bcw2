@@ -29,17 +29,16 @@ Goals
    that can be wrong. One engineer can read all of the hardware and the operating system.
    This goal comes first.
 
+.. definition:: design.mechanism
+
+   A :dfn:`mechanism` is a structure or a procedure that a reader learns in order to build,
+   check or operate the machine.
+
 .. goal:: design.economy
    :parent: design.workstation
 
    The machine has the fewest distinct mechanisms, counted across the hardware, the
    operating system and the discipline of the programs of the user. This goal comes second.
-
-.. definition:: design.mechanism
-   :parent: design.economy
-
-   A :dfn:`mechanism` is a structure or a procedure that a reader learns in order to build,
-   check or operate the machine.
 
 .. goal:: design.latency
    :parent: design.workstation
@@ -61,6 +60,10 @@ Goals
 
 Terms
 =====
+
+.. definition:: design.thread
+
+   A :dfn:`thread` is a stream of instructions with its own registers and program counter.
 
 .. definition:: design.protection-domain
    :parent: design.auditability

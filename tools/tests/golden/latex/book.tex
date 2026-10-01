@@ -160,11 +160,47 @@ No thread can change the timing.
 The core runs every thread through one pipeline.
 
 
+\section{Goals}
+\label{\detokenize{core/core:goals}}
+\begin{sphinxuseclass}{chunk}
+\begin{sphinxuseclass}{goal}\phantomsection\label{\detokenize{core/core:core.timing}}
+\sphinxAtStartPar
+\sphinxstylestrong{GOAL} \sphinxcode{\sphinxupquote{core.timing}}
+
+\sphinxAtStartPar
+No thread can change the timing of another thread.
+
+\end{sphinxuseclass}
+\end{sphinxuseclass}
+
 \section{Rotation}
 \label{\detokenize{core/core:rotation}}
 \sphinxAtStartPar
 Uses: {\hyperref[\detokenize{design/design:design.timing}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{design.timing}}}}}
 
+\begin{sphinxuseclass}{chunk}
+\begin{sphinxuseclass}{definition}\phantomsection\label{\detokenize{core/core:core.turn}}
+\sphinxAtStartPar
+\sphinxstylestrong{DEFINITION} \sphinxcode{\sphinxupquote{core.turn}}
+
+\sphinxAtStartPar
+A \sphinxstyleemphasis{turn} is a thread’s cycle in the rotation.
+
+\end{sphinxuseclass}
+\end{sphinxuseclass}
+\begin{sphinxuseclass}{chunk}
+\begin{sphinxuseclass}{definition}\phantomsection\label{\detokenize{core/core:core.core}}
+\sphinxAtStartPar
+\sphinxstylestrong{DEFINITION} \sphinxcode{\sphinxupquote{core.core}}
+
+\sphinxAtStartPar
+The \sphinxstyleemphasis{core} runs the threads in turn.
+
+\sphinxAtStartPar
+Serves: {\hyperref[\detokenize{design/design:design.timing}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{design.timing}}}}}
+
+\end{sphinxuseclass}
+\end{sphinxuseclass}
 \begin{sphinxuseclass}{chunk}
 \begin{sphinxuseclass}{requirement}\phantomsection\label{\detokenize{core/core:core.rotation}}
 \sphinxAtStartPar
@@ -207,51 +243,9 @@ Why: {\hyperref[\detokenize{core/core:why-1}]{\sphinxcrossref{see the explanatio
 
 \end{sphinxuseclass}
 \end{sphinxuseclass}
-\begin{sphinxuseclass}{chunk}
-\begin{sphinxuseclass}{definition}\phantomsection\label{\detokenize{core/core:core.turn}}
-\sphinxAtStartPar
-\sphinxstylestrong{DEFINITION} \sphinxcode{\sphinxupquote{core.turn}}
-
-\sphinxAtStartPar
-A \sphinxstyleemphasis{turn} is a thread’s cycle in the rotation.
-
-\sphinxAtStartPar
-Serves: {\hyperref[\detokenize{core/core:core.core}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{core.core}}}}}
-
-\end{sphinxuseclass}
-\end{sphinxuseclass}
-\begin{sphinxuseclass}{chunk}
-\begin{sphinxuseclass}{definition}\phantomsection\label{\detokenize{core/core:core.core}}
-\sphinxAtStartPar
-\sphinxstylestrong{DEFINITION} \sphinxcode{\sphinxupquote{core.core}}
-
-\sphinxAtStartPar
-The \sphinxstyleemphasis{core} runs the threads in turn.
-
-\sphinxAtStartPar
-Serves: {\hyperref[\detokenize{design/design:design.timing}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{design.timing}}}}}
-
-\end{sphinxuseclass}
-\end{sphinxuseclass}
 \sphinxAtStartPar
 \sphinxstylestrong{Thread.} An unlabelled bold paragraph is prose.
 
-
-\section{Goals}
-\label{\detokenize{core/core:goals}}
-\sphinxAtStartPar
-Uses: {\hyperref[\detokenize{core/core:core.core}]{\sphinxcrossref{\sphinxcode{\sphinxupquote{core.core}}}}}
-
-\begin{sphinxuseclass}{chunk}
-\begin{sphinxuseclass}{goal}\phantomsection\label{\detokenize{core/core:core.timing}}
-\sphinxAtStartPar
-\sphinxstylestrong{GOAL} \sphinxcode{\sphinxupquote{core.timing}}
-
-\sphinxAtStartPar
-No thread can change the timing of another thread.
-
-\end{sphinxuseclass}
-\end{sphinxuseclass}
 \begin{sphinxuseclass}{chunk}
 \begin{sphinxuseclass}{parameter}\phantomsection\label{\detokenize{core/core:core.threads}}
 \sphinxAtStartPar
