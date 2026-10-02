@@ -58,8 +58,9 @@ For each project on the command line it imports, builds and proves every obligat
    grafted onto the goal by `ProofBuilder.reuse`, and the other search stops:
    * the sets: all four solvers at once on the goal alone, then on the selected hypotheses,
      then on all of them, 6 s each (`bcw.timeout`);
-   * the split, for a variable in the goal that a hypothesis bounds to at most 8 values
-     (`bcw.split`): Rodin's case rule (`Tactics.doCase`) for each value, Rodin's tactics on each
+   * the split, for a variable that a hypothesis bounds to at most 8 values (`bcw.split`): a
+     variable of the goal if one has such a bound, else a variable that shares a hypothesis with
+     the goal (see The goal that needs veriT). Rodin's case rule (`Tactics.doCase`) for each value, Rodin's tactics on each
      case, the first solver for 0.7 s on the selected hypotheses and then on all, and then the sets.
 4. The obligations of a file are proved 4 at once (`bcw.jobs`). Attempts are created, committed
    and disposed one at a time.
@@ -280,6 +281,33 @@ still bundled, is the one solver that this set does not pin. Since commit `64149
 default. With it, the seven models prove 74 of 74 in 25.0 s with the binaries found on PATH, and
 `slice/mutant_check.sh` proves the slice and the control 144 of 144 and kills the three mutants, in
 95 s in all (Rodin 74 s, against 148 s with the old default).
+
+## The goal that needs veriT
+
+Without veriT, one measured goal stays open: `Slice/M1/INITIALISATION/init_val/SIM`. Its goal is
+`val' ∈ 0 ‥ 7 → 0 ‥ 255`, and a witness with 8 cases on `rot'` decides `val'`. Since `rot'` is not
+in the goal, the split did not apply. It now also takes a variable that shares a hypothesis with
+the goal, so it splits on `rot'`. Results (`reports/opt1/`, `reports/opt1b/`):
+
+| Solvers | Seven models (74) | Slice (144) |
+|---|---|---|
+| Z3 4.16, `z3a2`, cvc5 | 74, 21.8 s | 143: `init_val` SIM open, 17.2 s |
+| Z3 4.16, `z3a2`, cvc5, veriT (default), two runs | 74, 22.3 s and 22.1 s | 144, 16.4 s and 16.6 s |
+
+The split does not close `init_val`. In each case Rodin substitutes the witness, and the goal
+becomes a fixed function, such as `{0 ↦ f_rec', 7 ↦ x_rec', …, 1 ↦ w_rec'} ∈ 0 ‥ 7 → 0 ‥ 255`
+with each value in `0 ‥ 255`. Z3 in both modes and cvc5 fail on it in under 0.4 s, and so does
+Rodin's own first-order prover newPP (`org.eventb.pp`, restricted and unrestricted), on the case
+and on the whole goal. So the hard part is not the cases: it is that a set of pairs is a total
+function. veriT proves the whole goal in about 2 s.
+
+The wider split does make one goal faster: Shift `sll` SIM splits on the amount bit `k0`, in
+2.2 s and 2.5 s, against 5.7 s by `z3new` on the selected hypotheses. The other goals keep their
+provers and times within noise.
+
+To drop veriT, the witness can state `val'` as a function and its values (`val' ∈ 0 ‥ 7 → ℤ` and
+`val'(r) = …`), not as a set of pairs, or a rewrite can turn the membership of a set of pairs
+into the membership of each value. Neither is tried.
 
 ## Open questions
 
