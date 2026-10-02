@@ -64,17 +64,17 @@ import org.rodinp.core.RodinCore;
 
 /**
  * Imports each project directory named on the command line, builds it in full, and proves each
- * obligation: Rodin's default tactics, then Z3 alone for a short time on the selected hypotheses.
+ * obligation: Rodin's default tactics, then the first solver (Z3 by default) alone for a short time on the selected hypotheses.
  * A goal still open then gets two searches at once. One runs every SMT solver at once on the goal
  * alone, then on the selected hypotheses, then on all of them, each attempt within the timeout. The
  * other, for a goal over a variable that a hypothesis bounds to at most bcw.split values (default 8),
  * splits the goal into one case for each value. The first search to prove the goal wins.
  * The obligations of a file are proved bcw.jobs (default 4) at once.
  *
- * Properties: bcw.timeout (ms, default 6000), bcw.first (ms that Z3 has alone first, default 700), bcw.solvers (order, default Z3,CVC3,CVC4,veriT, measured),
+ * Properties: bcw.timeout (ms, default 6000), bcw.first (ms that the first solver has alone first, default 700), bcw.solvers (order, default Z3,CVC3,CVC4,veriT, measured),
  * bcw.report (CSV of obligation, result, ms, prover), bcw.baseline (an earlier report to compare),
- * bcw.measure (try every solver on every open goal, and report each attempt), bcw.cvc5 (the path of a
- * cvc5 binary, to name as solver cvc5 in bcw.solvers).
+ * bcw.measure (try every solver on every open goal, and report each attempt), bcw.cvc5 and bcw.z3new (the paths
+ * of a cvc5 and a newer Z3 binary, to name as solvers cvc5 and z3new in bcw.solvers).
  */
 public class Build implements IApplication {
     private static final NullProgressMonitor NONE = new NullProgressMonitor();
@@ -92,8 +92,9 @@ public class Build implements IApplication {
 
     public Object start(IApplicationContext context) throws Exception {
         timeout = Long.getLong("bcw.timeout", 6000);
-        String cvc5 = System.getProperty("bcw.cvc5");
-        if (cvc5 != null) addCvc5(cvc5);
+        String cvc5 = System.getProperty("bcw.cvc5"), z3new = System.getProperty("bcw.z3new");
+        if (cvc5 != null) addSolver("cvc5", SolverKind.CVC4, cvc5, System.getProperty("bcw.cvc5args", "--finite-model-find"));
+        if (z3new != null) addSolver("z3new", SolverKind.Z3, z3new, "");
         solvers = List.of(System.getProperty("bcw.solvers", "Z3,CVC3,CVC4,veriT").split(","));
         measure = System.getProperty("bcw.measure") != null;
         rodin = EventBPlugin.getAutoPostTacticManager().getAutoTacticPreference().getDefaultDescriptor().getTacticInstance();
@@ -108,7 +109,7 @@ public class Build implements IApplication {
                 smt.put(key(solver, restricted), parameterizer.instantiate(setting, "bcw." + key(solver, restricted)).getTacticInstance());
             }
         IParameterSetting first = parameterizer.makeParameterSetting();
-        first.setString("configName", "Z3");
+        first.setString("configName", solvers.get(0));
         first.setBoolean("restricted", true);
         first.setLong("timeOutDelay", Long.getLong("bcw.first", 700));
         quick = parameterizer.instantiate(first, "bcw.quick").getTacticInstance();
@@ -142,16 +143,16 @@ public class Build implements IApplication {
     }
 
     /**
-     * Registers the cvc5 binary at path as the solver and configuration "cvc5". The plug-in has no
-     * kind for cvc5, so it runs as a CVC4, by default with the one option of the CVC4 configuration that
-     * cvc5 keeps; bcw.cvc5args replaces the options.
+     * Registers the binary at path as the solver and configuration name, of the plug-in's kind. The
+     * plug-in has no kind for cvc5, so cvc5 runs as a CVC4, by default with the one option of the CVC4
+     * configuration that cvc5 keeps; bcw.cvc5args replaces the options. bcw.z3new names a newer Z3.
      */
-    private static void addCvc5(String path) {
+    private static void addSolver(String name, SolverKind kind, String path, String args) {
         List<ISolverDescriptor> solvers = new ArrayList<>(Arrays.asList(SMTCore.getSolvers()));
-        solvers.add(SMTCore.newSolverDescriptor("cvc5", SolverKind.CVC4, new org.eclipse.core.runtime.Path(path)));
+        solvers.add(SMTCore.newSolverDescriptor(name, kind, new org.eclipse.core.runtime.Path(path)));
         SMTCore.setSolvers(solvers.toArray(new ISolverDescriptor[0]));
         List<IConfigDescriptor> configs = new ArrayList<>(Arrays.asList(SMTCore.getConfigurations()));
-        configs.add(SMTCore.newConfigDescriptor("cvc5", "cvc5", System.getProperty("bcw.cvc5args", "--finite-model-find"), true));
+        configs.add(SMTCore.newConfigDescriptor(name, name, args, true));
         SMTCore.setConfigurations(configs.toArray(new IConfigDescriptor[0]));
     }
 
@@ -220,7 +221,7 @@ public class Build implements IApplication {
     /** Closes the goal by the first solver to prove it; returns that solver, or null. */
     private String smt(String name, IProofTreeNode node) throws InterruptedException {
         if (!measure) {
-            if (quick.apply(node, null) == null) return "Z3/quick";
+            if (quick.apply(node, null) == null) return solvers.get(0) + "/quick";
             return contest(node);
         }
         String closer = null;
