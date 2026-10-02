@@ -68,6 +68,29 @@ report; prints LOST and SLOWER), `bcw.measure` (each solver in turn on each goal
 Each solver call writes its own temporary file and reads its own process's output, so parallel
 calls cannot read each other's answers.
 
+### How proof state passes from one step to the next
+
+Rodin passes state only through the proof tree. Its own tactics leave their work as new subgoals;
+an external prover either closes the goal it gets or leaves it as it was.
+
+| Kind of step | Effect on the proof tree | Passed on to later steps |
+|---|---|---|
+| Rewriters and splitters (Rodin's default auto-tactic) | Replace a goal by simpler subgoals | The open subgoals |
+| Hypothesis selection (for example lasso), recorded as a rule | Changes the selected hypotheses of a subgoal | The new selection |
+| Case split (`Tactics.doCase`) | One subgoal for each case, with the case as a hypothesis | Each case as a new goal |
+| External prover (SMT; ML, PP and ProB where installed) | On success, one rule that closes the goal and records the hypotheses it used; on failure, nothing | Only the closure: no lemmas, partial models or search state |
+
+Rodin's combinators (`BasicTactics`) follow this: `composeOnAllPending`, `loopOnAllPending` and
+`onAllPending` apply the next tactic to the goals that are still open, and `composeUntilSuccess`
+tries alternatives on one goal. In `Build.java` each solver also runs on its own copy of the goal,
+as a fresh process with its own benchmark file.
+
+So the order of the solvers changes only the time a race takes: a solver tried later gains nothing
+from a failed attempt before it. What helps a solver is a step that transforms the goal before it.
+Rodin's default tactic is one; the split is another, and it made the `where_r` invariants, which no
+solver proved alone, easy. For a goal that is too hard, add a rewrite, a split or a hypothesis
+selection before the solvers, rather than change their order.
+
 ## The bridge from Verilog to the lowest machine (`gen/`)
 
 yosys `prep -flatten; opt -full` (and `dffunmap; opt_clean` for registers), then `write_json`.
