@@ -163,6 +163,28 @@ Of the 311 measured goals, 3 need CVC3 or CVC4. With Z3, cvc5 and veriT (`report
 | `RotLaps/M1/wrap/glue/INV` | CVC3 or CVC4 | Proved: cvc5 on the goal alone |
 | `Shift/M1/sll/act1/SIM` | CVC3 only | Open, with or without `--finite-model-find`, at 6 s and at 20 s |
 
+The open goal's benchmark (`reports/cvc5/sll_sim.smt2`, as the plug-in writes it) is quantifier-free
+linear integer arithmetic (`QF_AUFLIA`): division with remainder by 2³³, `a ∗ 2ᵏ = hi ∗ 2³³ + r`,
+in a 32-way case table on `k`, against five barrel stages. Run directly:
+
+| Solver and options | Result |
+|---|---|
+| CVC3 2.4.1, no options (as the plug-in runs it) | `unsat` in 2.4 s |
+| cvc5 1.4.0, no options, 120 s | no answer |
+| cvc5 with each of `--finite-model-find`, `--dio-decomps`, `--dio-turns=100`, `--cut-all-bounded`, `--arith-eq-solver`, `--arith-rewrite-equalities`, `--miplib-trick`, `--arith-static-learning`, `--no-arith-brab`, `--decision=justification`, `--simplification=none`, `--ite-simp`, `--learned-rewrite`, `--pb-rewrites`, `--restrict-pivots`, `--unate-lemmas=none`, and four pairs of them, 20 s | no answer |
+| cvc5, four of those, 120 s; and `--no-dio-solver`, 120 s | no answer |
+| With `0 ≤ a ≤ 2³³ − 1` added (an invariant that the selected hypotheses leave out): CVC3 / cvc5 with five option sets, 60 s | `unsat` in 2.1 s / no answer |
+
+The two solvers decide integer arithmetic differently. CVC3 eliminates integer variables exactly
+(Fourier–Motzkin with dark and gray shadows; its `-grayshadow-threshold` option). cvc5 uses simplex
+with branch and bound, cuts and a Diophantine equation solver, and documents no option for exact
+elimination. So cvc5 does not prove everything that CVC3 proves.
+
+The goal comes from the `Shift` probe model, which predates two later rules: it uses 33-bit words,
+and it writes a shift as division with remainder. The bridge writes shifts as case tables of bit
+sums, and `BridgeAluGates` proves its shifts without CVC3. A `Shift` model in the bridge's form might
+let cvc5 replace both CVC3 and CVC4; that is not tested.
+
 So cvc5 can replace CVC4 but not CVC3. The default stays Z3, CVC3, CVC4 and veriT.
 
 ## Open questions
