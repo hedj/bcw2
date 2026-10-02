@@ -1,0 +1,22 @@
+Shift/M0/INITIALISATION/words/INV,proved,127,Z3/quick
+Shift/M0/load/words/INV,proved,23,rodin
+Shift/M0/sll/words/INV,proved,24,rodin
+Shift/M0/srl/words/INV,proved,124,Z3/quick
+Shift/M1/sll/act1/SIM,open,12782,
+Shift/M1/srl/act1/SIM,proved,106,Z3/quick
+DecodeInt/M0/INITIALISATION/fields/INV,proved,42,Z3/quick×3
+DecodeInt/M0/set_rd/fields/INV,proved,6,rodin
+DecodeInt/M1/INITIALISATION/word/INV,proved,26,Z3/quick
+DecodeInt/M1/INITIALISATION/glue/INV,proved,20,rodin
+DecodeInt/M1/decode/grd1/GRD,proved,11697,Z3/all×2 cvc5/all×4
+DecodeInt/M1/set_rd/word/INV,proved,43,Z3/quick
+DecodeInt/M1/set_rd/glue/INV,proved,2912,Z3/all
+RotLaps/M0/INITIALISATION/inv1/INV,proved,4,rodin
+RotLaps/M0/tick/inv1/INV,proved,12,Z3/quick
+RotLaps/M1/cover/THM,proved,22,Z3/quick
+RotLaps/M1/INITIALISATION/inv1/INV,proved,96,Z3/all
+RotLaps/M1/INITIALISATION/glue/INV,proved,3,rodin
+RotLaps/M1/wrap/inv1/INV,proved,27,Z3/quick
+RotLaps/M1/wrap/glue/INV,proved,64,Z3/quick cvc5/none
+RotLaps/M1/step/inv1/INV,proved,18,Z3/quick
+RotLaps/M1/step/glue/INV,proved,10,rodin

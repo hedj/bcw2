@@ -147,6 +147,24 @@ The SMT plug-in also reports `sat`, `unsat` or `unknown` with the Eclipse debug 
 `prob/smt-debug.options` (`reports/verdict.raw`). A `sat` is weaker evidence: the plug-in promises
 only that `unsat` is sound.
 
+## cvc5 in place of CVC3 and CVC4
+
+CVC3 is unmaintained and CVC4 is superseded; both ship as binaries inside the SMT plug-in. cvc5 1.4.0
+is in the pinned nixpkgs. The plug-in has no kind for cvc5, so `bcw.cvc5` registers the binary as a
+CVC4, with `--finite-model-find` (cvc5 rejects the CVC4 configuration's `--fmf-inst-engine`), or
+the options of `bcw.cvc5args`. cvc5 checks its answer against the benchmark's
+`(set-info :status unsat)` and reports an error, not `sat`; the plug-in counts both as a failure.
+
+Of the 311 measured goals, 3 need CVC3 or CVC4. With Z3, cvc5 and veriT (`reports/cvc5/`):
+
+| Goal | Before | With cvc5 |
+|---|---|---|
+| `DecodeInt/M1/decode/grd1/GRD` | CVC3 only | Proved: cvc5 with all hypotheses |
+| `RotLaps/M1/wrap/glue/INV` | CVC3 or CVC4 | Proved: cvc5 on the goal alone |
+| `Shift/M1/sll/act1/SIM` | CVC3 only | Open, with or without `--finite-model-find`, at 6 s and at 20 s |
+
+So cvc5 can replace CVC4 but not CVC3. The default stays Z3, CVC3, CVC4 and veriT.
+
 ## Open questions
 
 1. Non-interference: a property of two runs, so it needs a self-composed machine.

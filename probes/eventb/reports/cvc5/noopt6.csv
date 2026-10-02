@@ -1,0 +1,6 @@
+Shift/M0/INITIALISATION/words/INV,proved,75,Z3/quick
+Shift/M0/load/words/INV,proved,11,rodin
+Shift/M0/sll/words/INV,proved,22,rodin
+Shift/M0/srl/words/INV,proved,68,Z3/quick
+Shift/M1/sll/act1/SIM,open,12769,
+Shift/M1/srl/act1/SIM,proved,108,Z3/quick
