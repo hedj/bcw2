@@ -60,14 +60,14 @@ For each project on the command line it imports, builds and proves every obligat
      then on all of them, 6 s each (`bcw.timeout`);
    * the split, for a variable that a hypothesis bounds to at most 8 values (`bcw.split`): a
      variable of the goal if one has such a bound, else a variable that shares a hypothesis with
-     the goal (see The goal that needs veriT). Rodin's case rule (`Tactics.doCase`) for each value, Rodin's tactics on each
+     the goal (see Primed names). Rodin's case rule (`Tactics.doCase`) for each value, Rodin's tactics on each
      case, the first solver for 0.7 s on the selected hypotheses and then on all, and then the sets.
 4. The obligations of a file are proved 4 at once (`bcw.jobs`). Attempts are created, committed
    and disposed one at a time.
 
 Other properties: `bcw.report` (CSV: obligation, result, ms, closers), `bcw.baseline` (an earlier
 report; prints LOST and SLOWER), `bcw.measure` (each solver in turn on each goal, timed), and
-`bcw.solvers` (default `z3new,z3a2,cvc5,veriT`; see A newer Z3). `bcw.z3new` and `bcw.cvc5` name
+`bcw.solvers` (default `z3new,z3a2,cvc5`; see A newer Z3 and Primed names). `bcw.z3new` and `bcw.cvc5` name
 the binaries, else the `z3` and `cvc5` on PATH are used; the run prints which. A solver of the
 order that is not available stops the run with exit status 2. The exit status is 1 if an
 obligation stays open.
@@ -282,32 +282,42 @@ default. With it, the seven models prove 74 of 74 in 25.0 s with the binaries fo
 `slice/mutant_check.sh` proves the slice and the control 144 of 144 and kills the three mutants, in
 95 s in all (Rodin 74 s, against 148 s with the old default).
 
-## The goal that needs veriT
+## Primed names, and the default without veriT
 
-Without veriT, one measured goal stays open: `Slice/M1/INITIALISATION/init_val/SIM`. Its goal is
-`val' ∈ 0 ‥ 7 → 0 ‥ 255`, and a witness with 8 cases on `rot'` decides `val'`. Since `rot'` is not
-in the goal, the split did not apply. It now also takes a variable that shares a hypothesis with
-the goal, so it splits on `rot'`. Results (`reports/opt1/`, `reports/opt1b/`):
+The SMT plug-in writes an after-value such as `val'` as a bare SMT-LIB name: `(declare-fun val'
+(Int Int) Bool)`. That is not SMT-LIB, since `'` may not be part of a plain name. veriT and Z3 4.5
+accept it; Z3 4.16 and cvc5 reject the whole input with a parse error, in a few milliseconds. In
+the slice, 83 of 392 solver calls failed so (`-debug` trace of the plug-in). Rodin closed most of
+those goals by itself; two were left to the solvers, both from the witness of `val'` at
+INITIALISATION: `init_val` SIM and `val'` WFIS. Only veriT proved `init_val` SIM.
+
+So after Rodin's default tactic, `unprime` in `Build.java` renames each primed name by Rodin's own
+rule (`Tactics.abstrExprThenEq`: a fresh name, such as `ae5`, and its equation, used to rewrite every
+occurrence), and hides the equations, which still hold the primed names. Each step is a rule of
+Rodin's prover, recorded in the proof tree; hiding a hypothesis only weakens what the solvers see.
+Each renaming also leaves the goal ⊤, which Rodin's default tactic closes; the renaming skips those
+goals, else the goals double with each name (1,024 goals and 55 s for `init_val` SIM).
+
+Results (`reports/unprime/`, against `reports/opt1b/`):
 
 | Solvers | Seven models (74) | Slice (144) |
 |---|---|---|
-| Z3 4.16, `z3a2`, cvc5 | 74, 21.8 s | 143: `init_val` SIM open, 17.2 s |
-| Z3 4.16, `z3a2`, cvc5, veriT (default), two runs | 74, 22.3 s and 22.1 s | 144, 16.4 s and 16.6 s |
+| Z3 4.16, `z3a2`, cvc5 | 74, wall 22.6 s | 144, 16.5 s; `init_val` SIM by `z3new` in 0.25 s |
+| Z3 4.16, `z3a2`, cvc5, veriT | 74, 24.8 s | 144, 16.5 s |
+| Before the renaming, with veriT | 74, 22.1 s | 144, 16.6 s; `init_val` SIM by veriT in 1.9 s |
 
-The split does not close `init_val`. In each case Rodin substitutes the witness, and the goal
-becomes a fixed function, such as `{0 ↦ f_rec', 7 ↦ x_rec', …, 1 ↦ w_rec'} ∈ 0 ‥ 7 → 0 ‥ 255`
-with each value in `0 ‥ 255`. Z3 in both modes and cvc5 fail on it in under 0.4 s, and so does
-Rodin's own first-order prover newPP (`org.eventb.pp`, restricted and unrestricted), on the case
-and on the whole goal. So the hard part is not the cases: it is that a set of pairs is a total
-function. veriT proves the whole goal in about 2 s.
+No obligation is lost. The one SLOWER line, Shift `sll` SIM with veriT (2.5 → 4.8 s), took 2.2 s
+in the run without veriT, so it is noise. `slice/mutant_check.sh` with `z3new,z3a2,cvc5`: ring
+and control 144 of 144, the three mutants killed by ProB, 80 s in all (Rodin 58 s). So the
+default is `z3new,z3a2,cvc5`, and veriT is no longer needed.
 
-The wider split does make one goal faster: Shift `sll` SIM splits on the amount bit `k0`, in
-2.2 s and 2.5 s, against 5.7 s by `z3new` on the selected hypotheses. The other goals keep their
-provers and times within noise.
+Before the cause was found, two other changes were tried:
 
-To drop veriT, the witness can state `val'` as a function and its values (`val' ∈ 0 ‥ 7 → ℤ` and
-`val'(r) = …`), not as a set of pairs, or a rewrite can turn the membership of a set of pairs
-into the membership of each value. Neither is tried.
+* The split takes a variable that shares a hypothesis with the goal when no goal variable has a
+  small range, so it split `init_val` SIM on `rot'`. That did not prove it (the cases had primed
+  names too), but it makes Shift `sll` SIM faster: 5.7 s → about 2.3 s, split on `k0`. It stays.
+* The witness of `val'` stated as a function and its values, in four forms: each left 2 to 11
+  obligations open (WFIS, WWD), and pointwise invariants made the slice 4 times slower. Dropped.
 
 ## Open questions
 

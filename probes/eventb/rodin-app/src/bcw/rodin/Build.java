@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.Map;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
@@ -71,7 +72,7 @@ import org.rodinp.core.RodinCore;
  * splits the goal into one case for each value. The first search to prove the goal wins.
  * The obligations of a file are proved bcw.jobs (default 4) at once.
  *
- * Properties: bcw.timeout (ms, default 6000), bcw.first (ms that the first solver has alone first, default 700), bcw.solvers (order, default z3new,z3a2,cvc5,veriT),
+ * Properties: bcw.timeout (ms, default 6000), bcw.first (ms that the first solver has alone first, default 700), bcw.solvers (order, default z3new,z3a2,cvc5),
  * bcw.report (CSV of obligation, result, ms, prover), bcw.baseline (an earlier report to compare),
  * bcw.measure (try every solver on every open goal, and report each attempt), bcw.cvc5 and bcw.z3new (the paths
  * of a cvc5 and a newer Z3 binary, else the cvc5 and z3 on PATH, which become the solvers cvc5, z3new
@@ -101,7 +102,7 @@ public class Build implements IApplication {
             // The arithmetic solvers of Z3 4.16 prove different goals, so the older one is a second solver.
             addSolver("z3a2", SolverKind.Z3, z3new, "smt.arith.solver=2");
         }
-        solvers = List.of(System.getProperty("bcw.solvers", "z3new,z3a2,cvc5,veriT").split(","));
+        solvers = List.of(System.getProperty("bcw.solvers", "z3new,z3a2,cvc5").split(","));
         Set<String> known = new HashSet<>();
         for (IConfigDescriptor config : SMTCore.getConfigurations()) known.add(config.getName());
         for (String solver : solvers)
@@ -220,6 +221,7 @@ public class Build implements IApplication {
         }
         IProofTreeNode top = attempt.getProofTree().getRoot();
         rodin.apply(top, null);
+        unprime(top);
         // The provers that closed the goals, each with the number of goals that it closed.
         Map<String, Integer> closers = new LinkedHashMap<>();
         if (top.isClosed()) closers.put("rodin", 1);
@@ -239,6 +241,39 @@ public class Build implements IApplication {
         lines[k] = name + "," + (closed ? "proved" : "open") + "," + ms + "," + (closed ? prover : "");
         System.out.printf("%s %s %d ms %s%n", closed ? "PROVED" : "OPEN  ", name, ms, closed ? prover : "");
         return closed;
+    }
+
+    /**
+     * Renames each after-value, such as val', by Rodin's rules, and hides the equation that links the
+     * two names. The SMT plug-in writes the name val' bare, which is not SMT-LIB, and Z3 4.16 and
+     * cvc5 reject the whole input.
+     */
+    private void unprime(IProofTreeNode top) {
+        Set<String> primed = new TreeSet<>();
+        for (IProofTreeNode node : top.getOpenDescendants()) primed.addAll(primed(node.getSequent().goal()));
+        for (IProofTreeNode node : top.getOpenDescendants())
+            for (Predicate hypothesis : node.getSequent().visibleHypIterable()) primed.addAll(primed(hypothesis));
+        // Each renaming also leaves the goal ⊤; renaming in those too would double the goals each time.
+        for (String name : primed)
+            for (IProofTreeNode node : top.getOpenDescendants())
+                if (node.getSequent().goal().getTag() != Formula.BTRUE) Tactics.abstrExprThenEq(name).apply(node, null);
+        for (IProofTreeNode node : top.getOpenDescendants()) {
+            if (node.getSequent().goal().getTag() == Formula.BTRUE) {
+                rodin.apply(node, null);
+                continue;
+            }
+            List<Predicate> stale = new ArrayList<>();
+            for (Predicate hypothesis : node.getSequent().visibleHypIterable())
+                if (!primed(hypothesis).isEmpty()) stale.add(hypothesis);
+            if (!stale.isEmpty()) Tactics.mngHyp(ProverFactory.makeHideHypAction(stale)).apply(node, null);
+        }
+    }
+
+    private static Set<String> primed(Predicate predicate) {
+        Set<String> names = new TreeSet<>();
+        for (FreeIdentifier identifier : predicate.getFreeIdentifiers())
+            if (identifier.getName().endsWith("'")) names.add(identifier.getName());
+        return names;
     }
 
     /** Closes the goal by the first solver to prove it; returns that solver, or null. */
