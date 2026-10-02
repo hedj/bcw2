@@ -52,6 +52,10 @@ import org.eventb.core.seqprover.IProofTreeNode;
 import org.eventb.core.seqprover.IProverSequent;
 import org.eventb.core.seqprover.ProverFactory;
 import org.eventb.core.seqprover.eventbExtensions.Tactics;
+import org.eventb.smt.core.IConfigDescriptor;
+import org.eventb.smt.core.ISolverDescriptor;
+import org.eventb.smt.core.SMTCore;
+import org.eventb.smt.core.SolverKind;
 import org.eventb.core.seqprover.proofBuilder.ProofBuilder;
 import org.eventb.core.seqprover.ITactic;
 import org.eventb.core.seqprover.SequentProver;
@@ -69,7 +73,8 @@ import org.rodinp.core.RodinCore;
  *
  * Properties: bcw.timeout (ms, default 6000), bcw.first (ms that Z3 has alone first, default 700), bcw.solvers (order, default Z3,CVC3,CVC4,veriT, measured),
  * bcw.report (CSV of obligation, result, ms, prover), bcw.baseline (an earlier report to compare),
- * bcw.measure (try every solver on every open goal, and report each attempt).
+ * bcw.measure (try every solver on every open goal, and report each attempt), bcw.cvc5 (the path of a
+ * cvc5 binary, to name as solver cvc5 in bcw.solvers).
  */
 public class Build implements IApplication {
     private static final NullProgressMonitor NONE = new NullProgressMonitor();
@@ -87,6 +92,8 @@ public class Build implements IApplication {
 
     public Object start(IApplicationContext context) throws Exception {
         timeout = Long.getLong("bcw.timeout", 6000);
+        String cvc5 = System.getProperty("bcw.cvc5");
+        if (cvc5 != null) addCvc5(cvc5);
         solvers = List.of(System.getProperty("bcw.solvers", "Z3,CVC3,CVC4,veriT").split(","));
         measure = System.getProperty("bcw.measure") != null;
         rodin = EventBPlugin.getAutoPostTacticManager().getAutoTacticPreference().getDefaultDescriptor().getTacticInstance();
@@ -132,6 +139,20 @@ public class Build implements IApplication {
         compare();
         workspace.save(true, null);
         return errors == 0 ? IApplication.EXIT_OK : Integer.valueOf(1);
+    }
+
+    /**
+     * Registers the cvc5 binary at path as the solver and configuration "cvc5". The plug-in has no
+     * kind for cvc5, so it runs as a CVC4, by default with the one option of the CVC4 configuration that
+     * cvc5 keeps; bcw.cvc5args replaces the options.
+     */
+    private static void addCvc5(String path) {
+        List<ISolverDescriptor> solvers = new ArrayList<>(Arrays.asList(SMTCore.getSolvers()));
+        solvers.add(SMTCore.newSolverDescriptor("cvc5", SolverKind.CVC4, new org.eclipse.core.runtime.Path(path)));
+        SMTCore.setSolvers(solvers.toArray(new ISolverDescriptor[0]));
+        List<IConfigDescriptor> configs = new ArrayList<>(Arrays.asList(SMTCore.getConfigurations()));
+        configs.add(SMTCore.newConfigDescriptor("cvc5", "cvc5", System.getProperty("bcw.cvc5args", "--finite-model-find"), true));
+        SMTCore.setConfigurations(configs.toArray(new IConfigDescriptor[0]));
     }
 
     private static String key(String solver, boolean restricted) {
