@@ -1,0 +1,3 @@
+org.eventb.smt.core/debug=true
+org.eventb.smt.core/debug/translator=true
+org.eventb.smt.core/debug/translator_details=true

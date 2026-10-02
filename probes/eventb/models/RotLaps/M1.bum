@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<org.eventb.core.machineFile org.eventb.core.configuration="org.eventb.core.fwd" version="5">
+<org.eventb.core.refinesMachine name="r1" org.eventb.core.target="M0"/>
+<org.eventb.core.seesContext name="s1" org.eventb.core.target="C0"/>
+<org.eventb.core.variable name="v1" org.eventb.core.identifier="turn"/>
+<org.eventb.core.variable name="v2" org.eventb.core.identifier="laps"/>
+<org.eventb.core.invariant name="i1" org.eventb.core.label="inv1" org.eventb.core.predicate="turn ∈ 0 ‥ THREADS − 1"/>
+<org.eventb.core.invariant name="i2" org.eventb.core.label="glue" org.eventb.core.predicate="laps ∈ ℕ ∧ time = THREADS ∗ laps + turn"/>
+<org.eventb.core.invariant name="i3" org.eventb.core.label="cover" org.eventb.core.theorem="true" org.eventb.core.predicate="turn = THREADS − 1 ∨ turn &lt; THREADS − 1"/>
+<org.eventb.core.event name="e0" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="INITIALISATION">
+<org.eventb.core.action name="a1" org.eventb.core.assignment="turn ≔ 0" org.eventb.core.label="act1"/>
+<org.eventb.core.action name="a2" org.eventb.core.assignment="laps ≔ 0" org.eventb.core.label="act2"/>
+</org.eventb.core.event>
+<org.eventb.core.event name="e1" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="wrap">
+<org.eventb.core.refinesEvent name="r1" org.eventb.core.target="tick"/>
+<org.eventb.core.guard name="g1" org.eventb.core.label="grd1" org.eventb.core.predicate="turn = THREADS − 1"/>
+<org.eventb.core.action name="a1" org.eventb.core.assignment="turn ≔ 0" org.eventb.core.label="act1"/>
+<org.eventb.core.action name="a2" org.eventb.core.assignment="laps ≔ laps + 1" org.eventb.core.label="act2"/>
+</org.eventb.core.event>
+<org.eventb.core.event name="e2" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="step">
+<org.eventb.core.refinesEvent name="r1" org.eventb.core.target="tick"/>
+<org.eventb.core.guard name="g1" org.eventb.core.label="grd1" org.eventb.core.predicate="turn &lt; THREADS − 1"/>
+<org.eventb.core.action name="a1" org.eventb.core.assignment="turn ≔ turn + 1" org.eventb.core.label="act1"/>
+</org.eventb.core.event>
+</org.eventb.core.machineFile>

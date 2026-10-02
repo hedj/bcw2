@@ -1,0 +1,3433 @@
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/INITIALISATION/word/INV 801 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/add/word/INV 64 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/add/act1/WD 130 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/sub/word/INV 98 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/sub/act1/WD 113 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/sll/word/INV 515 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/sll/act1/WD 1654 ms Z3/selected×62
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/slt/word/INV 31 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/slt/act1/WD 33 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/sltu/word/INV 36 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/sltu/act1/WD 37 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/xor/word/INV 250 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/srl/word/INV 190 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/srl/act1/WD 1218 ms Z3/selected×62
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/sra/word/INV 212 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/sra/act1/WD 1245 ms Z3/selected×62
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/or/word/INV 58 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M0/and/word/INV 60 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M1/sub_0_1/act1/WD 69 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT sat
+Prover failed
+Launching CVC3 (bundled) with input:
+RESULT sat
+Prover failed
+Launching CVC4 (bundled) with input:
+RESULT sat
+Prover failed
+Launching veriT (bundled) with input:
+RESULT warning : proof_done: status is still open
+Prover failed
+Launching Z3 (bundled) with input:
+RESULT sat
+Prover failed
+Launching CVC3 (bundled) with input:
+RESULT *** Fatal exception:
+Exception raised during prover call : Unexpected response of CVC3 (bundled). See rodin_sequent_pp.res for more details.
+Launching CVC4 (bundled) with input:
+RESULT sat
+Prover failed
+OPEN   BridgeAluMutSub/M1/sub_0_1/act1/SIM 6669 ms 
+PROVED BridgeAluMutSub/M1/sll_1_0/op/GRD 10 ms rodin
+PROVED BridgeAluMutSub/M1/sll_1_1/op/GRD 8 ms rodin
+PROVED BridgeAluMutSub/M1/slt_2_0/op/GRD 7 ms rodin
+PROVED BridgeAluMutSub/M1/slt_2_1/op/GRD 7 ms rodin
+PROVED BridgeAluMutSub/M1/sltu_3_0/op/GRD 8 ms rodin
+PROVED BridgeAluMutSub/M1/sltu_3_1/op/GRD 8 ms rodin
+PROVED BridgeAluMutSub/M1/xor_4_0/op/GRD 38 ms rodin
+PROVED BridgeAluMutSub/M1/xor_4_1/op/GRD 43 ms rodin
+Launching veriT (bundled) with input:
+RESULT Solver command finished.
+Exception raised during prover call : Unexpected response of veriT (bundled). See rodin_sequent_pp.res for more details.
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M1/sra_5_1/act1/WD 1419 ms Z3/selected×62
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutSub/M1/sra_5_1/act1/SIM 478 ms Z3/selected
+PROVED BridgeAluMutSub/M1/or_6_0/op/GRD 27 ms rodin
+PROVED BridgeAluMutSub/M1/or_6_1/op/GRD 25 ms rodin
+PROVED BridgeAluMutSub/M1/and_7_0/op/GRD 25 ms rodin
+PROVED BridgeAluMutSub/M1/and_7_1/op/GRD 26 ms rodin
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/INITIALISATION/word/INV 28 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/add/word/INV 34 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/add/act1/WD 34 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/sub/word/INV 31 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/sub/act1/WD 35 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/sll/word/INV 123 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/sll/act1/WD 1229 ms Z3/selected×62
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/slt/word/INV 34 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/slt/act1/WD 30 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/sltu/word/INV 28 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/sltu/act1/WD 30 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/xor/word/INV 183 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/srl/word/INV 169 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/srl/act1/WD 1402 ms Z3/selected×62
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/sra/word/INV 226 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/sra/act1/WD 1155 ms Z3/selected×62
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/or/word/INV 53 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M0/and/word/INV 55 ms Z3/selected
+PROVED BridgeAluMutXor/M1/sll_1_0/op/GRD 87 ms rodin
+PROVED BridgeAluMutXor/M1/sll_1_1/op/GRD 8 ms rodin
+PROVED BridgeAluMutXor/M1/slt_2_0/op/GRD 7 ms rodin
+PROVED BridgeAluMutXor/M1/slt_2_1/op/GRD 7 ms rodin
+PROVED BridgeAluMutXor/M1/sltu_3_0/op/GRD 7 ms rodin
+PROVED BridgeAluMutXor/M1/sltu_3_1/op/GRD 7 ms rodin
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t0/WWD 71 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t1/WWD 86 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t2/WWD 68 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t3/WWD 69 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t4/WWD 78 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t5/WWD 69 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t6/WWD 100 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t7/WWD 73 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t8/WWD 77 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t9/WWD 72 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t10/WWD 77 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t11/WWD 67 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t12/WWD 66 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t13/WWD 67 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t14/WWD 80 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t15/WWD 80 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t16/WWD 73 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t17/WWD 86 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t18/WWD 66 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t19/WWD 86 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t20/WWD 69 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t21/WWD 78 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t22/WWD 68 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t23/WWD 65 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t24/WWD 68 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t25/WWD 68 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t26/WWD 69 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t27/WWD 77 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t28/WWD 65 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t29/WWD 67 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t30/WWD 72 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_0/t31/WWD 70 ms Z3/selected×2
+PROVED BridgeAluMutXor/M1/xor_4_0/op/GRD 44 ms rodin
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT sat
+Prover failed
+Launching CVC3 (bundled) with input:
+RESULT *** Fatal exception:
+Exception raised during prover call : Unexpected response of CVC3 (bundled). See rodin_sequent_pp.res for more details.
+Launching CVC4 (bundled) with input:
+RESULT sat
+Prover failed
+Launching veriT (bundled) with input:
+RESULT warning : proof_done: status is still open
+Prover failed
+Launching Z3 (bundled) with input:
+RESULT sat
+Prover failed
+Launching CVC3 (bundled) with input:
+RESULT *** Fatal exception:
+Exception raised during prover call : Unexpected response of CVC3 (bundled). See rodin_sequent_pp.res for more details.
+Launching CVC4 (bundled) with input:
+RESULT sat
+Prover failed
+OPEN   BridgeAluMutXor/M1/xor_4_0/xor_bits/GRD 11054 ms 
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t0/WWD 87 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t1/WWD 97 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t2/WWD 82 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching veriT (bundled) with input:
+RESULT Solver command finished.
+Exception raised during prover call : Unexpected response of veriT (bundled). See rodin_sequent_pp.res for more details.
+PROVED BridgeAluMutXor/M1/xor_4_1/t3/WWD 71 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t4/WWD 71 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t5/WWD 67 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t6/WWD 73 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t7/WWD 71 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t8/WWD 77 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t9/WWD 83 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t10/WWD 89 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t11/WWD 70 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t12/WWD 83 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t13/WWD 71 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t14/WWD 83 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t15/WWD 81 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t16/WWD 76 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t17/WWD 96 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t18/WWD 66 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t19/WWD 67 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t20/WWD 73 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t21/WWD 78 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t22/WWD 95 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t23/WWD 110 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t24/WWD 82 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t25/WWD 78 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t26/WWD 66 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t27/WWD 72 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t28/WWD 67 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t29/WWD 80 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t30/WWD 103 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/xor_4_1/t31/WWD 72 ms Z3/selected×2
+PROVED BridgeAluMutXor/M1/xor_4_1/op/GRD 25 ms rodin
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT sat
+Prover failed
+Launching CVC3 (bundled) with input:
+RESULT *** Fatal exception:
+Exception raised during prover call : Unexpected response of CVC3 (bundled). See rodin_sequent_pp.res for more details.
+Launching CVC4 (bundled) with input:
+RESULT sat
+Prover failed
+Launching veriT (bundled) with input:
+RESULT warning : proof_done: status is still open
+Prover failed
+Launching Z3 (bundled) with input:
+RESULT sat
+Prover failed
+Launching CVC3 (bundled) with input:
+RESULT *** Fatal exception:
+Exception raised during prover call : Unexpected response of CVC3 (bundled). See rodin_sequent_pp.res for more details.
+Launching CVC4 (bundled) with input:
+RESULT sat
+Prover failed
+Launching veriT (bundled) with input:
+RESULT warning : proof_done: status is still open
+Prover failed
+OPEN   BridgeAluMutXor/M1/xor_4_1/xor_bits/GRD 7584 ms 
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/sra_5_1/act1/WD 1451 ms Z3/selected×62
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluMutXor/M1/sra_5_1/act1/SIM 556 ms Z3/selected
+PROVED BridgeAluMutXor/M1/or_6_0/op/GRD 31 ms rodin
+PROVED BridgeAluMutXor/M1/or_6_1/op/GRD 51 ms rodin
+PROVED BridgeAluMutXor/M1/and_7_0/op/GRD 40 ms rodin
+PROVED BridgeAluMutXor/M1/and_7_1/op/GRD 39 ms rodin
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/INITIALISATION/word/INV 47 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/add/word/INV 46 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/add/act1/WD 43 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/sub/word/INV 36 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/sub/act1/WD 34 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/sll/word/INV 130 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/sll/act1/WD 1334 ms Z3/selected×62
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/slt/word/INV 73 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/slt/act1/WD 79 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/sltu/word/INV 68 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/sltu/act1/WD 89 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/xor/word/INV 383 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/srl/word/INV 192 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/srl/act1/WD 1236 ms Z3/selected×62
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/sra/word/INV 220 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/sra/act1/WD 1156 ms Z3/selected×62
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/or/word/INV 54 ms Z3/selected
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M0/and/word/INV 64 ms Z3/selected
+PROVED BridgeAluCtlXor/M1/sll_1_0/op/GRD 212 ms rodin
+PROVED BridgeAluCtlXor/M1/sll_1_1/op/GRD 7 ms rodin
+PROVED BridgeAluCtlXor/M1/slt_2_0/op/GRD 8 ms rodin
+PROVED BridgeAluCtlXor/M1/slt_2_1/op/GRD 7 ms rodin
+PROVED BridgeAluCtlXor/M1/sltu_3_0/op/GRD 7 ms rodin
+PROVED BridgeAluCtlXor/M1/sltu_3_1/op/GRD 6 ms rodin
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r0/WWD 126 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r1/WWD 130 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r2/WWD 118 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r3/WWD 111 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r4/WWD 122 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r5/WWD 116 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r6/WWD 156 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r7/WWD 114 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r8/WWD 111 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r9/WWD 113 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r10/WWD 112 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r11/WWD 116 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r12/WWD 112 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r13/WWD 118 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r14/WWD 124 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r15/WWD 141 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r16/WWD 160 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r17/WWD 112 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r18/WWD 125 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r19/WWD 135 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r20/WWD 117 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r21/WWD 114 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r22/WWD 120 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r23/WWD 123 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r24/WWD 151 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r25/WWD 128 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r26/WWD 121 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r27/WWD 124 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r28/WWD 149 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r29/WWD 146 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r30/WWD 144 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/r31/WWD 124 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t0/WWD 115 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t1/WWD 111 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t2/WWD 115 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t3/WWD 127 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t4/WWD 127 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t5/WWD 116 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t6/WWD 113 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t7/WWD 120 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t8/WWD 112 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t9/WWD 127 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t10/WWD 138 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t11/WWD 113 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t12/WWD 116 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t13/WWD 153 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t14/WWD 146 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t15/WWD 122 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t16/WWD 114 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t17/WWD 123 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t18/WWD 116 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t19/WWD 116 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t20/WWD 113 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t21/WWD 109 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t22/WWD 120 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t23/WWD 124 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t24/WWD 133 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t25/WWD 118 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t26/WWD 114 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t27/WWD 120 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t28/WWD 114 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t29/WWD 110 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t30/WWD 113 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/t31/WWD 127 ms Z3/selected×2
+PROVED BridgeAluCtlXor/M1/xor_4_0/op/GRD 50 ms rodin
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/xor_bits/GRD 8257 ms Z3/selected×160
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_0/act1/WD 135 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT Solver command finished.
+Exception raised during prover call : Unexpected response of Z3 (bundled). See rodin_sequent_pp.res for more details.
+Launching CVC3 (bundled) with input:
+RESULT Solver command finished.
+Exception raised during prover call : Unexpected response of CVC3 (bundled). See rodin_sequent_pp.res for more details.
+Launching CVC4 (bundled) with input:
+RESULT Solver command finished.
+Exception raised during prover call : Unexpected response of CVC4 (bundled). See rodin_sequent_pp.res for more details.
+Launching veriT (bundled) with input:
+RESULT Solver command finished.
+Exception raised during prover call : Unexpected response of veriT (bundled). See rodin_sequent_pp.res for more details.
+Launching CVC3 (bundled) with input:
+RESULT *** Fatal exception:
+Exception raised during prover call : Unexpected response of CVC3 (bundled). See rodin_sequent_pp.res for more details.
+Launching Z3 (bundled) with input:
+RESULT Solver command finished.
+Exception raised during prover call : Unexpected response of Z3 (bundled). See rodin_sequent_pp.res for more details.
+Launching CVC4 (bundled) with input:
+RESULT Solver command finished.
+Exception raised during prover call : Unexpected response of CVC4 (bundled). See rodin_sequent_pp.res for more details.
+OPEN   BridgeAluCtlXor/M1/xor_4_0/act1/SIM 42075 ms 
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r0/WWD 155 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r1/WWD 112 ms Z3/selected×2
+Launching veriT (bundled) with input:
+RESULT Solver command finished.
+Exception raised during prover call : Unexpected response of veriT (bundled). See rodin_sequent_pp.res for more details.
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r2/WWD 113 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r3/WWD 141 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r4/WWD 129 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r5/WWD 171 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r6/WWD 160 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r7/WWD 128 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r8/WWD 113 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r9/WWD 118 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r10/WWD 116 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r11/WWD 112 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r12/WWD 117 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r13/WWD 113 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r14/WWD 133 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r15/WWD 118 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r16/WWD 114 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r17/WWD 118 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r18/WWD 128 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r19/WWD 147 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r20/WWD 134 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r21/WWD 113 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r22/WWD 114 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r23/WWD 112 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r24/WWD 122 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r25/WWD 118 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r26/WWD 132 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r27/WWD 118 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r28/WWD 112 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r29/WWD 115 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r30/WWD 113 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/r31/WWD 115 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t0/WWD 112 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t1/WWD 132 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t2/WWD 115 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t3/WWD 119 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t4/WWD 125 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t5/WWD 123 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t6/WWD 146 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t7/WWD 134 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t8/WWD 141 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t9/WWD 120 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t10/WWD 139 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t11/WWD 117 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t12/WWD 112 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t13/WWD 113 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t14/WWD 115 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t15/WWD 146 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t16/WWD 124 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t17/WWD 122 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t18/WWD 135 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t19/WWD 122 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t20/WWD 120 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t21/WWD 120 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t22/WWD 119 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t23/WWD 113 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t24/WWD 112 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t25/WWD 111 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t26/WWD 124 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t27/WWD 139 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t28/WWD 135 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t29/WWD 117 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t30/WWD 111 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/t31/WWD 112 ms Z3/selected×2
+PROVED BridgeAluCtlXor/M1/xor_4_1/op/GRD 51 ms rodin
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/xor_bits/GRD 8639 ms Z3/selected×160
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/xor_4_1/act1/WD 128 ms Z3/selected×2
+Launching Z3 (bundled) with input:
+RESULT Solver command finished.
+Exception raised during prover call : Unexpected response of Z3 (bundled). See rodin_sequent_pp.res for more details.
+Launching CVC3 (bundled) with input:
+RESULT Solver command finished.
+Exception raised during prover call : Unexpected response of CVC3 (bundled). See rodin_sequent_pp.res for more details.
+Launching CVC4 (bundled) with input:
+RESULT Solver command finished.
+Exception raised during prover call : Unexpected response of CVC4 (bundled). See rodin_sequent_pp.res for more details.
+Launching veriT (bundled) with input:
+RESULT Solver command finished.
+Exception raised during prover call : Unexpected response of veriT (bundled). See rodin_sequent_pp.res for more details.
+Launching CVC3 (bundled) with input:
+RESULT *** Fatal exception:
+Exception raised during prover call : Unexpected response of CVC3 (bundled). See rodin_sequent_pp.res for more details.
+Launching Z3 (bundled) with input:
+RESULT Solver command finished.
+Exception raised during prover call : Unexpected response of Z3 (bundled). See rodin_sequent_pp.res for more details.
+Launching CVC4 (bundled) with input:
+RESULT Solver command finished.
+Exception raised during prover call : Unexpected response of CVC4 (bundled). See rodin_sequent_pp.res for more details.
+OPEN   BridgeAluCtlXor/M1/xor_4_1/act1/SIM 42065 ms 
+Launching veriT (bundled) with input:
+RESULT Solver command finished.
+Exception raised during prover call : Unexpected response of veriT (bundled). See rodin_sequent_pp.res for more details.
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/sra_5_1/act1/WD 1370 ms Z3/selected×62
+Launching Z3 (bundled) with input:
+RESULT unsat
+Prover succeeded
+PROVED BridgeAluCtlXor/M1/sra_5_1/act1/SIM 416 ms Z3/selected
+PROVED BridgeAluCtlXor/M1/or_6_0/op/GRD 24 ms rodin
+PROVED BridgeAluCtlXor/M1/or_6_1/op/GRD 23 ms rodin
+PROVED BridgeAluCtlXor/M1/and_7_0/op/GRD 27 ms rodin
+PROVED BridgeAluCtlXor/M1/and_7_1/op/GRD 24 ms rodin

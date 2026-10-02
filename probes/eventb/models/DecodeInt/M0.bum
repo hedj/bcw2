@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<org.eventb.core.machineFile org.eventb.core.configuration="org.eventb.core.fwd" version="5">
+<org.eventb.core.variable name="v0" org.eventb.core.identifier="f7"/>
+<org.eventb.core.variable name="v1" org.eventb.core.identifier="rs2"/>
+<org.eventb.core.variable name="v2" org.eventb.core.identifier="rs1"/>
+<org.eventb.core.variable name="v3" org.eventb.core.identifier="f3"/>
+<org.eventb.core.variable name="v4" org.eventb.core.identifier="rd"/>
+<org.eventb.core.variable name="v5" org.eventb.core.identifier="op"/>
+<org.eventb.core.invariant name="i0" org.eventb.core.label="fields" org.eventb.core.predicate="f7 ∈ 0 ‥ 127 ∧ rs2 ∈ 0 ‥ 31 ∧ rs1 ∈ 0 ‥ 31 ∧ f3 ∈ 0 ‥ 7 ∧ rd ∈ 0 ‥ 31 ∧ op ∈ 0 ‥ 127"/>
+<org.eventb.core.event name="e0" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="INITIALISATION">
+<org.eventb.core.action name="a0" org.eventb.core.label="act1" org.eventb.core.assignment="f7, rs2, rs1, f3, rd, op ≔ 0, 0, 0, 0, 0, 0"/>
+</org.eventb.core.event>
+<org.eventb.core.event name="e1" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="decode">
+<org.eventb.core.parameter name="p0" org.eventb.core.identifier="F7"/>
+<org.eventb.core.parameter name="p1" org.eventb.core.identifier="RS2"/>
+<org.eventb.core.parameter name="p2" org.eventb.core.identifier="RS1"/>
+<org.eventb.core.parameter name="p3" org.eventb.core.identifier="F3"/>
+<org.eventb.core.parameter name="p4" org.eventb.core.identifier="RD"/>
+<org.eventb.core.parameter name="p5" org.eventb.core.identifier="OP"/>
+<org.eventb.core.guard name="g0" org.eventb.core.label="grd1" org.eventb.core.predicate="F7 = f7 ∧ RS2 = rs2 ∧ RS1 = rs1 ∧ F3 = f3 ∧ RD = rd ∧ OP = op"/>
+</org.eventb.core.event>
+<org.eventb.core.event name="e2" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="set_rd">
+<org.eventb.core.parameter name="p0" org.eventb.core.identifier="v"/>
+<org.eventb.core.guard name="g0" org.eventb.core.label="grd1" org.eventb.core.predicate="v ∈ 0 ‥ 31"/>
+<org.eventb.core.action name="a0" org.eventb.core.label="act1" org.eventb.core.assignment="rd ≔ v"/>
+</org.eventb.core.event>
+</org.eventb.core.machineFile>

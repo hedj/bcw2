@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<org.eventb.core.machineFile org.eventb.core.configuration="org.eventb.core.fwd" version="5">
+<org.eventb.core.variable name="v0" org.eventb.core.identifier="out"/>
+<org.eventb.core.invariant name="i0" org.eventb.core.label="outputs" org.eventb.core.predicate="out ∈ 0 ‥ 1"/>
+<org.eventb.core.event name="e0" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="INITIALISATION">
+<org.eventb.core.action name="a0" org.eventb.core.label="act1" org.eventb.core.assignment="out ≔ 0"/>
+</org.eventb.core.event>
+<org.eventb.core.event name="e1" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="eval">
+<org.eventb.core.parameter name="p0" org.eventb.core.identifier="offset"/>
+<org.eventb.core.parameter name="p1" org.eventb.core.identifier="size"/>
+<org.eventb.core.parameter name="p2" org.eventb.core.identifier="bound"/>
+<org.eventb.core.guard name="g0" org.eventb.core.label="assume0" org.eventb.core.predicate="offset ∈ 0 ‥ 4294967295"/>
+<org.eventb.core.guard name="g1" org.eventb.core.label="assume1" org.eventb.core.predicate="size ∈ 1 ‥ 7"/>
+<org.eventb.core.guard name="g2" org.eventb.core.label="assume2" org.eventb.core.predicate="bound ∈ 0 ‥ 131071"/>
+<org.eventb.core.action name="a0" org.eventb.core.label="act0" org.eventb.core.assignment="out ≔ ({TRUE ↦ 1, FALSE ↦ 0})(bool(¬ (offset ‥ offset + size − 1 ⊆ 0 ‥ bound − 1)))"/>
+</org.eventb.core.event>
+</org.eventb.core.machineFile>

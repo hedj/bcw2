@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<org.eventb.core.machineFile org.eventb.core.configuration="org.eventb.core.fwd" version="5">
+<org.eventb.core.refinesMachine name="r1" org.eventb.core.target="M0"/>
+<org.eventb.core.variable name="v0" org.eventb.core.identifier="a"/>
+<org.eventb.core.variable name="v1" org.eventb.core.identifier="b"/>
+<org.eventb.core.variable name="v2" org.eventb.core.identifier="z"/>
+<org.eventb.core.event name="e0" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="INITIALISATION">
+<org.eventb.core.action name="a0" org.eventb.core.label="act1" org.eventb.core.assignment="a, b, z ≔ 0, 0, 0"/>
+</org.eventb.core.event>
+<org.eventb.core.event name="e1" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="load">
+<org.eventb.core.refinesEvent name="r1" org.eventb.core.target="load"/>
+<org.eventb.core.parameter name="p0" org.eventb.core.identifier="x"/>
+<org.eventb.core.parameter name="p1" org.eventb.core.identifier="y"/>
+<org.eventb.core.guard name="g0" org.eventb.core.label="grd1" org.eventb.core.predicate="x ∈ 0 ‥ 8589934591 ∧ y ∈ 0 ‥ 8589934591"/>
+<org.eventb.core.action name="a0" org.eventb.core.label="act1" org.eventb.core.assignment="a, b ≔ x, y"/>
+</org.eventb.core.event>
+<org.eventb.core.event name="e2" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="add">
+<org.eventb.core.refinesEvent name="r1" org.eventb.core.target="add"/>
+<org.eventb.core.parameter name="p0" org.eventb.core.identifier="a0"/>
+<org.eventb.core.parameter name="p1" org.eventb.core.identifier="a1"/>
+<org.eventb.core.parameter name="p2" org.eventb.core.identifier="a2"/>
+<org.eventb.core.parameter name="p3" org.eventb.core.identifier="a3"/>
+<org.eventb.core.parameter name="p4" org.eventb.core.identifier="a4"/>
+<org.eventb.core.parameter name="p5" org.eventb.core.identifier="a5"/>
+<org.eventb.core.parameter name="p6" org.eventb.core.identifier="a6"/>
+<org.eventb.core.parameter name="p7" org.eventb.core.identifier="a7"/>
+<org.eventb.core.parameter name="p8" org.eventb.core.identifier="a8"/>
+<org.eventb.core.parameter name="p9" org.eventb.core.identifier="a9"/>
+<org.eventb.core.parameter name="p10" org.eventb.core.identifier="a10"/>
+<org.eventb.core.parameter name="p11" org.eventb.core.identifier="a11"/>
+<org.eventb.core.parameter name="p12" org.eventb.core.identifier="a12"/>
+<org.eventb.core.parameter name="p13" org.eventb.core.identifier="a13"/>
+<org.eventb.core.parameter name="p14" org.eventb.core.identifier="a14"/>
+<org.eventb.core.parameter name="p15" org.eventb.core.identifier="a15"/>
+<org.eventb.core.parameter name="p16" org.eventb.core.identifier="a16"/>
+<org.eventb.core.parameter name="p17" org.eventb.core.identifier="a17"/>
+<org.eventb.core.parameter name="p18" org.eventb.core.identifier="a18"/>
+<org.eventb.core.parameter name="p19" org.eventb.core.identifier="a19"/>
+<org.eventb.core.parameter name="p20" org.eventb.core.identifier="a20"/>
+<org.eventb.core.parameter name="p21" org.eventb.core.identifier="a21"/>
+<org.eventb.core.parameter name="p22" org.eventb.core.identifier="a22"/>
+<org.eventb.core.parameter name="p23" org.eventb.core.identifier="a23"/>
+<org.eventb.core.parameter name="p24" org.eventb.core.identifier="a24"/>
+<org.eventb.core.parameter name="p25" org.eventb.core.identifier="a25"/>
+<org.eventb.core.parameter name="p26" org.eventb.core.identifier="a26"/>
+<org.eventb.core.parameter name="p27" org.eventb.core.identifier="a27"/>
+<org.eventb.core.parameter name="p28" org.eventb.core.identifier="a28"/>
+<org.eventb.core.parameter name="p29" org.eventb.core.identifier="a29"/>
+<org.eventb.core.parameter name="p30" org.eventb.core.identifier="a30"/>
+<org.eventb.core.parameter name="p31" org.eventb.core.identifier="a31"/>
+<org.eventb.core.parameter name="p32" org.eventb.core.identifier="a32"/>
+<org.eventb.core.parameter name="p33" org.eventb.core.identifier="b0"/>
+<org.eventb.core.parameter name="p34" org.eventb.core.identifier="b1"/>
+<org.eventb.core.parameter name="p35" org.eventb.core.identifier="b2"/>
+<org.eventb.core.parameter name="p36" org.eventb.core.identifier="b3"/>
+<org.eventb.core.parameter name="p37" org.eventb.core.identifier="b4"/>
+<org.eventb.core.parameter name="p38" org.eventb.core.identifier="b5"/>
+<org.eventb.core.parameter name="p39" org.eventb.core.identifier="b6"/>
+<org.eventb.core.parameter name="p40" org.eventb.core.identifier="b7"/>
+<org.eventb.core.parameter name="p41" org.eventb.core.identifier="b8"/>
+<org.eventb.core.parameter name="p42" org.eventb.core.identifier="b9"/>
+<org.eventb.core.parameter name="p43" org.eventb.core.identifier="b10"/>
+<org.eventb.core.parameter name="p44" org.eventb.core.identifier="b11"/>
+<org.eventb.core.parameter name="p45" org.eventb.core.identifier="b12"/>
+<org.eventb.core.parameter name="p46" org.eventb.core.identifier="b13"/>
+<org.eventb.core.parameter name="p47" org.eventb.core.identifier="b14"/>
+<org.eventb.core.parameter name="p48" org.eventb.core.identifier="b15"/>
+<org.eventb.core.parameter name="p49" org.eventb.core.identifier="b16"/>
+<org.eventb.core.parameter name="p50" org.eventb.core.identifier="b17"/>
+<org.eventb.core.parameter name="p51" org.eventb.core.identifier="b18"/>
+<org.eventb.core.parameter name="p52" org.eventb.core.identifier="b19"/>
+<org.eventb.core.parameter name="p53" org.eventb.core.identifier="b20"/>
+<org.eventb.core.parameter name="p54" org.eventb.core.identifier="b21"/>
+<org.eventb.core.parameter name="p55" org.eventb.core.identifier="b22"/>
+<org.eventb.core.parameter name="p56" org.eventb.core.identifier="b23"/>
+<org.eventb.core.parameter name="p57" org.eventb.core.identifier="b24"/>
+<org.eventb.core.parameter name="p58" org.eventb.core.identifier="b25"/>
+<org.eventb.core.parameter name="p59" org.eventb.core.identifier="b26"/>
+<org.eventb.core.parameter name="p60" org.eventb.core.identifier="b27"/>
+<org.eventb.core.parameter name="p61" org.eventb.core.identifier="b28"/>
+<org.eventb.core.parameter name="p62" org.eventb.core.identifier="b29"/>
+<org.eventb.core.parameter name="p63" org.eventb.core.identifier="b30"/>
+<org.eventb.core.parameter name="p64" org.eventb.core.identifier="b31"/>
+<org.eventb.core.parameter name="p65" org.eventb.core.identifier="b32"/>
+<org.eventb.core.parameter name="p66" org.eventb.core.identifier="s0"/>
+<org.eventb.core.parameter name="p67" org.eventb.core.identifier="s1"/>
+<org.eventb.core.parameter name="p68" org.eventb.core.identifier="s2"/>
+<org.eventb.core.parameter name="p69" org.eventb.core.identifier="s3"/>
+<org.eventb.core.parameter name="p70" org.eventb.core.identifier="s4"/>
+<org.eventb.core.parameter name="p71" org.eventb.core.identifier="s5"/>
+<org.eventb.core.parameter name="p72" org.eventb.core.identifier="s6"/>
+<org.eventb.core.parameter name="p73" org.eventb.core.identifier="s7"/>
+<org.eventb.core.parameter name="p74" org.eventb.core.identifier="s8"/>
+<org.eventb.core.parameter name="p75" org.eventb.core.identifier="s9"/>
+<org.eventb.core.parameter name="p76" org.eventb.core.identifier="s10"/>
+<org.eventb.core.parameter name="p77" org.eventb.core.identifier="s11"/>
+<org.eventb.core.parameter name="p78" org.eventb.core.identifier="s12"/>
+<org.eventb.core.parameter name="p79" org.eventb.core.identifier="s13"/>
+<org.eventb.core.parameter name="p80" org.eventb.core.identifier="s14"/>
+<org.eventb.core.parameter name="p81" org.eventb.core.identifier="s15"/>
+<org.eventb.core.parameter name="p82" org.eventb.core.identifier="s16"/>
+<org.eventb.core.parameter name="p83" org.eventb.core.identifier="s17"/>
+<org.eventb.core.parameter name="p84" org.eventb.core.identifier="s18"/>
+<org.eventb.core.parameter name="p85" org.eventb.core.identifier="s19"/>
+<org.eventb.core.parameter name="p86" org.eventb.core.identifier="s20"/>
+<org.eventb.core.parameter name="p87" org.eventb.core.identifier="s21"/>
+<org.eventb.core.parameter name="p88" org.eventb.core.identifier="s22"/>
+<org.eventb.core.parameter name="p89" org.eventb.core.identifier="s23"/>
+<org.eventb.core.parameter name="p90" org.eventb.core.identifier="s24"/>
+<org.eventb.core.parameter name="p91" org.eventb.core.identifier="s25"/>
+<org.eventb.core.parameter name="p92" org.eventb.core.identifier="s26"/>
+<org.eventb.core.parameter name="p93" org.eventb.core.identifier="s27"/>
+<org.eventb.core.parameter name="p94" org.eventb.core.identifier="s28"/>
+<org.eventb.core.parameter name="p95" org.eventb.core.identifier="s29"/>
+<org.eventb.core.parameter name="p96" org.eventb.core.identifier="s30"/>
+<org.eventb.core.parameter name="p97" org.eventb.core.identifier="s31"/>
+<org.eventb.core.parameter name="p98" org.eventb.core.identifier="s32"/>
+<org.eventb.core.parameter name="p99" org.eventb.core.identifier="c1"/>
+<org.eventb.core.parameter name="p100" org.eventb.core.identifier="c2"/>
+<org.eventb.core.parameter name="p101" org.eventb.core.identifier="c3"/>
+<org.eventb.core.parameter name="p102" org.eventb.core.identifier="c4"/>
+<org.eventb.core.parameter name="p103" org.eventb.core.identifier="c5"/>
+<org.eventb.core.parameter name="p104" org.eventb.core.identifier="c6"/>
+<org.eventb.core.parameter name="p105" org.eventb.core.identifier="c7"/>
+<org.eventb.core.parameter name="p106" org.eventb.core.identifier="c8"/>
+<org.eventb.core.parameter name="p107" org.eventb.core.identifier="c9"/>
+<org.eventb.core.parameter name="p108" org.eventb.core.identifier="c10"/>
+<org.eventb.core.parameter name="p109" org.eventb.core.identifier="c11"/>
+<org.eventb.core.parameter name="p110" org.eventb.core.identifier="c12"/>
+<org.eventb.core.parameter name="p111" org.eventb.core.identifier="c13"/>
+<org.eventb.core.parameter name="p112" org.eventb.core.identifier="c14"/>
+<org.eventb.core.parameter name="p113" org.eventb.core.identifier="c15"/>
+<org.eventb.core.parameter name="p114" org.eventb.core.identifier="c16"/>
+<org.eventb.core.parameter name="p115" org.eventb.core.identifier="c17"/>
+<org.eventb.core.parameter name="p116" org.eventb.core.identifier="c18"/>
+<org.eventb.core.parameter name="p117" org.eventb.core.identifier="c19"/>
+<org.eventb.core.parameter name="p118" org.eventb.core.identifier="c20"/>
+<org.eventb.core.parameter name="p119" org.eventb.core.identifier="c21"/>
+<org.eventb.core.parameter name="p120" org.eventb.core.identifier="c22"/>
+<org.eventb.core.parameter name="p121" org.eventb.core.identifier="c23"/>
+<org.eventb.core.parameter name="p122" org.eventb.core.identifier="c24"/>
+<org.eventb.core.parameter name="p123" org.eventb.core.identifier="c25"/>
+<org.eventb.core.parameter name="p124" org.eventb.core.identifier="c26"/>
+<org.eventb.core.parameter name="p125" org.eventb.core.identifier="c27"/>
+<org.eventb.core.parameter name="p126" org.eventb.core.identifier="c28"/>
+<org.eventb.core.parameter name="p127" org.eventb.core.identifier="c29"/>
+<org.eventb.core.parameter name="p128" org.eventb.core.identifier="c30"/>
+<org.eventb.core.parameter name="p129" org.eventb.core.identifier="c31"/>
+<org.eventb.core.parameter name="p130" org.eventb.core.identifier="c32"/>
+<org.eventb.core.parameter name="p131" org.eventb.core.identifier="c33"/>
+<org.eventb.core.guard name="g0" org.eventb.core.label="abits" org.eventb.core.predicate="a0 ∈ 0 ‥ 1 ∧ a1 ∈ 0 ‥ 1 ∧ a2 ∈ 0 ‥ 1 ∧ a3 ∈ 0 ‥ 1 ∧ a4 ∈ 0 ‥ 1 ∧ a5 ∈ 0 ‥ 1 ∧ a6 ∈ 0 ‥ 1 ∧ a7 ∈ 0 ‥ 1 ∧ a8 ∈ 0 ‥ 1 ∧ a9 ∈ 0 ‥ 1 ∧ a10 ∈ 0 ‥ 1 ∧ a11 ∈ 0 ‥ 1 ∧ a12 ∈ 0 ‥ 1 ∧ a13 ∈ 0 ‥ 1 ∧ a14 ∈ 0 ‥ 1 ∧ a15 ∈ 0 ‥ 1 ∧ a16 ∈ 0 ‥ 1 ∧ a17 ∈ 0 ‥ 1 ∧ a18 ∈ 0 ‥ 1 ∧ a19 ∈ 0 ‥ 1 ∧ a20 ∈ 0 ‥ 1 ∧ a21 ∈ 0 ‥ 1 ∧ a22 ∈ 0 ‥ 1 ∧ a23 ∈ 0 ‥ 1 ∧ a24 ∈ 0 ‥ 1 ∧ a25 ∈ 0 ‥ 1 ∧ a26 ∈ 0 ‥ 1 ∧ a27 ∈ 0 ‥ 1 ∧ a28 ∈ 0 ‥ 1 ∧ a29 ∈ 0 ‥ 1 ∧ a30 ∈ 0 ‥ 1 ∧ a31 ∈ 0 ‥ 1 ∧ a32 ∈ 0 ‥ 1 ∧ a = a0 + a1 ∗ 2 + a2 ∗ 4 + a3 ∗ 8 + a4 ∗ 16 + a5 ∗ 32 + a6 ∗ 64 + a7 ∗ 128 + a8 ∗ 256 + a9 ∗ 512 + a10 ∗ 1024 + a11 ∗ 2048 + a12 ∗ 4096 + a13 ∗ 8192 + a14 ∗ 16384 + a15 ∗ 32768 + a16 ∗ 65536 + a17 ∗ 131072 + a18 ∗ 262144 + a19 ∗ 524288 + a20 ∗ 1048576 + a21 ∗ 2097152 + a22 ∗ 4194304 + a23 ∗ 8388608 + a24 ∗ 16777216 + a25 ∗ 33554432 + a26 ∗ 67108864 + a27 ∗ 134217728 + a28 ∗ 268435456 + a29 ∗ 536870912 + a30 ∗ 1073741824 + a31 ∗ 2147483648 + a32 ∗ 4294967296"/>
+<org.eventb.core.guard name="g1" org.eventb.core.label="bbits" org.eventb.core.predicate="b0 ∈ 0 ‥ 1 ∧ b1 ∈ 0 ‥ 1 ∧ b2 ∈ 0 ‥ 1 ∧ b3 ∈ 0 ‥ 1 ∧ b4 ∈ 0 ‥ 1 ∧ b5 ∈ 0 ‥ 1 ∧ b6 ∈ 0 ‥ 1 ∧ b7 ∈ 0 ‥ 1 ∧ b8 ∈ 0 ‥ 1 ∧ b9 ∈ 0 ‥ 1 ∧ b10 ∈ 0 ‥ 1 ∧ b11 ∈ 0 ‥ 1 ∧ b12 ∈ 0 ‥ 1 ∧ b13 ∈ 0 ‥ 1 ∧ b14 ∈ 0 ‥ 1 ∧ b15 ∈ 0 ‥ 1 ∧ b16 ∈ 0 ‥ 1 ∧ b17 ∈ 0 ‥ 1 ∧ b18 ∈ 0 ‥ 1 ∧ b19 ∈ 0 ‥ 1 ∧ b20 ∈ 0 ‥ 1 ∧ b21 ∈ 0 ‥ 1 ∧ b22 ∈ 0 ‥ 1 ∧ b23 ∈ 0 ‥ 1 ∧ b24 ∈ 0 ‥ 1 ∧ b25 ∈ 0 ‥ 1 ∧ b26 ∈ 0 ‥ 1 ∧ b27 ∈ 0 ‥ 1 ∧ b28 ∈ 0 ‥ 1 ∧ b29 ∈ 0 ‥ 1 ∧ b30 ∈ 0 ‥ 1 ∧ b31 ∈ 0 ‥ 1 ∧ b32 ∈ 0 ‥ 1 ∧ b = b0 + b1 ∗ 2 + b2 ∗ 4 + b3 ∗ 8 + b4 ∗ 16 + b5 ∗ 32 + b6 ∗ 64 + b7 ∗ 128 + b8 ∗ 256 + b9 ∗ 512 + b10 ∗ 1024 + b11 ∗ 2048 + b12 ∗ 4096 + b13 ∗ 8192 + b14 ∗ 16384 + b15 ∗ 32768 + b16 ∗ 65536 + b17 ∗ 131072 + b18 ∗ 262144 + b19 ∗ 524288 + b20 ∗ 1048576 + b21 ∗ 2097152 + b22 ∗ 4194304 + b23 ∗ 8388608 + b24 ∗ 16777216 + b25 ∗ 33554432 + b26 ∗ 67108864 + b27 ∗ 134217728 + b28 ∗ 268435456 + b29 ∗ 536870912 + b30 ∗ 1073741824 + b31 ∗ 2147483648 + b32 ∗ 4294967296"/>
+<org.eventb.core.guard name="g2" org.eventb.core.label="sums" org.eventb.core.predicate="s0 ∈ 0 ‥ 1 ∧ s1 ∈ 0 ‥ 1 ∧ s2 ∈ 0 ‥ 1 ∧ s3 ∈ 0 ‥ 1 ∧ s4 ∈ 0 ‥ 1 ∧ s5 ∈ 0 ‥ 1 ∧ s6 ∈ 0 ‥ 1 ∧ s7 ∈ 0 ‥ 1 ∧ s8 ∈ 0 ‥ 1 ∧ s9 ∈ 0 ‥ 1 ∧ s10 ∈ 0 ‥ 1 ∧ s11 ∈ 0 ‥ 1 ∧ s12 ∈ 0 ‥ 1 ∧ s13 ∈ 0 ‥ 1 ∧ s14 ∈ 0 ‥ 1 ∧ s15 ∈ 0 ‥ 1 ∧ s16 ∈ 0 ‥ 1 ∧ s17 ∈ 0 ‥ 1 ∧ s18 ∈ 0 ‥ 1 ∧ s19 ∈ 0 ‥ 1 ∧ s20 ∈ 0 ‥ 1 ∧ s21 ∈ 0 ‥ 1 ∧ s22 ∈ 0 ‥ 1 ∧ s23 ∈ 0 ‥ 1 ∧ s24 ∈ 0 ‥ 1 ∧ s25 ∈ 0 ‥ 1 ∧ s26 ∈ 0 ‥ 1 ∧ s27 ∈ 0 ‥ 1 ∧ s28 ∈ 0 ‥ 1 ∧ s29 ∈ 0 ‥ 1 ∧ s30 ∈ 0 ‥ 1 ∧ s31 ∈ 0 ‥ 1 ∧ s32 ∈ 0 ‥ 1"/>
+<org.eventb.core.guard name="g3" org.eventb.core.label="carries" org.eventb.core.predicate="c1 ∈ 0 ‥ 1 ∧ c2 ∈ 0 ‥ 1 ∧ c3 ∈ 0 ‥ 1 ∧ c4 ∈ 0 ‥ 1 ∧ c5 ∈ 0 ‥ 1 ∧ c6 ∈ 0 ‥ 1 ∧ c7 ∈ 0 ‥ 1 ∧ c8 ∈ 0 ‥ 1 ∧ c9 ∈ 0 ‥ 1 ∧ c10 ∈ 0 ‥ 1 ∧ c11 ∈ 0 ‥ 1 ∧ c12 ∈ 0 ‥ 1 ∧ c13 ∈ 0 ‥ 1 ∧ c14 ∈ 0 ‥ 1 ∧ c15 ∈ 0 ‥ 1 ∧ c16 ∈ 0 ‥ 1 ∧ c17 ∈ 0 ‥ 1 ∧ c18 ∈ 0 ‥ 1 ∧ c19 ∈ 0 ‥ 1 ∧ c20 ∈ 0 ‥ 1 ∧ c21 ∈ 0 ‥ 1 ∧ c22 ∈ 0 ‥ 1 ∧ c23 ∈ 0 ‥ 1 ∧ c24 ∈ 0 ‥ 1 ∧ c25 ∈ 0 ‥ 1 ∧ c26 ∈ 0 ‥ 1 ∧ c27 ∈ 0 ‥ 1 ∧ c28 ∈ 0 ‥ 1 ∧ c29 ∈ 0 ‥ 1 ∧ c30 ∈ 0 ‥ 1 ∧ c31 ∈ 0 ‥ 1 ∧ c32 ∈ 0 ‥ 1 ∧ c33 ∈ 0 ‥ 1"/>
+<org.eventb.core.guard name="g4" org.eventb.core.label="fa0" org.eventb.core.predicate="a0 + b0 + 0 = s0 + 2 ∗ c1"/>
+<org.eventb.core.guard name="g5" org.eventb.core.label="fa1" org.eventb.core.predicate="a1 + b1 + c1 = s1 + 2 ∗ c2"/>
+<org.eventb.core.guard name="g6" org.eventb.core.label="fa2" org.eventb.core.predicate="a2 + b2 + c2 = s2 + 2 ∗ c3"/>
+<org.eventb.core.guard name="g7" org.eventb.core.label="fa3" org.eventb.core.predicate="a3 + b3 + c3 = s3 + 2 ∗ c4"/>
+<org.eventb.core.guard name="g8" org.eventb.core.label="fa4" org.eventb.core.predicate="a4 + b4 + c4 = s4 + 2 ∗ c5"/>
+<org.eventb.core.guard name="g9" org.eventb.core.label="fa5" org.eventb.core.predicate="a5 + b5 + c5 = s5 + 2 ∗ c6"/>
+<org.eventb.core.guard name="g10" org.eventb.core.label="fa6" org.eventb.core.predicate="a6 + b6 + c6 = s6 + 2 ∗ c7"/>
+<org.eventb.core.guard name="g11" org.eventb.core.label="fa7" org.eventb.core.predicate="a7 + b7 + c7 = s7 + 2 ∗ c8"/>
+<org.eventb.core.guard name="g12" org.eventb.core.label="fa8" org.eventb.core.predicate="a8 + b8 + c8 = s8 + 2 ∗ c9"/>
+<org.eventb.core.guard name="g13" org.eventb.core.label="fa9" org.eventb.core.predicate="a9 + b9 + c9 = s9 + 2 ∗ c10"/>
+<org.eventb.core.guard name="g14" org.eventb.core.label="fa10" org.eventb.core.predicate="a10 + b10 + c10 = s10 + 2 ∗ c11"/>
+<org.eventb.core.guard name="g15" org.eventb.core.label="fa11" org.eventb.core.predicate="a11 + b11 + c11 = s11 + 2 ∗ c12"/>
+<org.eventb.core.guard name="g16" org.eventb.core.label="fa12" org.eventb.core.predicate="a12 + b12 + c12 = s12 + 2 ∗ c13"/>
+<org.eventb.core.guard name="g17" org.eventb.core.label="fa13" org.eventb.core.predicate="a13 + b13 + c13 = s13 + 2 ∗ c14"/>
+<org.eventb.core.guard name="g18" org.eventb.core.label="fa14" org.eventb.core.predicate="a14 + b14 + c14 = s14 + 2 ∗ c15"/>
+<org.eventb.core.guard name="g19" org.eventb.core.label="fa15" org.eventb.core.predicate="a15 + b15 + c15 = s15 + 2 ∗ c16"/>
+<org.eventb.core.guard name="g20" org.eventb.core.label="fa16" org.eventb.core.predicate="a16 + b16 + c16 = s16 + 2 ∗ c17"/>
+<org.eventb.core.guard name="g21" org.eventb.core.label="fa17" org.eventb.core.predicate="a17 + b17 + c17 = s17 + 2 ∗ c18"/>
+<org.eventb.core.guard name="g22" org.eventb.core.label="fa18" org.eventb.core.predicate="a18 + b18 + c18 = s18 + 2 ∗ c19"/>
+<org.eventb.core.guard name="g23" org.eventb.core.label="fa19" org.eventb.core.predicate="a19 + b19 + c19 = s19 + 2 ∗ c20"/>
+<org.eventb.core.guard name="g24" org.eventb.core.label="fa20" org.eventb.core.predicate="a20 + b20 + c20 = s20 + 2 ∗ c21"/>
+<org.eventb.core.guard name="g25" org.eventb.core.label="fa21" org.eventb.core.predicate="a21 + b21 + c21 = s21 + 2 ∗ c22"/>
+<org.eventb.core.guard name="g26" org.eventb.core.label="fa22" org.eventb.core.predicate="a22 + b22 + c22 = s22 + 2 ∗ c23"/>
+<org.eventb.core.guard name="g27" org.eventb.core.label="fa23" org.eventb.core.predicate="a23 + b23 + c23 = s23 + 2 ∗ c24"/>
+<org.eventb.core.guard name="g28" org.eventb.core.label="fa24" org.eventb.core.predicate="a24 + b24 + c24 = s24 + 2 ∗ c25"/>
+<org.eventb.core.guard name="g29" org.eventb.core.label="fa25" org.eventb.core.predicate="a25 + b25 + c25 = s25 + 2 ∗ c26"/>
+<org.eventb.core.guard name="g30" org.eventb.core.label="fa26" org.eventb.core.predicate="a26 + b26 + c26 = s26 + 2 ∗ c27"/>
+<org.eventb.core.guard name="g31" org.eventb.core.label="fa27" org.eventb.core.predicate="a27 + b27 + c27 = s27 + 2 ∗ c28"/>
+<org.eventb.core.guard name="g32" org.eventb.core.label="fa28" org.eventb.core.predicate="a28 + b28 + c28 = s28 + 2 ∗ c29"/>
+<org.eventb.core.guard name="g33" org.eventb.core.label="fa29" org.eventb.core.predicate="a29 + b29 + c29 = s29 + 2 ∗ c30"/>
+<org.eventb.core.guard name="g34" org.eventb.core.label="fa30" org.eventb.core.predicate="a30 + b30 + c30 = s30 + 2 ∗ c31"/>
+<org.eventb.core.guard name="g35" org.eventb.core.label="fa31" org.eventb.core.predicate="a31 + b31 + c31 = s31 + 2 ∗ c32"/>
+<org.eventb.core.guard name="g36" org.eventb.core.label="fa32" org.eventb.core.predicate="a32 + b32 + c32 = s32 + 2 ∗ c33"/>
+<org.eventb.core.witness name="w0" org.eventb.core.label="c" org.eventb.core.predicate="c = c33"/>
+<org.eventb.core.witness name="w1" org.eventb.core.label="r" org.eventb.core.predicate="r = s0 + s1 ∗ 2 + s2 ∗ 4 + s3 ∗ 8 + s4 ∗ 16 + s5 ∗ 32 + s6 ∗ 64 + s7 ∗ 128 + s8 ∗ 256 + s9 ∗ 512 + s10 ∗ 1024 + s11 ∗ 2048 + s12 ∗ 4096 + s13 ∗ 8192 + s14 ∗ 16384 + s15 ∗ 32768 + s16 ∗ 65536 + s17 ∗ 131072 + s18 ∗ 262144 + s19 ∗ 524288 + s20 ∗ 1048576 + s21 ∗ 2097152 + s22 ∗ 4194304 + s23 ∗ 8388608 + s24 ∗ 16777216 + s25 ∗ 33554432 + s26 ∗ 67108864 + s27 ∗ 134217728 + s28 ∗ 268435456 + s29 ∗ 536870912 + s30 ∗ 1073741824 + s31 ∗ 2147483648 + s32 ∗ 4294967296"/>
+<org.eventb.core.action name="a0" org.eventb.core.label="act1" org.eventb.core.assignment="z ≔ s0 + s1 ∗ 2 + s2 ∗ 4 + s3 ∗ 8 + s4 ∗ 16 + s5 ∗ 32 + s6 ∗ 64 + s7 ∗ 128 + s8 ∗ 256 + s9 ∗ 512 + s10 ∗ 1024 + s11 ∗ 2048 + s12 ∗ 4096 + s13 ∗ 8192 + s14 ∗ 16384 + s15 ∗ 32768 + s16 ∗ 65536 + s17 ∗ 131072 + s18 ∗ 262144 + s19 ∗ 524288 + s20 ∗ 1048576 + s21 ∗ 2097152 + s22 ∗ 4194304 + s23 ∗ 8388608 + s24 ∗ 16777216 + s25 ∗ 33554432 + s26 ∗ 67108864 + s27 ∗ 134217728 + s28 ∗ 268435456 + s29 ∗ 536870912 + s30 ∗ 1073741824 + s31 ∗ 2147483648 + s32 ∗ 4294967296"/>
+</org.eventb.core.event>
+<org.eventb.core.event name="e3" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="sub">
+<org.eventb.core.refinesEvent name="r1" org.eventb.core.target="sub"/>
+<org.eventb.core.parameter name="p0" org.eventb.core.identifier="a0"/>
+<org.eventb.core.parameter name="p1" org.eventb.core.identifier="a1"/>
+<org.eventb.core.parameter name="p2" org.eventb.core.identifier="a2"/>
+<org.eventb.core.parameter name="p3" org.eventb.core.identifier="a3"/>
+<org.eventb.core.parameter name="p4" org.eventb.core.identifier="a4"/>
+<org.eventb.core.parameter name="p5" org.eventb.core.identifier="a5"/>
+<org.eventb.core.parameter name="p6" org.eventb.core.identifier="a6"/>
+<org.eventb.core.parameter name="p7" org.eventb.core.identifier="a7"/>
+<org.eventb.core.parameter name="p8" org.eventb.core.identifier="a8"/>
+<org.eventb.core.parameter name="p9" org.eventb.core.identifier="a9"/>
+<org.eventb.core.parameter name="p10" org.eventb.core.identifier="a10"/>
+<org.eventb.core.parameter name="p11" org.eventb.core.identifier="a11"/>
+<org.eventb.core.parameter name="p12" org.eventb.core.identifier="a12"/>
+<org.eventb.core.parameter name="p13" org.eventb.core.identifier="a13"/>
+<org.eventb.core.parameter name="p14" org.eventb.core.identifier="a14"/>
+<org.eventb.core.parameter name="p15" org.eventb.core.identifier="a15"/>
+<org.eventb.core.parameter name="p16" org.eventb.core.identifier="a16"/>
+<org.eventb.core.parameter name="p17" org.eventb.core.identifier="a17"/>
+<org.eventb.core.parameter name="p18" org.eventb.core.identifier="a18"/>
+<org.eventb.core.parameter name="p19" org.eventb.core.identifier="a19"/>
+<org.eventb.core.parameter name="p20" org.eventb.core.identifier="a20"/>
+<org.eventb.core.parameter name="p21" org.eventb.core.identifier="a21"/>
+<org.eventb.core.parameter name="p22" org.eventb.core.identifier="a22"/>
+<org.eventb.core.parameter name="p23" org.eventb.core.identifier="a23"/>
+<org.eventb.core.parameter name="p24" org.eventb.core.identifier="a24"/>
+<org.eventb.core.parameter name="p25" org.eventb.core.identifier="a25"/>
+<org.eventb.core.parameter name="p26" org.eventb.core.identifier="a26"/>
+<org.eventb.core.parameter name="p27" org.eventb.core.identifier="a27"/>
+<org.eventb.core.parameter name="p28" org.eventb.core.identifier="a28"/>
+<org.eventb.core.parameter name="p29" org.eventb.core.identifier="a29"/>
+<org.eventb.core.parameter name="p30" org.eventb.core.identifier="a30"/>
+<org.eventb.core.parameter name="p31" org.eventb.core.identifier="a31"/>
+<org.eventb.core.parameter name="p32" org.eventb.core.identifier="a32"/>
+<org.eventb.core.parameter name="p33" org.eventb.core.identifier="b0"/>
+<org.eventb.core.parameter name="p34" org.eventb.core.identifier="b1"/>
+<org.eventb.core.parameter name="p35" org.eventb.core.identifier="b2"/>
+<org.eventb.core.parameter name="p36" org.eventb.core.identifier="b3"/>
+<org.eventb.core.parameter name="p37" org.eventb.core.identifier="b4"/>
+<org.eventb.core.parameter name="p38" org.eventb.core.identifier="b5"/>
+<org.eventb.core.parameter name="p39" org.eventb.core.identifier="b6"/>
+<org.eventb.core.parameter name="p40" org.eventb.core.identifier="b7"/>
+<org.eventb.core.parameter name="p41" org.eventb.core.identifier="b8"/>
+<org.eventb.core.parameter name="p42" org.eventb.core.identifier="b9"/>
+<org.eventb.core.parameter name="p43" org.eventb.core.identifier="b10"/>
+<org.eventb.core.parameter name="p44" org.eventb.core.identifier="b11"/>
+<org.eventb.core.parameter name="p45" org.eventb.core.identifier="b12"/>
+<org.eventb.core.parameter name="p46" org.eventb.core.identifier="b13"/>
+<org.eventb.core.parameter name="p47" org.eventb.core.identifier="b14"/>
+<org.eventb.core.parameter name="p48" org.eventb.core.identifier="b15"/>
+<org.eventb.core.parameter name="p49" org.eventb.core.identifier="b16"/>
+<org.eventb.core.parameter name="p50" org.eventb.core.identifier="b17"/>
+<org.eventb.core.parameter name="p51" org.eventb.core.identifier="b18"/>
+<org.eventb.core.parameter name="p52" org.eventb.core.identifier="b19"/>
+<org.eventb.core.parameter name="p53" org.eventb.core.identifier="b20"/>
+<org.eventb.core.parameter name="p54" org.eventb.core.identifier="b21"/>
+<org.eventb.core.parameter name="p55" org.eventb.core.identifier="b22"/>
+<org.eventb.core.parameter name="p56" org.eventb.core.identifier="b23"/>
+<org.eventb.core.parameter name="p57" org.eventb.core.identifier="b24"/>
+<org.eventb.core.parameter name="p58" org.eventb.core.identifier="b25"/>
+<org.eventb.core.parameter name="p59" org.eventb.core.identifier="b26"/>
+<org.eventb.core.parameter name="p60" org.eventb.core.identifier="b27"/>
+<org.eventb.core.parameter name="p61" org.eventb.core.identifier="b28"/>
+<org.eventb.core.parameter name="p62" org.eventb.core.identifier="b29"/>
+<org.eventb.core.parameter name="p63" org.eventb.core.identifier="b30"/>
+<org.eventb.core.parameter name="p64" org.eventb.core.identifier="b31"/>
+<org.eventb.core.parameter name="p65" org.eventb.core.identifier="b32"/>
+<org.eventb.core.parameter name="p66" org.eventb.core.identifier="s0"/>
+<org.eventb.core.parameter name="p67" org.eventb.core.identifier="s1"/>
+<org.eventb.core.parameter name="p68" org.eventb.core.identifier="s2"/>
+<org.eventb.core.parameter name="p69" org.eventb.core.identifier="s3"/>
+<org.eventb.core.parameter name="p70" org.eventb.core.identifier="s4"/>
+<org.eventb.core.parameter name="p71" org.eventb.core.identifier="s5"/>
+<org.eventb.core.parameter name="p72" org.eventb.core.identifier="s6"/>
+<org.eventb.core.parameter name="p73" org.eventb.core.identifier="s7"/>
+<org.eventb.core.parameter name="p74" org.eventb.core.identifier="s8"/>
+<org.eventb.core.parameter name="p75" org.eventb.core.identifier="s9"/>
+<org.eventb.core.parameter name="p76" org.eventb.core.identifier="s10"/>
+<org.eventb.core.parameter name="p77" org.eventb.core.identifier="s11"/>
+<org.eventb.core.parameter name="p78" org.eventb.core.identifier="s12"/>
+<org.eventb.core.parameter name="p79" org.eventb.core.identifier="s13"/>
+<org.eventb.core.parameter name="p80" org.eventb.core.identifier="s14"/>
+<org.eventb.core.parameter name="p81" org.eventb.core.identifier="s15"/>
+<org.eventb.core.parameter name="p82" org.eventb.core.identifier="s16"/>
+<org.eventb.core.parameter name="p83" org.eventb.core.identifier="s17"/>
+<org.eventb.core.parameter name="p84" org.eventb.core.identifier="s18"/>
+<org.eventb.core.parameter name="p85" org.eventb.core.identifier="s19"/>
+<org.eventb.core.parameter name="p86" org.eventb.core.identifier="s20"/>
+<org.eventb.core.parameter name="p87" org.eventb.core.identifier="s21"/>
+<org.eventb.core.parameter name="p88" org.eventb.core.identifier="s22"/>
+<org.eventb.core.parameter name="p89" org.eventb.core.identifier="s23"/>
+<org.eventb.core.parameter name="p90" org.eventb.core.identifier="s24"/>
+<org.eventb.core.parameter name="p91" org.eventb.core.identifier="s25"/>
+<org.eventb.core.parameter name="p92" org.eventb.core.identifier="s26"/>
+<org.eventb.core.parameter name="p93" org.eventb.core.identifier="s27"/>
+<org.eventb.core.parameter name="p94" org.eventb.core.identifier="s28"/>
+<org.eventb.core.parameter name="p95" org.eventb.core.identifier="s29"/>
+<org.eventb.core.parameter name="p96" org.eventb.core.identifier="s30"/>
+<org.eventb.core.parameter name="p97" org.eventb.core.identifier="s31"/>
+<org.eventb.core.parameter name="p98" org.eventb.core.identifier="s32"/>
+<org.eventb.core.parameter name="p99" org.eventb.core.identifier="c1"/>
+<org.eventb.core.parameter name="p100" org.eventb.core.identifier="c2"/>
+<org.eventb.core.parameter name="p101" org.eventb.core.identifier="c3"/>
+<org.eventb.core.parameter name="p102" org.eventb.core.identifier="c4"/>
+<org.eventb.core.parameter name="p103" org.eventb.core.identifier="c5"/>
+<org.eventb.core.parameter name="p104" org.eventb.core.identifier="c6"/>
+<org.eventb.core.parameter name="p105" org.eventb.core.identifier="c7"/>
+<org.eventb.core.parameter name="p106" org.eventb.core.identifier="c8"/>
+<org.eventb.core.parameter name="p107" org.eventb.core.identifier="c9"/>
+<org.eventb.core.parameter name="p108" org.eventb.core.identifier="c10"/>
+<org.eventb.core.parameter name="p109" org.eventb.core.identifier="c11"/>
+<org.eventb.core.parameter name="p110" org.eventb.core.identifier="c12"/>
+<org.eventb.core.parameter name="p111" org.eventb.core.identifier="c13"/>
+<org.eventb.core.parameter name="p112" org.eventb.core.identifier="c14"/>
+<org.eventb.core.parameter name="p113" org.eventb.core.identifier="c15"/>
+<org.eventb.core.parameter name="p114" org.eventb.core.identifier="c16"/>
+<org.eventb.core.parameter name="p115" org.eventb.core.identifier="c17"/>
+<org.eventb.core.parameter name="p116" org.eventb.core.identifier="c18"/>
+<org.eventb.core.parameter name="p117" org.eventb.core.identifier="c19"/>
+<org.eventb.core.parameter name="p118" org.eventb.core.identifier="c20"/>
+<org.eventb.core.parameter name="p119" org.eventb.core.identifier="c21"/>
+<org.eventb.core.parameter name="p120" org.eventb.core.identifier="c22"/>
+<org.eventb.core.parameter name="p121" org.eventb.core.identifier="c23"/>
+<org.eventb.core.parameter name="p122" org.eventb.core.identifier="c24"/>
+<org.eventb.core.parameter name="p123" org.eventb.core.identifier="c25"/>
+<org.eventb.core.parameter name="p124" org.eventb.core.identifier="c26"/>
+<org.eventb.core.parameter name="p125" org.eventb.core.identifier="c27"/>
+<org.eventb.core.parameter name="p126" org.eventb.core.identifier="c28"/>
+<org.eventb.core.parameter name="p127" org.eventb.core.identifier="c29"/>
+<org.eventb.core.parameter name="p128" org.eventb.core.identifier="c30"/>
+<org.eventb.core.parameter name="p129" org.eventb.core.identifier="c31"/>
+<org.eventb.core.parameter name="p130" org.eventb.core.identifier="c32"/>
+<org.eventb.core.parameter name="p131" org.eventb.core.identifier="c33"/>
+<org.eventb.core.guard name="g0" org.eventb.core.label="abits" org.eventb.core.predicate="a0 ∈ 0 ‥ 1 ∧ a1 ∈ 0 ‥ 1 ∧ a2 ∈ 0 ‥ 1 ∧ a3 ∈ 0 ‥ 1 ∧ a4 ∈ 0 ‥ 1 ∧ a5 ∈ 0 ‥ 1 ∧ a6 ∈ 0 ‥ 1 ∧ a7 ∈ 0 ‥ 1 ∧ a8 ∈ 0 ‥ 1 ∧ a9 ∈ 0 ‥ 1 ∧ a10 ∈ 0 ‥ 1 ∧ a11 ∈ 0 ‥ 1 ∧ a12 ∈ 0 ‥ 1 ∧ a13 ∈ 0 ‥ 1 ∧ a14 ∈ 0 ‥ 1 ∧ a15 ∈ 0 ‥ 1 ∧ a16 ∈ 0 ‥ 1 ∧ a17 ∈ 0 ‥ 1 ∧ a18 ∈ 0 ‥ 1 ∧ a19 ∈ 0 ‥ 1 ∧ a20 ∈ 0 ‥ 1 ∧ a21 ∈ 0 ‥ 1 ∧ a22 ∈ 0 ‥ 1 ∧ a23 ∈ 0 ‥ 1 ∧ a24 ∈ 0 ‥ 1 ∧ a25 ∈ 0 ‥ 1 ∧ a26 ∈ 0 ‥ 1 ∧ a27 ∈ 0 ‥ 1 ∧ a28 ∈ 0 ‥ 1 ∧ a29 ∈ 0 ‥ 1 ∧ a30 ∈ 0 ‥ 1 ∧ a31 ∈ 0 ‥ 1 ∧ a32 ∈ 0 ‥ 1 ∧ a = a0 + a1 ∗ 2 + a2 ∗ 4 + a3 ∗ 8 + a4 ∗ 16 + a5 ∗ 32 + a6 ∗ 64 + a7 ∗ 128 + a8 ∗ 256 + a9 ∗ 512 + a10 ∗ 1024 + a11 ∗ 2048 + a12 ∗ 4096 + a13 ∗ 8192 + a14 ∗ 16384 + a15 ∗ 32768 + a16 ∗ 65536 + a17 ∗ 131072 + a18 ∗ 262144 + a19 ∗ 524288 + a20 ∗ 1048576 + a21 ∗ 2097152 + a22 ∗ 4194304 + a23 ∗ 8388608 + a24 ∗ 16777216 + a25 ∗ 33554432 + a26 ∗ 67108864 + a27 ∗ 134217728 + a28 ∗ 268435456 + a29 ∗ 536870912 + a30 ∗ 1073741824 + a31 ∗ 2147483648 + a32 ∗ 4294967296"/>
+<org.eventb.core.guard name="g1" org.eventb.core.label="bbits" org.eventb.core.predicate="b0 ∈ 0 ‥ 1 ∧ b1 ∈ 0 ‥ 1 ∧ b2 ∈ 0 ‥ 1 ∧ b3 ∈ 0 ‥ 1 ∧ b4 ∈ 0 ‥ 1 ∧ b5 ∈ 0 ‥ 1 ∧ b6 ∈ 0 ‥ 1 ∧ b7 ∈ 0 ‥ 1 ∧ b8 ∈ 0 ‥ 1 ∧ b9 ∈ 0 ‥ 1 ∧ b10 ∈ 0 ‥ 1 ∧ b11 ∈ 0 ‥ 1 ∧ b12 ∈ 0 ‥ 1 ∧ b13 ∈ 0 ‥ 1 ∧ b14 ∈ 0 ‥ 1 ∧ b15 ∈ 0 ‥ 1 ∧ b16 ∈ 0 ‥ 1 ∧ b17 ∈ 0 ‥ 1 ∧ b18 ∈ 0 ‥ 1 ∧ b19 ∈ 0 ‥ 1 ∧ b20 ∈ 0 ‥ 1 ∧ b21 ∈ 0 ‥ 1 ∧ b22 ∈ 0 ‥ 1 ∧ b23 ∈ 0 ‥ 1 ∧ b24 ∈ 0 ‥ 1 ∧ b25 ∈ 0 ‥ 1 ∧ b26 ∈ 0 ‥ 1 ∧ b27 ∈ 0 ‥ 1 ∧ b28 ∈ 0 ‥ 1 ∧ b29 ∈ 0 ‥ 1 ∧ b30 ∈ 0 ‥ 1 ∧ b31 ∈ 0 ‥ 1 ∧ b32 ∈ 0 ‥ 1 ∧ b = b0 + b1 ∗ 2 + b2 ∗ 4 + b3 ∗ 8 + b4 ∗ 16 + b5 ∗ 32 + b6 ∗ 64 + b7 ∗ 128 + b8 ∗ 256 + b9 ∗ 512 + b10 ∗ 1024 + b11 ∗ 2048 + b12 ∗ 4096 + b13 ∗ 8192 + b14 ∗ 16384 + b15 ∗ 32768 + b16 ∗ 65536 + b17 ∗ 131072 + b18 ∗ 262144 + b19 ∗ 524288 + b20 ∗ 1048576 + b21 ∗ 2097152 + b22 ∗ 4194304 + b23 ∗ 8388608 + b24 ∗ 16777216 + b25 ∗ 33554432 + b26 ∗ 67108864 + b27 ∗ 134217728 + b28 ∗ 268435456 + b29 ∗ 536870912 + b30 ∗ 1073741824 + b31 ∗ 2147483648 + b32 ∗ 4294967296"/>
+<org.eventb.core.guard name="g2" org.eventb.core.label="sums" org.eventb.core.predicate="s0 ∈ 0 ‥ 1 ∧ s1 ∈ 0 ‥ 1 ∧ s2 ∈ 0 ‥ 1 ∧ s3 ∈ 0 ‥ 1 ∧ s4 ∈ 0 ‥ 1 ∧ s5 ∈ 0 ‥ 1 ∧ s6 ∈ 0 ‥ 1 ∧ s7 ∈ 0 ‥ 1 ∧ s8 ∈ 0 ‥ 1 ∧ s9 ∈ 0 ‥ 1 ∧ s10 ∈ 0 ‥ 1 ∧ s11 ∈ 0 ‥ 1 ∧ s12 ∈ 0 ‥ 1 ∧ s13 ∈ 0 ‥ 1 ∧ s14 ∈ 0 ‥ 1 ∧ s15 ∈ 0 ‥ 1 ∧ s16 ∈ 0 ‥ 1 ∧ s17 ∈ 0 ‥ 1 ∧ s18 ∈ 0 ‥ 1 ∧ s19 ∈ 0 ‥ 1 ∧ s20 ∈ 0 ‥ 1 ∧ s21 ∈ 0 ‥ 1 ∧ s22 ∈ 0 ‥ 1 ∧ s23 ∈ 0 ‥ 1 ∧ s24 ∈ 0 ‥ 1 ∧ s25 ∈ 0 ‥ 1 ∧ s26 ∈ 0 ‥ 1 ∧ s27 ∈ 0 ‥ 1 ∧ s28 ∈ 0 ‥ 1 ∧ s29 ∈ 0 ‥ 1 ∧ s30 ∈ 0 ‥ 1 ∧ s31 ∈ 0 ‥ 1 ∧ s32 ∈ 0 ‥ 1"/>
+<org.eventb.core.guard name="g3" org.eventb.core.label="carries" org.eventb.core.predicate="c1 ∈ 0 ‥ 1 ∧ c2 ∈ 0 ‥ 1 ∧ c3 ∈ 0 ‥ 1 ∧ c4 ∈ 0 ‥ 1 ∧ c5 ∈ 0 ‥ 1 ∧ c6 ∈ 0 ‥ 1 ∧ c7 ∈ 0 ‥ 1 ∧ c8 ∈ 0 ‥ 1 ∧ c9 ∈ 0 ‥ 1 ∧ c10 ∈ 0 ‥ 1 ∧ c11 ∈ 0 ‥ 1 ∧ c12 ∈ 0 ‥ 1 ∧ c13 ∈ 0 ‥ 1 ∧ c14 ∈ 0 ‥ 1 ∧ c15 ∈ 0 ‥ 1 ∧ c16 ∈ 0 ‥ 1 ∧ c17 ∈ 0 ‥ 1 ∧ c18 ∈ 0 ‥ 1 ∧ c19 ∈ 0 ‥ 1 ∧ c20 ∈ 0 ‥ 1 ∧ c21 ∈ 0 ‥ 1 ∧ c22 ∈ 0 ‥ 1 ∧ c23 ∈ 0 ‥ 1 ∧ c24 ∈ 0 ‥ 1 ∧ c25 ∈ 0 ‥ 1 ∧ c26 ∈ 0 ‥ 1 ∧ c27 ∈ 0 ‥ 1 ∧ c28 ∈ 0 ‥ 1 ∧ c29 ∈ 0 ‥ 1 ∧ c30 ∈ 0 ‥ 1 ∧ c31 ∈ 0 ‥ 1 ∧ c32 ∈ 0 ‥ 1 ∧ c33 ∈ 0 ‥ 1"/>
+<org.eventb.core.guard name="g4" org.eventb.core.label="fa0" org.eventb.core.predicate="a0 + (1 − b0) + 1 = s0 + 2 ∗ c1"/>
+<org.eventb.core.guard name="g5" org.eventb.core.label="fa1" org.eventb.core.predicate="a1 + (1 − b1) + c1 = s1 + 2 ∗ c2"/>
+<org.eventb.core.guard name="g6" org.eventb.core.label="fa2" org.eventb.core.predicate="a2 + (1 − b2) + c2 = s2 + 2 ∗ c3"/>
+<org.eventb.core.guard name="g7" org.eventb.core.label="fa3" org.eventb.core.predicate="a3 + (1 − b3) + c3 = s3 + 2 ∗ c4"/>
+<org.eventb.core.guard name="g8" org.eventb.core.label="fa4" org.eventb.core.predicate="a4 + (1 − b4) + c4 = s4 + 2 ∗ c5"/>
+<org.eventb.core.guard name="g9" org.eventb.core.label="fa5" org.eventb.core.predicate="a5 + (1 − b5) + c5 = s5 + 2 ∗ c6"/>
+<org.eventb.core.guard name="g10" org.eventb.core.label="fa6" org.eventb.core.predicate="a6 + (1 − b6) + c6 = s6 + 2 ∗ c7"/>
+<org.eventb.core.guard name="g11" org.eventb.core.label="fa7" org.eventb.core.predicate="a7 + (1 − b7) + c7 = s7 + 2 ∗ c8"/>
+<org.eventb.core.guard name="g12" org.eventb.core.label="fa8" org.eventb.core.predicate="a8 + (1 − b8) + c8 = s8 + 2 ∗ c9"/>
+<org.eventb.core.guard name="g13" org.eventb.core.label="fa9" org.eventb.core.predicate="a9 + (1 − b9) + c9 = s9 + 2 ∗ c10"/>
+<org.eventb.core.guard name="g14" org.eventb.core.label="fa10" org.eventb.core.predicate="a10 + (1 − b10) + c10 = s10 + 2 ∗ c11"/>
+<org.eventb.core.guard name="g15" org.eventb.core.label="fa11" org.eventb.core.predicate="a11 + (1 − b11) + c11 = s11 + 2 ∗ c12"/>
+<org.eventb.core.guard name="g16" org.eventb.core.label="fa12" org.eventb.core.predicate="a12 + (1 − b12) + c12 = s12 + 2 ∗ c13"/>
+<org.eventb.core.guard name="g17" org.eventb.core.label="fa13" org.eventb.core.predicate="a13 + (1 − b13) + c13 = s13 + 2 ∗ c14"/>
+<org.eventb.core.guard name="g18" org.eventb.core.label="fa14" org.eventb.core.predicate="a14 + (1 − b14) + c14 = s14 + 2 ∗ c15"/>
+<org.eventb.core.guard name="g19" org.eventb.core.label="fa15" org.eventb.core.predicate="a15 + (1 − b15) + c15 = s15 + 2 ∗ c16"/>
+<org.eventb.core.guard name="g20" org.eventb.core.label="fa16" org.eventb.core.predicate="a16 + (1 − b16) + c16 = s16 + 2 ∗ c17"/>
+<org.eventb.core.guard name="g21" org.eventb.core.label="fa17" org.eventb.core.predicate="a17 + (1 − b17) + c17 = s17 + 2 ∗ c18"/>
+<org.eventb.core.guard name="g22" org.eventb.core.label="fa18" org.eventb.core.predicate="a18 + (1 − b18) + c18 = s18 + 2 ∗ c19"/>
+<org.eventb.core.guard name="g23" org.eventb.core.label="fa19" org.eventb.core.predicate="a19 + (1 − b19) + c19 = s19 + 2 ∗ c20"/>
+<org.eventb.core.guard name="g24" org.eventb.core.label="fa20" org.eventb.core.predicate="a20 + (1 − b20) + c20 = s20 + 2 ∗ c21"/>
+<org.eventb.core.guard name="g25" org.eventb.core.label="fa21" org.eventb.core.predicate="a21 + (1 − b21) + c21 = s21 + 2 ∗ c22"/>
+<org.eventb.core.guard name="g26" org.eventb.core.label="fa22" org.eventb.core.predicate="a22 + (1 − b22) + c22 = s22 + 2 ∗ c23"/>
+<org.eventb.core.guard name="g27" org.eventb.core.label="fa23" org.eventb.core.predicate="a23 + (1 − b23) + c23 = s23 + 2 ∗ c24"/>
+<org.eventb.core.guard name="g28" org.eventb.core.label="fa24" org.eventb.core.predicate="a24 + (1 − b24) + c24 = s24 + 2 ∗ c25"/>
+<org.eventb.core.guard name="g29" org.eventb.core.label="fa25" org.eventb.core.predicate="a25 + (1 − b25) + c25 = s25 + 2 ∗ c26"/>
+<org.eventb.core.guard name="g30" org.eventb.core.label="fa26" org.eventb.core.predicate="a26 + (1 − b26) + c26 = s26 + 2 ∗ c27"/>
+<org.eventb.core.guard name="g31" org.eventb.core.label="fa27" org.eventb.core.predicate="a27 + (1 − b27) + c27 = s27 + 2 ∗ c28"/>
+<org.eventb.core.guard name="g32" org.eventb.core.label="fa28" org.eventb.core.predicate="a28 + (1 − b28) + c28 = s28 + 2 ∗ c29"/>
+<org.eventb.core.guard name="g33" org.eventb.core.label="fa29" org.eventb.core.predicate="a29 + (1 − b29) + c29 = s29 + 2 ∗ c30"/>
+<org.eventb.core.guard name="g34" org.eventb.core.label="fa30" org.eventb.core.predicate="a30 + (1 − b30) + c30 = s30 + 2 ∗ c31"/>
+<org.eventb.core.guard name="g35" org.eventb.core.label="fa31" org.eventb.core.predicate="a31 + (1 − b31) + c31 = s31 + 2 ∗ c32"/>
+<org.eventb.core.guard name="g36" org.eventb.core.label="fa32" org.eventb.core.predicate="a32 + (1 − b32) + c32 = s32 + 2 ∗ c33"/>
+<org.eventb.core.witness name="w0" org.eventb.core.label="n" org.eventb.core.predicate="n = 1 − c33"/>
+<org.eventb.core.witness name="w1" org.eventb.core.label="r" org.eventb.core.predicate="r = s0 + s1 ∗ 2 + s2 ∗ 4 + s3 ∗ 8 + s4 ∗ 16 + s5 ∗ 32 + s6 ∗ 64 + s7 ∗ 128 + s8 ∗ 256 + s9 ∗ 512 + s10 ∗ 1024 + s11 ∗ 2048 + s12 ∗ 4096 + s13 ∗ 8192 + s14 ∗ 16384 + s15 ∗ 32768 + s16 ∗ 65536 + s17 ∗ 131072 + s18 ∗ 262144 + s19 ∗ 524288 + s20 ∗ 1048576 + s21 ∗ 2097152 + s22 ∗ 4194304 + s23 ∗ 8388608 + s24 ∗ 16777216 + s25 ∗ 33554432 + s26 ∗ 67108864 + s27 ∗ 134217728 + s28 ∗ 268435456 + s29 ∗ 536870912 + s30 ∗ 1073741824 + s31 ∗ 2147483648 + s32 ∗ 4294967296"/>
+<org.eventb.core.action name="a0" org.eventb.core.label="act1" org.eventb.core.assignment="z ≔ s0 + s1 ∗ 2 + s2 ∗ 4 + s3 ∗ 8 + s4 ∗ 16 + s5 ∗ 32 + s6 ∗ 64 + s7 ∗ 128 + s8 ∗ 256 + s9 ∗ 512 + s10 ∗ 1024 + s11 ∗ 2048 + s12 ∗ 4096 + s13 ∗ 8192 + s14 ∗ 16384 + s15 ∗ 32768 + s16 ∗ 65536 + s17 ∗ 131072 + s18 ∗ 262144 + s19 ∗ 524288 + s20 ∗ 1048576 + s21 ∗ 2097152 + s22 ∗ 4194304 + s23 ∗ 8388608 + s24 ∗ 16777216 + s25 ∗ 33554432 + s26 ∗ 67108864 + s27 ∗ 134217728 + s28 ∗ 268435456 + s29 ∗ 536870912 + s30 ∗ 1073741824 + s31 ∗ 2147483648 + s32 ∗ 4294967296"/>
+</org.eventb.core.event>
+</org.eventb.core.machineFile>

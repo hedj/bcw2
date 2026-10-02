@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<org.eventb.core.machineFile org.eventb.core.configuration="org.eventb.core.fwd" version="5">
+<org.eventb.core.refinesMachine name="r1" org.eventb.core.target="M0"/>
+<org.eventb.core.variable name="v1" org.eventb.core.identifier="w"/>
+<org.eventb.core.invariant name="i1" org.eventb.core.label="word" org.eventb.core.predicate="w ∈ 0 ‥ 4294967295"/>
+<org.eventb.core.invariant name="i2" org.eventb.core.label="glue" org.eventb.core.predicate="w = hi ∗ 4096 + rd ∗ 128 + lo"/>
+<org.eventb.core.event name="e0" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="INITIALISATION">
+<org.eventb.core.action name="a1" org.eventb.core.assignment="w ≔ 0" org.eventb.core.label="act1"/>
+</org.eventb.core.event>
+<org.eventb.core.event name="e1" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="insert">
+<org.eventb.core.refinesEvent name="r1" org.eventb.core.target="insert"/>
+<org.eventb.core.parameter name="p1" org.eventb.core.identifier="v"/>
+<org.eventb.core.parameter name="p2" org.eventb.core.identifier="h"/>
+<org.eventb.core.parameter name="p3" org.eventb.core.identifier="f"/>
+<org.eventb.core.parameter name="p4" org.eventb.core.identifier="l"/>
+<org.eventb.core.guard name="g1" org.eventb.core.label="grd1" org.eventb.core.predicate="v ∈ 0 ‥ 31"/>
+<org.eventb.core.guard name="g2" org.eventb.core.label="split" org.eventb.core.predicate="h ∈ 0 ‥ 1048575 ∧ f ∈ 0 ‥ 31 ∧ l ∈ 0 ‥ 127 ∧ w = h ∗ 4096 + f ∗ 128 + l"/>
+<org.eventb.core.action name="a1" org.eventb.core.assignment="w ≔ h ∗ 4096 + v ∗ 128 + l" org.eventb.core.label="act1"/>
+</org.eventb.core.event>
+<org.eventb.core.event name="e2" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="extract">
+<org.eventb.core.refinesEvent name="r1" org.eventb.core.target="extract"/>
+<org.eventb.core.parameter name="p1" org.eventb.core.identifier="r"/>
+<org.eventb.core.parameter name="p2" org.eventb.core.identifier="h"/>
+<org.eventb.core.parameter name="p3" org.eventb.core.identifier="l"/>
+<org.eventb.core.guard name="g1" org.eventb.core.label="split" org.eventb.core.predicate="h ∈ 0 ‥ 1048575 ∧ r ∈ 0 ‥ 31 ∧ l ∈ 0 ‥ 127 ∧ w = h ∗ 4096 + r ∗ 128 + l"/>
+</org.eventb.core.event>
+</org.eventb.core.machineFile>

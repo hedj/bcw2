@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<org.eventb.core.machineFile org.eventb.core.configuration="org.eventb.core.fwd" version="5">
+<org.eventb.core.variable name="v0" org.eventb.core.identifier="a"/>
+<org.eventb.core.variable name="v1" org.eventb.core.identifier="b"/>
+<org.eventb.core.variable name="v2" org.eventb.core.identifier="z"/>
+<org.eventb.core.invariant name="i0" org.eventb.core.label="words" org.eventb.core.predicate="a ∈ 0 ‥ 8589934591 ∧ b ∈ 0 ‥ 8589934591 ∧ z ∈ 0 ‥ 8589934591"/>
+<org.eventb.core.event name="e0" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="INITIALISATION">
+<org.eventb.core.action name="a0" org.eventb.core.label="act1" org.eventb.core.assignment="a, b, z ≔ 0, 0, 0"/>
+</org.eventb.core.event>
+<org.eventb.core.event name="e1" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="load">
+<org.eventb.core.parameter name="p0" org.eventb.core.identifier="x"/>
+<org.eventb.core.parameter name="p1" org.eventb.core.identifier="y"/>
+<org.eventb.core.guard name="g0" org.eventb.core.label="grd1" org.eventb.core.predicate="x ∈ 0 ‥ 8589934591 ∧ y ∈ 0 ‥ 8589934591"/>
+<org.eventb.core.action name="a0" org.eventb.core.label="act1" org.eventb.core.assignment="a, b ≔ x, y"/>
+</org.eventb.core.event>
+<org.eventb.core.event name="e2" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="add">
+<org.eventb.core.parameter name="p0" org.eventb.core.identifier="c"/>
+<org.eventb.core.parameter name="p1" org.eventb.core.identifier="r"/>
+<org.eventb.core.guard name="g0" org.eventb.core.label="grd1" org.eventb.core.predicate="c ∈ 0 ‥ 1 ∧ r ∈ 0 ‥ 8589934591 ∧ a + b = c ∗ 8589934592 + r"/>
+<org.eventb.core.action name="a0" org.eventb.core.label="act1" org.eventb.core.assignment="z ≔ r"/>
+</org.eventb.core.event>
+<org.eventb.core.event name="e3" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="sub">
+<org.eventb.core.parameter name="p0" org.eventb.core.identifier="n"/>
+<org.eventb.core.parameter name="p1" org.eventb.core.identifier="r"/>
+<org.eventb.core.guard name="g0" org.eventb.core.label="grd1" org.eventb.core.predicate="n ∈ 0 ‥ 1 ∧ r ∈ 0 ‥ 8589934591 ∧ a − b = r − n ∗ 8589934592"/>
+<org.eventb.core.action name="a0" org.eventb.core.label="act1" org.eventb.core.assignment="z ≔ r"/>
+</org.eventb.core.event>
+</org.eventb.core.machineFile>

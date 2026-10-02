@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<org.eventb.core.machineFile org.eventb.core.configuration="org.eventb.core.fwd" version="5">
+<org.eventb.core.variable name="v1" org.eventb.core.identifier="hi"/>
+<org.eventb.core.variable name="v2" org.eventb.core.identifier="rd"/>
+<org.eventb.core.variable name="v3" org.eventb.core.identifier="lo"/>
+<org.eventb.core.invariant name="i1" org.eventb.core.label="fields" org.eventb.core.predicate="hi ∈ 0 ‥ 1048575 ∧ rd ∈ 0 ‥ 31 ∧ lo ∈ 0 ‥ 127"/>
+<org.eventb.core.event name="e0" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="INITIALISATION">
+<org.eventb.core.action name="a1" org.eventb.core.assignment="hi, rd, lo ≔ 0, 0, 0" org.eventb.core.label="act1"/>
+</org.eventb.core.event>
+<org.eventb.core.event name="e1" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="insert">
+<org.eventb.core.parameter name="p1" org.eventb.core.identifier="v"/>
+<org.eventb.core.guard name="g1" org.eventb.core.label="grd1" org.eventb.core.predicate="v ∈ 0 ‥ 31"/>
+<org.eventb.core.action name="a1" org.eventb.core.assignment="rd ≔ v" org.eventb.core.label="act1"/>
+</org.eventb.core.event>
+<org.eventb.core.event name="e2" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="extract">
+<org.eventb.core.parameter name="p1" org.eventb.core.identifier="r"/>
+<org.eventb.core.guard name="g1" org.eventb.core.label="grd1" org.eventb.core.predicate="r = rd"/>
+</org.eventb.core.event>
+</org.eventb.core.machineFile>
