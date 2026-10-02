@@ -181,8 +181,8 @@ The two solvers decide integer arithmetic differently. CVC3 eliminates integer v
 with branch and bound, cuts and a Diophantine equation solver, and documents no option for exact
 elimination. So cvc5 does not prove everything that CVC3 proves.
 
-The goal comes from the `Shift` probe model, which predates two later rules: it uses 33-bit words,
-and it writes a shift as division with remainder. The bridge writes shifts as case tables of bit
+The goal came from the old `Shift` probe model, which predated two later rules: it used 33-bit words,
+and it wrote a shift as division with remainder. The bridge writes shifts as case tables of bit
 sums, and `BridgeAluGates` proves its shifts without CVC3. A `Shift` model in the bridge's form might
 let cvc5 replace both CVC3 and CVC4; that is not tested.
 
@@ -201,9 +201,25 @@ predates the slice, and the slice needs CVC4 or cvc5 (`reports/cvc5/`, one run e
 | Z3, CVC4, veriT | not run (Shift `sll` needs CVC3) | 144, 13.6 s |
 | Z3, CVC3, cvc5, veriT | 74, 20.3 s | 144, 14.8 s |
 
-So cvc5 replaces CVC4 on every measured obligation, and CVC3 stays for Shift `sll`. Z3, CVC3, cvc5
-and veriT is the candidate default; it needs `bcw.cvc5` to name the binary, so the default in
-`Build.java` stays Z3, CVC3, CVC4 and veriT.
+So cvc5 replaces CVC4 on every measured obligation, and CVC3 stays for Shift `sll`.
+
+Then `gen/shift.py` was rewritten: 32-bit words, and shifts as offsets in indexed bit sums (M0: a
+table over k, each case the bits of a moved k places; M1: a five-stage barrel that moves each bit
+2^j places when bit j of k is 1). The new SIMs need no CVC3: CVC4 proves them, and so does cvc5
+(`unsat` in 3.8 s on its own), though under Rodin only with less contention or more time. Their
+benchmarks have 31 quantifiers, from the translation of the `ite` functions. With the new `Shift`
+(one run each):
+
+| Solvers | Timeout | Seven models (76) | Slice (144) |
+|---|---|---|---|
+| Z3, CVC3, CVC4, veriT | 6 s | 76, 33.3 s | 144, 16.9 s |
+| Z3, cvc5, veriT | 6 s | 75: `Shift/M1/sll/act1/SIM` open, 43.1 s | 144, 13.5 s |
+| Z3, cvc5, veriT | 10 s | 76, 48.8 s | 144, 14.6 s |
+
+So Z3, cvc5 and veriT prove every measured obligation with a 10 s timeout, and need neither CVC3
+nor CVC4. The trade-off: the seven models take 48.8 s, against 33.3 s with the four solvers. The
+new `Shift` is itself slower than the old one (seven models 33.3 s, against 23.6 s). The default in
+`Build.java` stays Z3, CVC3, CVC4, veriT and 6 s, since cvc5 needs `bcw.cvc5` to name the binary.
 
 ## Open questions
 
