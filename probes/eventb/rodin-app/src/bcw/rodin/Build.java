@@ -64,8 +64,7 @@ import org.rodinp.core.RodinCore;
  * A goal still open then gets two searches at once. One runs every SMT solver at once on the goal
  * alone, then on the selected hypotheses, then on all of them, each attempt within the timeout. The
  * other, for a goal over a variable that a hypothesis bounds to at most bcw.split values (default 8),
- * splits the goal into one case for each value, and proves bcw.cases (default 4) cases at once,
- * while the first search waits bcw.hold ms (default 1000). The first search to prove the goal wins.
+ * splits the goal into one case for each value. The first search to prove the goal wins.
  * The obligations of a file are proved bcw.jobs (default 4) at once.
  *
  * Properties: bcw.timeout (ms, default 6000), bcw.first (ms that Z3 has alone first, default 700), bcw.solvers (order, default Z3,CVC3,CVC4,veriT, measured),
@@ -78,8 +77,6 @@ public class Build implements IApplication {
     private long timeout;
     private ITactic quick, quickAll;
     private static final int SPLIT = Integer.getInteger("bcw.split", 8);
-    private static final int CASES = Integer.getInteger("bcw.cases", 4);
-    private static final long HOLD = Long.getLong("bcw.hold", 1000);
     private static final int JOBS = Integer.getInteger("bcw.jobs", 4);
     private List<String> solvers;
     private boolean measure;
@@ -240,11 +237,7 @@ public class Build implements IApplication {
         Stop stop = new Stop(null);
         ExecutorService pool = Executors.newFixedThreadPool(2);
         CompletionService<Proof> done = new ExecutorCompletionService<>(pool);
-        done.submit(() -> {
-            // A split wins most goals that it applies to, so the sets wait a moment and leave it the cores.
-            if (range != null) hold(stop);
-            return sets(sequent, stop);
-        });
+        done.submit(() -> sets(sequent, stop));
         if (range != null) done.submit(() -> split(sequent, range, stop));
         try {
             for (int i = 0; i < (range == null ? 1 : 2); i++) {
@@ -328,9 +321,10 @@ public class Build implements IApplication {
     }
 
     /**
-     * Rodin's case rule on a copy of the goal, one case for each value of the variable.
+     * Rodin's case rule on a copy of the goal, one case for each value of the variable. Each case gets
+     * Rodin's tactics, then short attempts by Z3, and only then the sets of solvers.
      */
-    private Proof split(IProverSequent sequent, Range range, Stop outer) throws InterruptedException {
+    private Proof split(IProverSequent sequent, Range range, Stop stop) throws InterruptedException {
         IProofTree copy = ProverFactory.makeProofTree(sequent, null);
         IProofTreeNode rest = copy.getRoot();
         for (int value = range.low(); value <= range.high(); value++) {
@@ -338,51 +332,16 @@ public class Build implements IApplication {
             IProofTreeNode[] children = rest.getChildNodes();
             rest = children[children.length - 1];   // The case in which the variable is not this value.
         }
-        // Each case is proved on its own copy, bcw.cases at once, and then grafted back onto its leaf.
-        IProofTreeNode[] leaves = copy.getRoot().getOpenDescendants();
-        Stop stop = new Stop(outer);
-        ExecutorService pool = Executors.newFixedThreadPool(CASES);
-        try {
-            List<Future<IProofTree>> cases = new ArrayList<>();
-            for (IProofTreeNode leaf : leaves) {
-                IProverSequent one = leaf.getSequent();
-                cases.add(pool.submit(() -> proveCase(one, stop)));
-            }
-            for (int i = 0; i < leaves.length; i++) {
-                IProofTree proved = cases.get(i).get();
-                if (proved == null || !ProofBuilder.reuse(leaves[i], proved.getRoot(), null) || !leaves[i].isClosed())
-                    return null;
-            }
-            return new Proof(copy, "split(" + range.variable() + ")");
-        } catch (ExecutionException e) {
-            throw new IllegalStateException(e.getCause());
-        } finally {
-            stop.setCanceled(true);
-            pool.shutdown();
-            pool.awaitTermination(1, TimeUnit.MINUTES);
-        }
-    }
-
-    /** One case of a split: Rodin's tactics, short attempts by Z3, and only then the sets of solvers. */
-    private IProofTree proveCase(IProverSequent sequent, Stop stop) throws InterruptedException {
-        IProofTree tree = ProverFactory.makeProofTree(sequent, null);
-        rodin.apply(tree.getRoot(), null);
-        for (IProofTreeNode goal : tree.getRoot().getOpenDescendants()) {
-            if (stop.isCanceled()) return null;
-            if (quick.apply(goal, stop) == null || quickAll.apply(goal, stop) == null) continue;
-            Proof proof = sets(goal.getSequent(), stop);
-            if (proof == null || !ProofBuilder.reuse(goal, proof.tree().getRoot(), null) || !goal.isClosed()) {
-                stop.setCanceled(true);   // One open case fails the split, so the other cases stop.
-                return null;
+        for (IProofTreeNode leaf : copy.getRoot().getOpenDescendants()) {
+            rodin.apply(leaf, null);
+            for (IProofTreeNode goal : leaf.getOpenDescendants()) {
+                if (stop.isCanceled()) return null;
+                if (quick.apply(goal, stop) == null || quickAll.apply(goal, stop) == null) continue;
+                Proof proof = sets(goal.getSequent(), stop);
+                if (proof == null || !ProofBuilder.reuse(goal, proof.tree().getRoot(), null) || !goal.isClosed()) return null;
             }
         }
-        return tree;
-    }
-
-    /** Waits bcw.hold milliseconds, or less if the search is stopped. */
-    private static void hold(Stop stop) throws InterruptedException {
-        long end = System.nanoTime() + HOLD * 1000000L;
-        while (!stop.isCanceled() && System.nanoTime() < end) Thread.sleep(20);
+        return new Proof(copy, "split(" + range.variable() + ")");
     }
 
     /** Tells the solvers that are still running to stop. */

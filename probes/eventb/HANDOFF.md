@@ -10,7 +10,7 @@ not tested, the note says so.
 Event-B in Rodin can replace the ad-hoc formal system of bcw2 (twins, `equiv`, `prove`) and
 enforce a top-down exposition, with open solvers only and no weaker proofs. A vertical slice
 proved, with no proof written by hand, from a top machine (threads, a fixed rotation, isolation)
-down to sequential RTL: 144 of 144 obligations in 13.5 s. A mutant check killed each of three
+down to sequential RTL: 144 of 144 obligations in 17 s. A mutant check killed each of three
 seeded faults with a concrete counterexample, and kept a correct variant.
 
 Not probed: non-interference, the multiplier, a whole chapter's audit time and live set.
@@ -41,7 +41,7 @@ a moving nightly with no revision stamp: pin a fixed copy by its hash.
 
 ## The build application (`rodin-app/`)
 
-`Build.java` (399 lines) is an Eclipse application in an OSGi bundle in Rodin's `dropins/`. Build
+`Build.java` (360 lines) is an Eclipse application in an OSGi bundle in Rodin's `dropins/`. Build
 it with `javac --release 17` against every jar in Rodin's `plugins/`, then `jar cfm` with
 `META-INF/MANIFEST.MF` and `plugin.xml`. Check `javac`'s own exit status: a pipe through `grep`
 once skipped the `jar` step and ran an old bundle.
@@ -57,9 +57,7 @@ For each project on the command line it imports, builds and proves every obligat
      then on all of them, 6 s each (`bcw.timeout`);
    * the split, for a variable in the goal that a hypothesis bounds to at most 8 values
      (`bcw.split`): Rodin's case rule (`Tactics.doCase`) for each value, Rodin's tactics on each
-     case, Z3 for 0.7 s on the selected hypotheses and then on all, and then the sets. Each case
-     runs on its own copy, 4 at once (`bcw.cases`), and is grafted back. When a split applies, the
-     sets wait 1 s (`bcw.hold`) so that the split has the cores.
+     case, Z3 for 0.7 s on the selected hypotheses and then on all, and then the sets.
 4. The obligations of a file are proved 4 at once (`bcw.jobs`). Attempts are created, committed
    and disposed one at a time.
 
@@ -112,15 +110,20 @@ was neither proved nor killed: the bridge is sound but not complete.
 | 311 goals, each solver timed (`reports/measure.csv`) | Z3 proves 308 with all hypotheses, 299 with the selected ones (largest success 5,645 ms against 242 ms); no goal falls only to the selected hypotheses |
 | Seven probe models, 74 obligations, by strategy | Sequential ladder 49 s; race only 55 s; quick Z3 then race 27 s; contest 27 s (`reports/contest2_7.csv`, no LOST, no SLOWER against `reports/baseline.csv`) |
 | Bridge, combinational | `core_rotate` 50 ms; `core_region` 32 ms; `core_alu` 32 of 32 in 41 s with gates (the first, monolithic form was too slow) |
-| Slice: M0 (threads, rotation, isolation), M1 (ring of 8 stage records), M2 (generated from `slice/ring.v`) | 11 + 70 + 63 = 144 of 144 in 30 s wall one obligation at a time (`reports/contest2slice.csv`), 13.5 s four at a time (`reports/speed/E.csv`); M2 alone 0.8 s |
+| Slice: M0 (threads, rotation, isolation), M1 (ring of 8 stage records), M2 (generated from `slice/ring.v`) | 11 + 70 + 63 = 144 of 144 in 30 s wall one obligation at a time (`reports/contest2slice.csv`), 17 s four at a time (`reports/speed/F.csv`); M2 alone 0.8 s |
 | Slice, written by hand against the RTL | `slice/spec.py`, 38 lines, for 15 lines of RTL |
-| Speed-ups, one run each (`reports/speed/`) | Slice wall: 30.5 s before; 27.6 s with parallel cases; 25.9 s with the hold too; 16.5 s with 2 obligations at once; 13.5 s with 4. Seven models: 27 s before; 26.9 s with 2; 24.8 s with 4. No obligation lost |
+| Speed-ups, one run each (`reports/speed/`) | Slice wall: 30.5 s before (A); 16.9 s with 4 obligations at once (F, kept). Seven models: 27 s before; 23.6 s (F7). No obligation lost |
 
-Parallel cases and the hold gain little: the 8 `where_r` invariants average 2.46 s before and
-2.23–2.51 s after, and where their time goes is not measured. Obligations run at once compete for
-the 4 cores, so one obligation can take longer while the whole run takes less. A baseline from a
-sequential run then reports SLOWER (here 1.2 s → 2.0–2.3 s for three obligations with 62 goals
-each); take the baseline with the same `bcw.jobs`.
+Two more speed-ups were measured and then removed, as about 40 lines of code for a gain that one
+run each cannot separate from noise: the cases of a split at once (slice 30.5 → 27.6 s, B) and a
+1 s wait for the sets when a split applies (→ 25.9 s, C). The trade-off: with both and 4
+obligations at once the slice took 13.5 s (E), against 16.9 s without them (F). The 8 `where_r`
+invariants average about 2.3 s each in every configuration, and where that time goes is not
+measured.
+
+Obligations run at once compete for the 4 cores, so one obligation can take longer while the whole
+run takes less. A baseline from a sequential run then reports SLOWER (here 1.2 s → 2.0–2.3 s for
+three obligations with 62 goals each); take the baseline with the same `bcw.jobs`.
 
 `core_region`'s rule holds only for `size ∈ 1 ‥ 7`. Size 0 is reachable (`3'd1 << f3[1:0]` with
 `f3[1:0] = 3`), but only for an illegal access.
