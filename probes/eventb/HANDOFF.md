@@ -131,7 +131,8 @@ propagates them, so each netlist holds one operation. `alu/netlists.sh` rebuilds
 | The lowest machine named as the RTL names its registers | — |
 
 The lowest machine mirrors the structure of the RTL. A correct XOR built as `(a | b) − (a & b)`
-(`alu/ctl_xor`) is not proved: the bridge is sound but not complete. Its output comes from `$sub`,
+(`alu/ctl_xor`) is not proved by the word-level bridge (it is at bit level: see Bit-level
+normalisation): the bridge is sound but not complete. Its output comes from `$sub`,
 so the netlist names no bit `r0` … `r31` of the specification, and the generator stops with that
 message. Before, a table of the specification's values gave the witnesses, and the refinement goal
 stayed open with no counterexample from ProB. With linear forms for `$sub` and for those
@@ -325,6 +326,41 @@ Before the cause was found, two other changes were tried:
 * The witness of `val'` stated as a function and its values, in four forms: each left 2 to 11
   obligations open (WFIS, WWD), and pointwise invariants made the slice 4 times slower. Dropped.
 
+## Bit-level normalisation (`bits/`)
+
+A netlist bit-blasted to single-bit gates proves where word-level cells do not. `bits/netlists.sh`
+runs yosys `techmap` after `prep; opt -full`, and `bits/gen_bits.py` writes each gate as a 0/1
+parameter with linear constraints (NOT inline as `1 − x`), with the output bits named `r0` … `r31`,
+so that the specification's parameters need no witness. Three choices decide the proof time:
+
+1. One guard per gate, in the order of the cones of `r0`, `r1`, …, with a theorem guard after each
+   cone. A theorem's obligation has only the guards before it, so each proof is local, and the
+   refinement goal follows from the theorems. The theorems name only bits of the netlist: for xor,
+   `r(i)` is `a(i)` xor `b(i)`; for add, `A(i) + B(i) − R(i) = 2^(i+1) ∗ c(i+1)`, with `A(i)` the
+   low `i + 1` bits of `a` and `c(i+1)` the carry gate into the next bit.
+2. A ripple carry: yosys maps an adder to a Brent–Kung tree, in which each carry depends on all
+   lower bits. `bits/ripple.v` (15 lines, tried before yosys's map because its name sorts first)
+   maps `$lcu` to `CO[i] = G[i] | P[i] & CO[i−1]`, so each carry depends on the one below.
+3. The quick attempt at 1 s (`bcw.first`).
+
+Results, default solvers, 6 s timeout (`reports/bits/`):
+
+| Netlist | Lowest machine | Proved | Wall, proof |
+|---|---|---|---|
+| Control xor, `(a \| b) − (a & b)`, 318 gates | One guard | 6 of 6 | 340 s, 657 s |
+| Control xor | Cones and theorems | 70 of 70 | 96 s, 182 s |
+| Adder, Brent–Kung, 220 gates | One guard (also at 60 s) | 3 of 4: SIM open | — |
+| Adder, Brent–Kung | Cones and theorems, quick at 1 s | 36 of 36 | 37 s, 87 s |
+| Adder, ripple, 154 gates | Cones and theorems | 36 of 36, each theorem by the quick attempt | 20 s, 31 s |
+| Adder, ripple | Cones and theorems with the carry | 36 of 36 | 19 s, 25 s |
+
+The control xor, which no word-level encoding proved, proves; so does the adder against `a + b`
+modulo 2³². The proof is of the RTL's cells as `techmap` expands them, not of the circuit that the
+FPGA tools build; `ripple.v` joins yosys's `techmap.v` as a trusted definition. The generated
+machine is not for reading; the rules are: the gate constraints, the ripple map, the cone order and
+one theorem form for each kind of operation. Not yet tried: sub, the compares, the shifts, the
+multiplier, the divider, registers at bit level, mutants at bit level.
+
 ## Open questions
 
 1. Non-interference: a property of two runs, so it needs a self-composed machine.
@@ -357,4 +393,5 @@ Before the cause was found, two other changes were tried:
 | `alu/` | The 16 wrappers, the ALU variants of the mutant check, and `netlists.sh` |
 | `slice/` | `ring.v`, `spec.py` (M0, M1), `gen.py` (M2), the mutants, and `mutant_check.sh`, which runs the whole slice and the mutant check |
 | `prob/` | `po_extract.py` and the SMT debug options |
+| `bits/` | The bit-level probe: `netlists.sh` (yosys `techmap`), `ripple.v` (the ripple carry map) and `gen_bits.py` (the lowest machines) |
 | `reports/` | The CSV reports and verdicts quoted above |

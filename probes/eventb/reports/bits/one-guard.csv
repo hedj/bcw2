@@ -1,0 +1,10 @@
+BitsCtlXor/M0/INITIALISATION/word/INV,proved,3763,z3new/none
+BitsCtlXor/M0/xor/word/INV,proved,4071,z3new/selected
+BitsCtlXor/M1/xor_4_0/op/GRD,proved,745,rodin
+BitsCtlXor/M1/xor_4_0/xor_bits/GRD,proved,322849,z3new/quick×45 z3a2/selected×82 split(a23) split(a31)
+BitsCtlXor/M1/xor_4_1/op/GRD,proved,1354,rodin
+BitsCtlXor/M1/xor_4_1/xor_bits/GRD,proved,323939,z3new/quick×46 z3a2/selected×80 split(a13) split(a24) split(a28)
+BitsAdd/M0/INITIALISATION/word/INV,proved,44,z3new/quick
+BitsAdd/M0/add/word/INV,proved,97,z3new/quick
+BitsAdd/M0/add/act1/WD,proved,106,z3new/quick×2
+BitsAdd/M1/add_0_0/act1/SIM,open,14382,
