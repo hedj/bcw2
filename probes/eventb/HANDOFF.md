@@ -32,7 +32,7 @@ Not probed: non-interference, the multiplier, a whole chapter's audit time and l
 |---|---|---|
 | Rodin | 3.10.0, `rodin-3.10.0.202607010932-881664d81-linux.gtk.x86_64.tar.gz` from SourceForge (`Core_Rodin_Platform/3.10`), sha256 `5323ef00173320a27c410ee6db200fa337e7249ecad4df5655f0100e6f75ff46` | Headless with `-application bcw.rodin.build` |
 | JDK | Nix `jdk21_headless` from the repository's nixpkgs (openjdk-headless 21.0.12.1) | `--add-modules=ALL-SYSTEM` |
-| SMT Solvers plug-in | 1.5.0, `https://rodin-b-sharp.sourceforge.net/updates/Plugin_SMT_Solvers/1.5.0`, installed by p2 director: `-installIU org.eventb.smt.feature.group,org.eventb.smt.verit.feature.group,org.eventb.smt.cvc4.feature.group,org.eventb.smt.z3.feature.group` | Bundles veriT, CVC3, CVC4 and Z3 4.5 |
+| SMT Solvers plug-in | 1.5.0, `https://rodin-b-sharp.sourceforge.net/updates/Plugin_SMT_Solvers/1.5.0`, installed by p2 director: `-installIU org.eventb.smt.feature.group,org.eventb.smt.cvc4.feature.group,org.eventb.smt.z3.feature.group` | Bundles CVC3, CVC4 and Z3 4.5, which the default solvers do not use |
 | Z3 | 4.16.0 from the repository's nixpkgs (`nixpkgs#z3`; `./dev` has the same version) | `bcw.z3new`, or `z3` on PATH; replaces the plug-in's Z3 4.5.0 |
 | cvc5 | 1.4.0 from the repository's nixpkgs (`nixpkgs#cvc5`; not in `./dev`) | `bcw.cvc5`, or `cvc5` on PATH; replaces CVC3 and CVC4 |
 | ProB | 1.16.2-nightly source, `https://www3.hhu.de/stups/downloads/prob/source/ProB_src.tgz`, sha256 `7b1277140ca528b6ff55207a00f34e30607bb71b307ba08d4c14c7d2f8b99463`; EPL 1.0 | Parser: `./gradlew updateParser` (Maven `de.hhu.stups:cliparser:2.16.1`) |
