@@ -33,6 +33,8 @@ Not probed: non-interference, the multiplier, a whole chapter's audit time and l
 | Rodin | 3.10.0, `rodin-3.10.0.202607010932-881664d81-linux.gtk.x86_64.tar.gz` from SourceForge (`Core_Rodin_Platform/3.10`), sha256 `5323ef00173320a27c410ee6db200fa337e7249ecad4df5655f0100e6f75ff46` | Headless with `-application bcw.rodin.build` |
 | JDK | Nix `jdk21_headless` from the repository's nixpkgs (openjdk-headless 21.0.12.1) | `--add-modules=ALL-SYSTEM` |
 | SMT Solvers plug-in | 1.5.0, `https://rodin-b-sharp.sourceforge.net/updates/Plugin_SMT_Solvers/1.5.0`, installed by p2 director: `-installIU org.eventb.smt.feature.group,org.eventb.smt.verit.feature.group,org.eventb.smt.cvc4.feature.group,org.eventb.smt.z3.feature.group` | Bundles veriT, CVC3, CVC4 and Z3 4.5 |
+| Z3 | 4.16.0 from the repository's nixpkgs (`nixpkgs#z3`; `./dev` has the same version) | `bcw.z3new`, or `z3` on PATH; replaces the plug-in's Z3 4.5.0 |
+| cvc5 | 1.4.0 from the repository's nixpkgs (`nixpkgs#cvc5`; not in `./dev`) | `bcw.cvc5`, or `cvc5` on PATH; replaces CVC3 and CVC4 |
 | ProB | 1.16.2-nightly source, `https://www3.hhu.de/stups/downloads/prob/source/ProB_src.tgz`, sha256 `7b1277140ca528b6ff55207a00f34e30607bb71b307ba08d4c14c7d2f8b99463`; EPL 1.0 | Parser: `./gradlew updateParser` (Maven `de.hhu.stups:cliparser:2.16.1`) |
 | SWI-Prolog | 10.0.2 from the repository's nixpkgs | `PROLOG_SYSTEM=swi ./probcli_src.sh` |
 
@@ -50,20 +52,24 @@ For each project on the command line it imports, builds and proves every obligat
 
 1. Rodin's default auto-tactic. Rodin turns on its auto-prover only from the GUI, so the
    application applies tactics through `IProofAttempt`.
-2. Z3 alone on the selected hypotheses for 0.7 s (`bcw.first`). It closes most goals.
+2. The first solver (Z3 4.16) alone on the selected hypotheses for 0.7 s (`bcw.first`). It closes
+   most goals.
 3. A contest of two searches at once, each on its own copy of the goal. The first proof is
    grafted onto the goal by `ProofBuilder.reuse`, and the other search stops:
    * the sets: all four solvers at once on the goal alone, then on the selected hypotheses,
      then on all of them, 6 s each (`bcw.timeout`);
    * the split, for a variable in the goal that a hypothesis bounds to at most 8 values
      (`bcw.split`): Rodin's case rule (`Tactics.doCase`) for each value, Rodin's tactics on each
-     case, Z3 for 0.7 s on the selected hypotheses and then on all, and then the sets.
+     case, the first solver for 0.7 s on the selected hypotheses and then on all, and then the sets.
 4. The obligations of a file are proved 4 at once (`bcw.jobs`). Attempts are created, committed
    and disposed one at a time.
 
 Other properties: `bcw.report` (CSV: obligation, result, ms, closers), `bcw.baseline` (an earlier
 report; prints LOST and SLOWER), `bcw.measure` (each solver in turn on each goal, timed), and
-`bcw.solvers` (default `Z3,CVC3,CVC4,veriT`). The exit status is 1 if an obligation stays open.
+`bcw.solvers` (default `z3new,z3a2,cvc5,veriT`; see A newer Z3). `bcw.z3new` and `bcw.cvc5` name
+the binaries, else the `z3` and `cvc5` on PATH are used; the run prints which. A solver of the
+order that is not available stops the run with exit status 2. The exit status is 1 if an
+obligation stays open.
 
 Each solver call writes its own temporary file and reads its own process's output, so parallel
 calls cannot read each other's answers.
@@ -243,8 +249,8 @@ and `models/Shift` hold the original model):
 So with the bit-sum `Shift`, Z3, cvc5 and veriT prove every measured obligation with a 10 s timeout,
 and need neither CVC3 nor CVC4. With the original `Shift`, its `sll` SIM still needs CVC3. The
 trade-off: the seven models take 48.8 s, against 33.3 s with the four solvers. The bit-sum `Shift`
-is itself slower than the original (seven models 33.3 s, against 23.6 s). The default in
-`Build.java` stays Z3, CVC3, CVC4, veriT and 6 s, since cvc5 needs `bcw.cvc5` to name the binary.
+is itself slower than the original (seven models 33.3 s, against 23.6 s). The default
+then stayed Z3, CVC3, CVC4, veriT and 6 s; A newer Z3 below replaced it.
 
 ## A newer Z3
 
@@ -270,9 +276,10 @@ The two arithmetic solvers of Z3 4.16 prove different goals: the default proves 
 which before only CVC3 proved, and one goal of `DecodeInt` decode GRD; the older one (as in Z3
 4.5) proves `FieldInt` extract GRD. So Z3 4.16 in both modes, cvc5 and veriT prove every measured
 obligation, without CVC3, CVC4 or the bundled Z3, in about the time of the default set. veriT,
-still bundled, is the one solver that this set does not pin. The default in `Build.java` stays
-Z3, CVC3, CVC4, veriT, since the new solvers need `bcw.z3new` and `bcw.cvc5` to name their
-binaries.
+still bundled, is the one solver that this set does not pin. Since commit `641496a` this set is the
+default. With it, the seven models prove 74 of 74 in 25.0 s with the binaries found on PATH, and
+`slice/mutant_check.sh` proves the slice and the control 144 of 144 and kills the three mutants, in
+95 s in all (Rodin 74 s, against 148 s with the old default).
 
 ## Open questions
 
