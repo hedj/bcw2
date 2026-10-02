@@ -2,8 +2,9 @@
 # ./dev make check, or make check in the shell that ./dev opens.
 #
 #   make tangle   tangle the book into build/
-#   make check    the checks of the book, Verilator lint, a read by yosys, and a run of each
-#                 check directive
+#   make check    stubbed for the moment: it prints a notice and runs nothing
+#   make check-full  the checks of the book, Verilator lint, a read by yosys, and a run of
+#                 each check directive
 #   make weave    the reader edition, as build/html/index.html and build/latex/bcw2.pdf
 #   make test     the tests of the tools, with pytest on each core
 #   make timing   the maximum frequency of the core, over 3 seeds of place and route (SEEDS=n for n)
@@ -32,12 +33,16 @@ ifndef BCW_ENV
 $(error the tools come from the Nix environment: run ./dev make $(MAKECMDGOALS))
 endif
 
-.PHONY: tangle check weave test timing clean
+.PHONY: tangle check check-full weave test timing clean
 
 tangle:
 	$(SPHINX) 2>&1 | $(RELATIVE)
 
+# Stubbed for the moment, at the author's request: make check-full runs the checks.
 check:
+	@echo "make check is stubbed; make check-full runs the checks"
+
+check-full:
 	$(SPHINX) -W --keep-going 2>&1 | $(RELATIVE)
 	@packages="$$(find build/rtl -name '*.sv' | sort | tr '\n' ' ')"; \
 	for f in $$(find build/rtl -name '*.v' | sort); do \
