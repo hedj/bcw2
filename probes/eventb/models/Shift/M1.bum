@@ -9,73 +9,429 @@
 <org.eventb.core.event name="e1" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="load">
 <org.eventb.core.refinesEvent name="r1" org.eventb.core.target="load"/>
 <org.eventb.core.parameter name="p0" org.eventb.core.identifier="y"/>
-<org.eventb.core.guard name="g0" org.eventb.core.label="grd1" org.eventb.core.predicate="y ∈ 0 ‥ 8589934591"/>
+<org.eventb.core.guard name="g0" org.eventb.core.label="grd1" org.eventb.core.predicate="y ∈ 0 ‥ 4294967295"/>
 <org.eventb.core.action name="a0" org.eventb.core.label="act1" org.eventb.core.assignment="a ≔ y"/>
 </org.eventb.core.event>
 <org.eventb.core.event name="e2" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="sll">
 <org.eventb.core.refinesEvent name="r1" org.eventb.core.target="sll"/>
 <org.eventb.core.parameter name="p0" org.eventb.core.identifier="k"/>
-<org.eventb.core.parameter name="p1" org.eventb.core.identifier="hi"/>
-<org.eventb.core.parameter name="p2" org.eventb.core.identifier="lo"/>
-<org.eventb.core.parameter name="p3" org.eventb.core.identifier="r"/>
-<org.eventb.core.parameter name="p4" org.eventb.core.identifier="k0"/>
-<org.eventb.core.parameter name="p5" org.eventb.core.identifier="k1"/>
-<org.eventb.core.parameter name="p6" org.eventb.core.identifier="k2"/>
-<org.eventb.core.parameter name="p7" org.eventb.core.identifier="k3"/>
-<org.eventb.core.parameter name="p8" org.eventb.core.identifier="k4"/>
-<org.eventb.core.parameter name="p9" org.eventb.core.identifier="t1"/>
-<org.eventb.core.parameter name="p10" org.eventb.core.identifier="t2"/>
-<org.eventb.core.parameter name="p11" org.eventb.core.identifier="t3"/>
-<org.eventb.core.parameter name="p12" org.eventb.core.identifier="t4"/>
-<org.eventb.core.parameter name="p13" org.eventb.core.identifier="t5"/>
-<org.eventb.core.parameter name="p14" org.eventb.core.identifier="x0"/>
-<org.eventb.core.parameter name="p15" org.eventb.core.identifier="x1"/>
-<org.eventb.core.parameter name="p16" org.eventb.core.identifier="x2"/>
-<org.eventb.core.parameter name="p17" org.eventb.core.identifier="x3"/>
-<org.eventb.core.parameter name="p18" org.eventb.core.identifier="x4"/>
+<org.eventb.core.parameter name="p1" org.eventb.core.identifier="a0"/>
+<org.eventb.core.parameter name="p2" org.eventb.core.identifier="a1"/>
+<org.eventb.core.parameter name="p3" org.eventb.core.identifier="a2"/>
+<org.eventb.core.parameter name="p4" org.eventb.core.identifier="a3"/>
+<org.eventb.core.parameter name="p5" org.eventb.core.identifier="a4"/>
+<org.eventb.core.parameter name="p6" org.eventb.core.identifier="a5"/>
+<org.eventb.core.parameter name="p7" org.eventb.core.identifier="a6"/>
+<org.eventb.core.parameter name="p8" org.eventb.core.identifier="a7"/>
+<org.eventb.core.parameter name="p9" org.eventb.core.identifier="a8"/>
+<org.eventb.core.parameter name="p10" org.eventb.core.identifier="a9"/>
+<org.eventb.core.parameter name="p11" org.eventb.core.identifier="a10"/>
+<org.eventb.core.parameter name="p12" org.eventb.core.identifier="a11"/>
+<org.eventb.core.parameter name="p13" org.eventb.core.identifier="a12"/>
+<org.eventb.core.parameter name="p14" org.eventb.core.identifier="a13"/>
+<org.eventb.core.parameter name="p15" org.eventb.core.identifier="a14"/>
+<org.eventb.core.parameter name="p16" org.eventb.core.identifier="a15"/>
+<org.eventb.core.parameter name="p17" org.eventb.core.identifier="a16"/>
+<org.eventb.core.parameter name="p18" org.eventb.core.identifier="a17"/>
+<org.eventb.core.parameter name="p19" org.eventb.core.identifier="a18"/>
+<org.eventb.core.parameter name="p20" org.eventb.core.identifier="a19"/>
+<org.eventb.core.parameter name="p21" org.eventb.core.identifier="a20"/>
+<org.eventb.core.parameter name="p22" org.eventb.core.identifier="a21"/>
+<org.eventb.core.parameter name="p23" org.eventb.core.identifier="a22"/>
+<org.eventb.core.parameter name="p24" org.eventb.core.identifier="a23"/>
+<org.eventb.core.parameter name="p25" org.eventb.core.identifier="a24"/>
+<org.eventb.core.parameter name="p26" org.eventb.core.identifier="a25"/>
+<org.eventb.core.parameter name="p27" org.eventb.core.identifier="a26"/>
+<org.eventb.core.parameter name="p28" org.eventb.core.identifier="a27"/>
+<org.eventb.core.parameter name="p29" org.eventb.core.identifier="a28"/>
+<org.eventb.core.parameter name="p30" org.eventb.core.identifier="a29"/>
+<org.eventb.core.parameter name="p31" org.eventb.core.identifier="a30"/>
+<org.eventb.core.parameter name="p32" org.eventb.core.identifier="a31"/>
+<org.eventb.core.parameter name="p33" org.eventb.core.identifier="k0"/>
+<org.eventb.core.parameter name="p34" org.eventb.core.identifier="k1"/>
+<org.eventb.core.parameter name="p35" org.eventb.core.identifier="k2"/>
+<org.eventb.core.parameter name="p36" org.eventb.core.identifier="k3"/>
+<org.eventb.core.parameter name="p37" org.eventb.core.identifier="k4"/>
+<org.eventb.core.parameter name="p38" org.eventb.core.identifier="t1_0"/>
+<org.eventb.core.parameter name="p39" org.eventb.core.identifier="t1_1"/>
+<org.eventb.core.parameter name="p40" org.eventb.core.identifier="t1_2"/>
+<org.eventb.core.parameter name="p41" org.eventb.core.identifier="t1_3"/>
+<org.eventb.core.parameter name="p42" org.eventb.core.identifier="t1_4"/>
+<org.eventb.core.parameter name="p43" org.eventb.core.identifier="t1_5"/>
+<org.eventb.core.parameter name="p44" org.eventb.core.identifier="t1_6"/>
+<org.eventb.core.parameter name="p45" org.eventb.core.identifier="t1_7"/>
+<org.eventb.core.parameter name="p46" org.eventb.core.identifier="t1_8"/>
+<org.eventb.core.parameter name="p47" org.eventb.core.identifier="t1_9"/>
+<org.eventb.core.parameter name="p48" org.eventb.core.identifier="t1_10"/>
+<org.eventb.core.parameter name="p49" org.eventb.core.identifier="t1_11"/>
+<org.eventb.core.parameter name="p50" org.eventb.core.identifier="t1_12"/>
+<org.eventb.core.parameter name="p51" org.eventb.core.identifier="t1_13"/>
+<org.eventb.core.parameter name="p52" org.eventb.core.identifier="t1_14"/>
+<org.eventb.core.parameter name="p53" org.eventb.core.identifier="t1_15"/>
+<org.eventb.core.parameter name="p54" org.eventb.core.identifier="t1_16"/>
+<org.eventb.core.parameter name="p55" org.eventb.core.identifier="t1_17"/>
+<org.eventb.core.parameter name="p56" org.eventb.core.identifier="t1_18"/>
+<org.eventb.core.parameter name="p57" org.eventb.core.identifier="t1_19"/>
+<org.eventb.core.parameter name="p58" org.eventb.core.identifier="t1_20"/>
+<org.eventb.core.parameter name="p59" org.eventb.core.identifier="t1_21"/>
+<org.eventb.core.parameter name="p60" org.eventb.core.identifier="t1_22"/>
+<org.eventb.core.parameter name="p61" org.eventb.core.identifier="t1_23"/>
+<org.eventb.core.parameter name="p62" org.eventb.core.identifier="t1_24"/>
+<org.eventb.core.parameter name="p63" org.eventb.core.identifier="t1_25"/>
+<org.eventb.core.parameter name="p64" org.eventb.core.identifier="t1_26"/>
+<org.eventb.core.parameter name="p65" org.eventb.core.identifier="t1_27"/>
+<org.eventb.core.parameter name="p66" org.eventb.core.identifier="t1_28"/>
+<org.eventb.core.parameter name="p67" org.eventb.core.identifier="t1_29"/>
+<org.eventb.core.parameter name="p68" org.eventb.core.identifier="t1_30"/>
+<org.eventb.core.parameter name="p69" org.eventb.core.identifier="t1_31"/>
+<org.eventb.core.parameter name="p70" org.eventb.core.identifier="t2_0"/>
+<org.eventb.core.parameter name="p71" org.eventb.core.identifier="t2_1"/>
+<org.eventb.core.parameter name="p72" org.eventb.core.identifier="t2_2"/>
+<org.eventb.core.parameter name="p73" org.eventb.core.identifier="t2_3"/>
+<org.eventb.core.parameter name="p74" org.eventb.core.identifier="t2_4"/>
+<org.eventb.core.parameter name="p75" org.eventb.core.identifier="t2_5"/>
+<org.eventb.core.parameter name="p76" org.eventb.core.identifier="t2_6"/>
+<org.eventb.core.parameter name="p77" org.eventb.core.identifier="t2_7"/>
+<org.eventb.core.parameter name="p78" org.eventb.core.identifier="t2_8"/>
+<org.eventb.core.parameter name="p79" org.eventb.core.identifier="t2_9"/>
+<org.eventb.core.parameter name="p80" org.eventb.core.identifier="t2_10"/>
+<org.eventb.core.parameter name="p81" org.eventb.core.identifier="t2_11"/>
+<org.eventb.core.parameter name="p82" org.eventb.core.identifier="t2_12"/>
+<org.eventb.core.parameter name="p83" org.eventb.core.identifier="t2_13"/>
+<org.eventb.core.parameter name="p84" org.eventb.core.identifier="t2_14"/>
+<org.eventb.core.parameter name="p85" org.eventb.core.identifier="t2_15"/>
+<org.eventb.core.parameter name="p86" org.eventb.core.identifier="t2_16"/>
+<org.eventb.core.parameter name="p87" org.eventb.core.identifier="t2_17"/>
+<org.eventb.core.parameter name="p88" org.eventb.core.identifier="t2_18"/>
+<org.eventb.core.parameter name="p89" org.eventb.core.identifier="t2_19"/>
+<org.eventb.core.parameter name="p90" org.eventb.core.identifier="t2_20"/>
+<org.eventb.core.parameter name="p91" org.eventb.core.identifier="t2_21"/>
+<org.eventb.core.parameter name="p92" org.eventb.core.identifier="t2_22"/>
+<org.eventb.core.parameter name="p93" org.eventb.core.identifier="t2_23"/>
+<org.eventb.core.parameter name="p94" org.eventb.core.identifier="t2_24"/>
+<org.eventb.core.parameter name="p95" org.eventb.core.identifier="t2_25"/>
+<org.eventb.core.parameter name="p96" org.eventb.core.identifier="t2_26"/>
+<org.eventb.core.parameter name="p97" org.eventb.core.identifier="t2_27"/>
+<org.eventb.core.parameter name="p98" org.eventb.core.identifier="t2_28"/>
+<org.eventb.core.parameter name="p99" org.eventb.core.identifier="t2_29"/>
+<org.eventb.core.parameter name="p100" org.eventb.core.identifier="t2_30"/>
+<org.eventb.core.parameter name="p101" org.eventb.core.identifier="t2_31"/>
+<org.eventb.core.parameter name="p102" org.eventb.core.identifier="t3_0"/>
+<org.eventb.core.parameter name="p103" org.eventb.core.identifier="t3_1"/>
+<org.eventb.core.parameter name="p104" org.eventb.core.identifier="t3_2"/>
+<org.eventb.core.parameter name="p105" org.eventb.core.identifier="t3_3"/>
+<org.eventb.core.parameter name="p106" org.eventb.core.identifier="t3_4"/>
+<org.eventb.core.parameter name="p107" org.eventb.core.identifier="t3_5"/>
+<org.eventb.core.parameter name="p108" org.eventb.core.identifier="t3_6"/>
+<org.eventb.core.parameter name="p109" org.eventb.core.identifier="t3_7"/>
+<org.eventb.core.parameter name="p110" org.eventb.core.identifier="t3_8"/>
+<org.eventb.core.parameter name="p111" org.eventb.core.identifier="t3_9"/>
+<org.eventb.core.parameter name="p112" org.eventb.core.identifier="t3_10"/>
+<org.eventb.core.parameter name="p113" org.eventb.core.identifier="t3_11"/>
+<org.eventb.core.parameter name="p114" org.eventb.core.identifier="t3_12"/>
+<org.eventb.core.parameter name="p115" org.eventb.core.identifier="t3_13"/>
+<org.eventb.core.parameter name="p116" org.eventb.core.identifier="t3_14"/>
+<org.eventb.core.parameter name="p117" org.eventb.core.identifier="t3_15"/>
+<org.eventb.core.parameter name="p118" org.eventb.core.identifier="t3_16"/>
+<org.eventb.core.parameter name="p119" org.eventb.core.identifier="t3_17"/>
+<org.eventb.core.parameter name="p120" org.eventb.core.identifier="t3_18"/>
+<org.eventb.core.parameter name="p121" org.eventb.core.identifier="t3_19"/>
+<org.eventb.core.parameter name="p122" org.eventb.core.identifier="t3_20"/>
+<org.eventb.core.parameter name="p123" org.eventb.core.identifier="t3_21"/>
+<org.eventb.core.parameter name="p124" org.eventb.core.identifier="t3_22"/>
+<org.eventb.core.parameter name="p125" org.eventb.core.identifier="t3_23"/>
+<org.eventb.core.parameter name="p126" org.eventb.core.identifier="t3_24"/>
+<org.eventb.core.parameter name="p127" org.eventb.core.identifier="t3_25"/>
+<org.eventb.core.parameter name="p128" org.eventb.core.identifier="t3_26"/>
+<org.eventb.core.parameter name="p129" org.eventb.core.identifier="t3_27"/>
+<org.eventb.core.parameter name="p130" org.eventb.core.identifier="t3_28"/>
+<org.eventb.core.parameter name="p131" org.eventb.core.identifier="t3_29"/>
+<org.eventb.core.parameter name="p132" org.eventb.core.identifier="t3_30"/>
+<org.eventb.core.parameter name="p133" org.eventb.core.identifier="t3_31"/>
+<org.eventb.core.parameter name="p134" org.eventb.core.identifier="t4_0"/>
+<org.eventb.core.parameter name="p135" org.eventb.core.identifier="t4_1"/>
+<org.eventb.core.parameter name="p136" org.eventb.core.identifier="t4_2"/>
+<org.eventb.core.parameter name="p137" org.eventb.core.identifier="t4_3"/>
+<org.eventb.core.parameter name="p138" org.eventb.core.identifier="t4_4"/>
+<org.eventb.core.parameter name="p139" org.eventb.core.identifier="t4_5"/>
+<org.eventb.core.parameter name="p140" org.eventb.core.identifier="t4_6"/>
+<org.eventb.core.parameter name="p141" org.eventb.core.identifier="t4_7"/>
+<org.eventb.core.parameter name="p142" org.eventb.core.identifier="t4_8"/>
+<org.eventb.core.parameter name="p143" org.eventb.core.identifier="t4_9"/>
+<org.eventb.core.parameter name="p144" org.eventb.core.identifier="t4_10"/>
+<org.eventb.core.parameter name="p145" org.eventb.core.identifier="t4_11"/>
+<org.eventb.core.parameter name="p146" org.eventb.core.identifier="t4_12"/>
+<org.eventb.core.parameter name="p147" org.eventb.core.identifier="t4_13"/>
+<org.eventb.core.parameter name="p148" org.eventb.core.identifier="t4_14"/>
+<org.eventb.core.parameter name="p149" org.eventb.core.identifier="t4_15"/>
+<org.eventb.core.parameter name="p150" org.eventb.core.identifier="t4_16"/>
+<org.eventb.core.parameter name="p151" org.eventb.core.identifier="t4_17"/>
+<org.eventb.core.parameter name="p152" org.eventb.core.identifier="t4_18"/>
+<org.eventb.core.parameter name="p153" org.eventb.core.identifier="t4_19"/>
+<org.eventb.core.parameter name="p154" org.eventb.core.identifier="t4_20"/>
+<org.eventb.core.parameter name="p155" org.eventb.core.identifier="t4_21"/>
+<org.eventb.core.parameter name="p156" org.eventb.core.identifier="t4_22"/>
+<org.eventb.core.parameter name="p157" org.eventb.core.identifier="t4_23"/>
+<org.eventb.core.parameter name="p158" org.eventb.core.identifier="t4_24"/>
+<org.eventb.core.parameter name="p159" org.eventb.core.identifier="t4_25"/>
+<org.eventb.core.parameter name="p160" org.eventb.core.identifier="t4_26"/>
+<org.eventb.core.parameter name="p161" org.eventb.core.identifier="t4_27"/>
+<org.eventb.core.parameter name="p162" org.eventb.core.identifier="t4_28"/>
+<org.eventb.core.parameter name="p163" org.eventb.core.identifier="t4_29"/>
+<org.eventb.core.parameter name="p164" org.eventb.core.identifier="t4_30"/>
+<org.eventb.core.parameter name="p165" org.eventb.core.identifier="t4_31"/>
+<org.eventb.core.parameter name="p166" org.eventb.core.identifier="t5_0"/>
+<org.eventb.core.parameter name="p167" org.eventb.core.identifier="t5_1"/>
+<org.eventb.core.parameter name="p168" org.eventb.core.identifier="t5_2"/>
+<org.eventb.core.parameter name="p169" org.eventb.core.identifier="t5_3"/>
+<org.eventb.core.parameter name="p170" org.eventb.core.identifier="t5_4"/>
+<org.eventb.core.parameter name="p171" org.eventb.core.identifier="t5_5"/>
+<org.eventb.core.parameter name="p172" org.eventb.core.identifier="t5_6"/>
+<org.eventb.core.parameter name="p173" org.eventb.core.identifier="t5_7"/>
+<org.eventb.core.parameter name="p174" org.eventb.core.identifier="t5_8"/>
+<org.eventb.core.parameter name="p175" org.eventb.core.identifier="t5_9"/>
+<org.eventb.core.parameter name="p176" org.eventb.core.identifier="t5_10"/>
+<org.eventb.core.parameter name="p177" org.eventb.core.identifier="t5_11"/>
+<org.eventb.core.parameter name="p178" org.eventb.core.identifier="t5_12"/>
+<org.eventb.core.parameter name="p179" org.eventb.core.identifier="t5_13"/>
+<org.eventb.core.parameter name="p180" org.eventb.core.identifier="t5_14"/>
+<org.eventb.core.parameter name="p181" org.eventb.core.identifier="t5_15"/>
+<org.eventb.core.parameter name="p182" org.eventb.core.identifier="t5_16"/>
+<org.eventb.core.parameter name="p183" org.eventb.core.identifier="t5_17"/>
+<org.eventb.core.parameter name="p184" org.eventb.core.identifier="t5_18"/>
+<org.eventb.core.parameter name="p185" org.eventb.core.identifier="t5_19"/>
+<org.eventb.core.parameter name="p186" org.eventb.core.identifier="t5_20"/>
+<org.eventb.core.parameter name="p187" org.eventb.core.identifier="t5_21"/>
+<org.eventb.core.parameter name="p188" org.eventb.core.identifier="t5_22"/>
+<org.eventb.core.parameter name="p189" org.eventb.core.identifier="t5_23"/>
+<org.eventb.core.parameter name="p190" org.eventb.core.identifier="t5_24"/>
+<org.eventb.core.parameter name="p191" org.eventb.core.identifier="t5_25"/>
+<org.eventb.core.parameter name="p192" org.eventb.core.identifier="t5_26"/>
+<org.eventb.core.parameter name="p193" org.eventb.core.identifier="t5_27"/>
+<org.eventb.core.parameter name="p194" org.eventb.core.identifier="t5_28"/>
+<org.eventb.core.parameter name="p195" org.eventb.core.identifier="t5_29"/>
+<org.eventb.core.parameter name="p196" org.eventb.core.identifier="t5_30"/>
+<org.eventb.core.parameter name="p197" org.eventb.core.identifier="t5_31"/>
 <org.eventb.core.guard name="g0" org.eventb.core.label="amount" org.eventb.core.predicate="k ∈ 0 ‥ 31"/>
-<org.eventb.core.guard name="g1" org.eventb.core.label="parts" org.eventb.core.predicate="hi ∈ ℕ ∧ lo ∈ ℕ"/>
-<org.eventb.core.guard name="g2" org.eventb.core.label="table" org.eventb.core.predicate="(k = 0 ∧ a ∗ 1 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 1 ∧ a ∗ 2 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 2 ∧ a ∗ 4 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 3 ∧ a ∗ 8 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 4 ∧ a ∗ 16 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 5 ∧ a ∗ 32 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 6 ∧ a ∗ 64 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 7 ∧ a ∗ 128 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 8 ∧ a ∗ 256 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 9 ∧ a ∗ 512 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 10 ∧ a ∗ 1024 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 11 ∧ a ∗ 2048 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 12 ∧ a ∗ 4096 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 13 ∧ a ∗ 8192 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 14 ∧ a ∗ 16384 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 15 ∧ a ∗ 32768 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 16 ∧ a ∗ 65536 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 17 ∧ a ∗ 131072 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 18 ∧ a ∗ 262144 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 19 ∧ a ∗ 524288 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 20 ∧ a ∗ 1048576 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 21 ∧ a ∗ 2097152 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 22 ∧ a ∗ 4194304 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 23 ∧ a ∗ 8388608 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 24 ∧ a ∗ 16777216 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 25 ∧ a ∗ 33554432 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 26 ∧ a ∗ 67108864 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 27 ∧ a ∗ 134217728 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 28 ∧ a ∗ 268435456 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 29 ∧ a ∗ 536870912 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 30 ∧ a ∗ 1073741824 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591) ∨ (k = 31 ∧ a ∗ 2147483648 = hi ∗ 8589934592 + r ∧ r ∈ 0 ‥ 8589934591)"/>
-<org.eventb.core.guard name="g3" org.eventb.core.label="bits" org.eventb.core.predicate="k0 ∈ 0 ‥ 1 ∧ k1 ∈ 0 ‥ 1 ∧ k2 ∈ 0 ‥ 1 ∧ k3 ∈ 0 ‥ 1 ∧ k4 ∈ 0 ‥ 1 ∧ k = k0 + 2 ∗ k1 + 4 ∗ k2 + 8 ∗ k3 + 16 ∗ k4"/>
-<org.eventb.core.guard name="g4" org.eventb.core.label="wires" org.eventb.core.predicate="t1 ∈ 0 ‥ 8589934591 ∧ t2 ∈ 0 ‥ 8589934591 ∧ t3 ∈ 0 ‥ 8589934591 ∧ t4 ∈ 0 ‥ 8589934591 ∧ t5 ∈ 0 ‥ 8589934591"/>
-<org.eventb.core.guard name="g5" org.eventb.core.label="stage0" org.eventb.core.predicate="(k0 = 0 ⇒ t1 = a ∧ x0 = 0) ∧ (k0 = 1 ⇒ a ∗ 2 = x0 ∗ 8589934592 + t1 ∧ x0 ∈ 0 ‥ 1)"/>
-<org.eventb.core.guard name="g6" org.eventb.core.label="stage1" org.eventb.core.predicate="(k1 = 0 ⇒ t2 = t1 ∧ x1 = 0) ∧ (k1 = 1 ⇒ t1 ∗ 4 = x1 ∗ 8589934592 + t2 ∧ x1 ∈ 0 ‥ 3)"/>
-<org.eventb.core.guard name="g7" org.eventb.core.label="stage2" org.eventb.core.predicate="(k2 = 0 ⇒ t3 = t2 ∧ x2 = 0) ∧ (k2 = 1 ⇒ t2 ∗ 16 = x2 ∗ 8589934592 + t3 ∧ x2 ∈ 0 ‥ 15)"/>
-<org.eventb.core.guard name="g8" org.eventb.core.label="stage3" org.eventb.core.predicate="(k3 = 0 ⇒ t4 = t3 ∧ x3 = 0) ∧ (k3 = 1 ⇒ t3 ∗ 256 = x3 ∗ 8589934592 + t4 ∧ x3 ∈ 0 ‥ 255)"/>
-<org.eventb.core.guard name="g9" org.eventb.core.label="stage4" org.eventb.core.predicate="(k4 = 0 ⇒ t5 = t4 ∧ x4 = 0) ∧ (k4 = 1 ⇒ t4 ∗ 65536 = x4 ∗ 8589934592 + t5 ∧ x4 ∈ 0 ‥ 65535)"/>
-<org.eventb.core.action name="a0" org.eventb.core.label="act1" org.eventb.core.assignment="z ≔ t5"/>
+<org.eventb.core.guard name="g1" org.eventb.core.label="abits" org.eventb.core.predicate="a0 ∈ 0 ‥ 1 ∧ a1 ∈ 0 ‥ 1 ∧ a2 ∈ 0 ‥ 1 ∧ a3 ∈ 0 ‥ 1 ∧ a4 ∈ 0 ‥ 1 ∧ a5 ∈ 0 ‥ 1 ∧ a6 ∈ 0 ‥ 1 ∧ a7 ∈ 0 ‥ 1 ∧ a8 ∈ 0 ‥ 1 ∧ a9 ∈ 0 ‥ 1 ∧ a10 ∈ 0 ‥ 1 ∧ a11 ∈ 0 ‥ 1 ∧ a12 ∈ 0 ‥ 1 ∧ a13 ∈ 0 ‥ 1 ∧ a14 ∈ 0 ‥ 1 ∧ a15 ∈ 0 ‥ 1 ∧ a16 ∈ 0 ‥ 1 ∧ a17 ∈ 0 ‥ 1 ∧ a18 ∈ 0 ‥ 1 ∧ a19 ∈ 0 ‥ 1 ∧ a20 ∈ 0 ‥ 1 ∧ a21 ∈ 0 ‥ 1 ∧ a22 ∈ 0 ‥ 1 ∧ a23 ∈ 0 ‥ 1 ∧ a24 ∈ 0 ‥ 1 ∧ a25 ∈ 0 ‥ 1 ∧ a26 ∈ 0 ‥ 1 ∧ a27 ∈ 0 ‥ 1 ∧ a28 ∈ 0 ‥ 1 ∧ a29 ∈ 0 ‥ 1 ∧ a30 ∈ 0 ‥ 1 ∧ a31 ∈ 0 ‥ 1 ∧ a = a0 + a1 ∗ 2 + a2 ∗ 4 + a3 ∗ 8 + a4 ∗ 16 + a5 ∗ 32 + a6 ∗ 64 + a7 ∗ 128 + a8 ∗ 256 + a9 ∗ 512 + a10 ∗ 1024 + a11 ∗ 2048 + a12 ∗ 4096 + a13 ∗ 8192 + a14 ∗ 16384 + a15 ∗ 32768 + a16 ∗ 65536 + a17 ∗ 131072 + a18 ∗ 262144 + a19 ∗ 524288 + a20 ∗ 1048576 + a21 ∗ 2097152 + a22 ∗ 4194304 + a23 ∗ 8388608 + a24 ∗ 16777216 + a25 ∗ 33554432 + a26 ∗ 67108864 + a27 ∗ 134217728 + a28 ∗ 268435456 + a29 ∗ 536870912 + a30 ∗ 1073741824 + a31 ∗ 2147483648"/>
+<org.eventb.core.guard name="g2" org.eventb.core.label="kbits" org.eventb.core.predicate="k0 ∈ 0 ‥ 1 ∧ k1 ∈ 0 ‥ 1 ∧ k2 ∈ 0 ‥ 1 ∧ k3 ∈ 0 ‥ 1 ∧ k4 ∈ 0 ‥ 1 ∧ k = k0 + k1 ∗ 2 + k2 ∗ 4 + k3 ∗ 8 + k4 ∗ 16"/>
+<org.eventb.core.guard name="g3" org.eventb.core.label="wires" org.eventb.core.predicate="t1_0 ∈ 0 ‥ 1 ∧ t1_1 ∈ 0 ‥ 1 ∧ t1_2 ∈ 0 ‥ 1 ∧ t1_3 ∈ 0 ‥ 1 ∧ t1_4 ∈ 0 ‥ 1 ∧ t1_5 ∈ 0 ‥ 1 ∧ t1_6 ∈ 0 ‥ 1 ∧ t1_7 ∈ 0 ‥ 1 ∧ t1_8 ∈ 0 ‥ 1 ∧ t1_9 ∈ 0 ‥ 1 ∧ t1_10 ∈ 0 ‥ 1 ∧ t1_11 ∈ 0 ‥ 1 ∧ t1_12 ∈ 0 ‥ 1 ∧ t1_13 ∈ 0 ‥ 1 ∧ t1_14 ∈ 0 ‥ 1 ∧ t1_15 ∈ 0 ‥ 1 ∧ t1_16 ∈ 0 ‥ 1 ∧ t1_17 ∈ 0 ‥ 1 ∧ t1_18 ∈ 0 ‥ 1 ∧ t1_19 ∈ 0 ‥ 1 ∧ t1_20 ∈ 0 ‥ 1 ∧ t1_21 ∈ 0 ‥ 1 ∧ t1_22 ∈ 0 ‥ 1 ∧ t1_23 ∈ 0 ‥ 1 ∧ t1_24 ∈ 0 ‥ 1 ∧ t1_25 ∈ 0 ‥ 1 ∧ t1_26 ∈ 0 ‥ 1 ∧ t1_27 ∈ 0 ‥ 1 ∧ t1_28 ∈ 0 ‥ 1 ∧ t1_29 ∈ 0 ‥ 1 ∧ t1_30 ∈ 0 ‥ 1 ∧ t1_31 ∈ 0 ‥ 1 ∧ t2_0 ∈ 0 ‥ 1 ∧ t2_1 ∈ 0 ‥ 1 ∧ t2_2 ∈ 0 ‥ 1 ∧ t2_3 ∈ 0 ‥ 1 ∧ t2_4 ∈ 0 ‥ 1 ∧ t2_5 ∈ 0 ‥ 1 ∧ t2_6 ∈ 0 ‥ 1 ∧ t2_7 ∈ 0 ‥ 1 ∧ t2_8 ∈ 0 ‥ 1 ∧ t2_9 ∈ 0 ‥ 1 ∧ t2_10 ∈ 0 ‥ 1 ∧ t2_11 ∈ 0 ‥ 1 ∧ t2_12 ∈ 0 ‥ 1 ∧ t2_13 ∈ 0 ‥ 1 ∧ t2_14 ∈ 0 ‥ 1 ∧ t2_15 ∈ 0 ‥ 1 ∧ t2_16 ∈ 0 ‥ 1 ∧ t2_17 ∈ 0 ‥ 1 ∧ t2_18 ∈ 0 ‥ 1 ∧ t2_19 ∈ 0 ‥ 1 ∧ t2_20 ∈ 0 ‥ 1 ∧ t2_21 ∈ 0 ‥ 1 ∧ t2_22 ∈ 0 ‥ 1 ∧ t2_23 ∈ 0 ‥ 1 ∧ t2_24 ∈ 0 ‥ 1 ∧ t2_25 ∈ 0 ‥ 1 ∧ t2_26 ∈ 0 ‥ 1 ∧ t2_27 ∈ 0 ‥ 1 ∧ t2_28 ∈ 0 ‥ 1 ∧ t2_29 ∈ 0 ‥ 1 ∧ t2_30 ∈ 0 ‥ 1 ∧ t2_31 ∈ 0 ‥ 1 ∧ t3_0 ∈ 0 ‥ 1 ∧ t3_1 ∈ 0 ‥ 1 ∧ t3_2 ∈ 0 ‥ 1 ∧ t3_3 ∈ 0 ‥ 1 ∧ t3_4 ∈ 0 ‥ 1 ∧ t3_5 ∈ 0 ‥ 1 ∧ t3_6 ∈ 0 ‥ 1 ∧ t3_7 ∈ 0 ‥ 1 ∧ t3_8 ∈ 0 ‥ 1 ∧ t3_9 ∈ 0 ‥ 1 ∧ t3_10 ∈ 0 ‥ 1 ∧ t3_11 ∈ 0 ‥ 1 ∧ t3_12 ∈ 0 ‥ 1 ∧ t3_13 ∈ 0 ‥ 1 ∧ t3_14 ∈ 0 ‥ 1 ∧ t3_15 ∈ 0 ‥ 1 ∧ t3_16 ∈ 0 ‥ 1 ∧ t3_17 ∈ 0 ‥ 1 ∧ t3_18 ∈ 0 ‥ 1 ∧ t3_19 ∈ 0 ‥ 1 ∧ t3_20 ∈ 0 ‥ 1 ∧ t3_21 ∈ 0 ‥ 1 ∧ t3_22 ∈ 0 ‥ 1 ∧ t3_23 ∈ 0 ‥ 1 ∧ t3_24 ∈ 0 ‥ 1 ∧ t3_25 ∈ 0 ‥ 1 ∧ t3_26 ∈ 0 ‥ 1 ∧ t3_27 ∈ 0 ‥ 1 ∧ t3_28 ∈ 0 ‥ 1 ∧ t3_29 ∈ 0 ‥ 1 ∧ t3_30 ∈ 0 ‥ 1 ∧ t3_31 ∈ 0 ‥ 1 ∧ t4_0 ∈ 0 ‥ 1 ∧ t4_1 ∈ 0 ‥ 1 ∧ t4_2 ∈ 0 ‥ 1 ∧ t4_3 ∈ 0 ‥ 1 ∧ t4_4 ∈ 0 ‥ 1 ∧ t4_5 ∈ 0 ‥ 1 ∧ t4_6 ∈ 0 ‥ 1 ∧ t4_7 ∈ 0 ‥ 1 ∧ t4_8 ∈ 0 ‥ 1 ∧ t4_9 ∈ 0 ‥ 1 ∧ t4_10 ∈ 0 ‥ 1 ∧ t4_11 ∈ 0 ‥ 1 ∧ t4_12 ∈ 0 ‥ 1 ∧ t4_13 ∈ 0 ‥ 1 ∧ t4_14 ∈ 0 ‥ 1 ∧ t4_15 ∈ 0 ‥ 1 ∧ t4_16 ∈ 0 ‥ 1 ∧ t4_17 ∈ 0 ‥ 1 ∧ t4_18 ∈ 0 ‥ 1 ∧ t4_19 ∈ 0 ‥ 1 ∧ t4_20 ∈ 0 ‥ 1 ∧ t4_21 ∈ 0 ‥ 1 ∧ t4_22 ∈ 0 ‥ 1 ∧ t4_23 ∈ 0 ‥ 1 ∧ t4_24 ∈ 0 ‥ 1 ∧ t4_25 ∈ 0 ‥ 1 ∧ t4_26 ∈ 0 ‥ 1 ∧ t4_27 ∈ 0 ‥ 1 ∧ t4_28 ∈ 0 ‥ 1 ∧ t4_29 ∈ 0 ‥ 1 ∧ t4_30 ∈ 0 ‥ 1 ∧ t4_31 ∈ 0 ‥ 1 ∧ t5_0 ∈ 0 ‥ 1 ∧ t5_1 ∈ 0 ‥ 1 ∧ t5_2 ∈ 0 ‥ 1 ∧ t5_3 ∈ 0 ‥ 1 ∧ t5_4 ∈ 0 ‥ 1 ∧ t5_5 ∈ 0 ‥ 1 ∧ t5_6 ∈ 0 ‥ 1 ∧ t5_7 ∈ 0 ‥ 1 ∧ t5_8 ∈ 0 ‥ 1 ∧ t5_9 ∈ 0 ‥ 1 ∧ t5_10 ∈ 0 ‥ 1 ∧ t5_11 ∈ 0 ‥ 1 ∧ t5_12 ∈ 0 ‥ 1 ∧ t5_13 ∈ 0 ‥ 1 ∧ t5_14 ∈ 0 ‥ 1 ∧ t5_15 ∈ 0 ‥ 1 ∧ t5_16 ∈ 0 ‥ 1 ∧ t5_17 ∈ 0 ‥ 1 ∧ t5_18 ∈ 0 ‥ 1 ∧ t5_19 ∈ 0 ‥ 1 ∧ t5_20 ∈ 0 ‥ 1 ∧ t5_21 ∈ 0 ‥ 1 ∧ t5_22 ∈ 0 ‥ 1 ∧ t5_23 ∈ 0 ‥ 1 ∧ t5_24 ∈ 0 ‥ 1 ∧ t5_25 ∈ 0 ‥ 1 ∧ t5_26 ∈ 0 ‥ 1 ∧ t5_27 ∈ 0 ‥ 1 ∧ t5_28 ∈ 0 ‥ 1 ∧ t5_29 ∈ 0 ‥ 1 ∧ t5_30 ∈ 0 ‥ 1 ∧ t5_31 ∈ 0 ‥ 1"/>
+<org.eventb.core.guard name="g4" org.eventb.core.label="stage0" org.eventb.core.predicate="(k0 = 0 ⇒ t1_0 = a0) ∧ (k0 = 1 ⇒ t1_0 = 0) ∧ (k0 = 0 ⇒ t1_1 = a1) ∧ (k0 = 1 ⇒ t1_1 = a0) ∧ (k0 = 0 ⇒ t1_2 = a2) ∧ (k0 = 1 ⇒ t1_2 = a1) ∧ (k0 = 0 ⇒ t1_3 = a3) ∧ (k0 = 1 ⇒ t1_3 = a2) ∧ (k0 = 0 ⇒ t1_4 = a4) ∧ (k0 = 1 ⇒ t1_4 = a3) ∧ (k0 = 0 ⇒ t1_5 = a5) ∧ (k0 = 1 ⇒ t1_5 = a4) ∧ (k0 = 0 ⇒ t1_6 = a6) ∧ (k0 = 1 ⇒ t1_6 = a5) ∧ (k0 = 0 ⇒ t1_7 = a7) ∧ (k0 = 1 ⇒ t1_7 = a6) ∧ (k0 = 0 ⇒ t1_8 = a8) ∧ (k0 = 1 ⇒ t1_8 = a7) ∧ (k0 = 0 ⇒ t1_9 = a9) ∧ (k0 = 1 ⇒ t1_9 = a8) ∧ (k0 = 0 ⇒ t1_10 = a10) ∧ (k0 = 1 ⇒ t1_10 = a9) ∧ (k0 = 0 ⇒ t1_11 = a11) ∧ (k0 = 1 ⇒ t1_11 = a10) ∧ (k0 = 0 ⇒ t1_12 = a12) ∧ (k0 = 1 ⇒ t1_12 = a11) ∧ (k0 = 0 ⇒ t1_13 = a13) ∧ (k0 = 1 ⇒ t1_13 = a12) ∧ (k0 = 0 ⇒ t1_14 = a14) ∧ (k0 = 1 ⇒ t1_14 = a13) ∧ (k0 = 0 ⇒ t1_15 = a15) ∧ (k0 = 1 ⇒ t1_15 = a14) ∧ (k0 = 0 ⇒ t1_16 = a16) ∧ (k0 = 1 ⇒ t1_16 = a15) ∧ (k0 = 0 ⇒ t1_17 = a17) ∧ (k0 = 1 ⇒ t1_17 = a16) ∧ (k0 = 0 ⇒ t1_18 = a18) ∧ (k0 = 1 ⇒ t1_18 = a17) ∧ (k0 = 0 ⇒ t1_19 = a19) ∧ (k0 = 1 ⇒ t1_19 = a18) ∧ (k0 = 0 ⇒ t1_20 = a20) ∧ (k0 = 1 ⇒ t1_20 = a19) ∧ (k0 = 0 ⇒ t1_21 = a21) ∧ (k0 = 1 ⇒ t1_21 = a20) ∧ (k0 = 0 ⇒ t1_22 = a22) ∧ (k0 = 1 ⇒ t1_22 = a21) ∧ (k0 = 0 ⇒ t1_23 = a23) ∧ (k0 = 1 ⇒ t1_23 = a22) ∧ (k0 = 0 ⇒ t1_24 = a24) ∧ (k0 = 1 ⇒ t1_24 = a23) ∧ (k0 = 0 ⇒ t1_25 = a25) ∧ (k0 = 1 ⇒ t1_25 = a24) ∧ (k0 = 0 ⇒ t1_26 = a26) ∧ (k0 = 1 ⇒ t1_26 = a25) ∧ (k0 = 0 ⇒ t1_27 = a27) ∧ (k0 = 1 ⇒ t1_27 = a26) ∧ (k0 = 0 ⇒ t1_28 = a28) ∧ (k0 = 1 ⇒ t1_28 = a27) ∧ (k0 = 0 ⇒ t1_29 = a29) ∧ (k0 = 1 ⇒ t1_29 = a28) ∧ (k0 = 0 ⇒ t1_30 = a30) ∧ (k0 = 1 ⇒ t1_30 = a29) ∧ (k0 = 0 ⇒ t1_31 = a31) ∧ (k0 = 1 ⇒ t1_31 = a30)"/>
+<org.eventb.core.guard name="g5" org.eventb.core.label="stage1" org.eventb.core.predicate="(k1 = 0 ⇒ t2_0 = t1_0) ∧ (k1 = 1 ⇒ t2_0 = 0) ∧ (k1 = 0 ⇒ t2_1 = t1_1) ∧ (k1 = 1 ⇒ t2_1 = 0) ∧ (k1 = 0 ⇒ t2_2 = t1_2) ∧ (k1 = 1 ⇒ t2_2 = t1_0) ∧ (k1 = 0 ⇒ t2_3 = t1_3) ∧ (k1 = 1 ⇒ t2_3 = t1_1) ∧ (k1 = 0 ⇒ t2_4 = t1_4) ∧ (k1 = 1 ⇒ t2_4 = t1_2) ∧ (k1 = 0 ⇒ t2_5 = t1_5) ∧ (k1 = 1 ⇒ t2_5 = t1_3) ∧ (k1 = 0 ⇒ t2_6 = t1_6) ∧ (k1 = 1 ⇒ t2_6 = t1_4) ∧ (k1 = 0 ⇒ t2_7 = t1_7) ∧ (k1 = 1 ⇒ t2_7 = t1_5) ∧ (k1 = 0 ⇒ t2_8 = t1_8) ∧ (k1 = 1 ⇒ t2_8 = t1_6) ∧ (k1 = 0 ⇒ t2_9 = t1_9) ∧ (k1 = 1 ⇒ t2_9 = t1_7) ∧ (k1 = 0 ⇒ t2_10 = t1_10) ∧ (k1 = 1 ⇒ t2_10 = t1_8) ∧ (k1 = 0 ⇒ t2_11 = t1_11) ∧ (k1 = 1 ⇒ t2_11 = t1_9) ∧ (k1 = 0 ⇒ t2_12 = t1_12) ∧ (k1 = 1 ⇒ t2_12 = t1_10) ∧ (k1 = 0 ⇒ t2_13 = t1_13) ∧ (k1 = 1 ⇒ t2_13 = t1_11) ∧ (k1 = 0 ⇒ t2_14 = t1_14) ∧ (k1 = 1 ⇒ t2_14 = t1_12) ∧ (k1 = 0 ⇒ t2_15 = t1_15) ∧ (k1 = 1 ⇒ t2_15 = t1_13) ∧ (k1 = 0 ⇒ t2_16 = t1_16) ∧ (k1 = 1 ⇒ t2_16 = t1_14) ∧ (k1 = 0 ⇒ t2_17 = t1_17) ∧ (k1 = 1 ⇒ t2_17 = t1_15) ∧ (k1 = 0 ⇒ t2_18 = t1_18) ∧ (k1 = 1 ⇒ t2_18 = t1_16) ∧ (k1 = 0 ⇒ t2_19 = t1_19) ∧ (k1 = 1 ⇒ t2_19 = t1_17) ∧ (k1 = 0 ⇒ t2_20 = t1_20) ∧ (k1 = 1 ⇒ t2_20 = t1_18) ∧ (k1 = 0 ⇒ t2_21 = t1_21) ∧ (k1 = 1 ⇒ t2_21 = t1_19) ∧ (k1 = 0 ⇒ t2_22 = t1_22) ∧ (k1 = 1 ⇒ t2_22 = t1_20) ∧ (k1 = 0 ⇒ t2_23 = t1_23) ∧ (k1 = 1 ⇒ t2_23 = t1_21) ∧ (k1 = 0 ⇒ t2_24 = t1_24) ∧ (k1 = 1 ⇒ t2_24 = t1_22) ∧ (k1 = 0 ⇒ t2_25 = t1_25) ∧ (k1 = 1 ⇒ t2_25 = t1_23) ∧ (k1 = 0 ⇒ t2_26 = t1_26) ∧ (k1 = 1 ⇒ t2_26 = t1_24) ∧ (k1 = 0 ⇒ t2_27 = t1_27) ∧ (k1 = 1 ⇒ t2_27 = t1_25) ∧ (k1 = 0 ⇒ t2_28 = t1_28) ∧ (k1 = 1 ⇒ t2_28 = t1_26) ∧ (k1 = 0 ⇒ t2_29 = t1_29) ∧ (k1 = 1 ⇒ t2_29 = t1_27) ∧ (k1 = 0 ⇒ t2_30 = t1_30) ∧ (k1 = 1 ⇒ t2_30 = t1_28) ∧ (k1 = 0 ⇒ t2_31 = t1_31) ∧ (k1 = 1 ⇒ t2_31 = t1_29)"/>
+<org.eventb.core.guard name="g6" org.eventb.core.label="stage2" org.eventb.core.predicate="(k2 = 0 ⇒ t3_0 = t2_0) ∧ (k2 = 1 ⇒ t3_0 = 0) ∧ (k2 = 0 ⇒ t3_1 = t2_1) ∧ (k2 = 1 ⇒ t3_1 = 0) ∧ (k2 = 0 ⇒ t3_2 = t2_2) ∧ (k2 = 1 ⇒ t3_2 = 0) ∧ (k2 = 0 ⇒ t3_3 = t2_3) ∧ (k2 = 1 ⇒ t3_3 = 0) ∧ (k2 = 0 ⇒ t3_4 = t2_4) ∧ (k2 = 1 ⇒ t3_4 = t2_0) ∧ (k2 = 0 ⇒ t3_5 = t2_5) ∧ (k2 = 1 ⇒ t3_5 = t2_1) ∧ (k2 = 0 ⇒ t3_6 = t2_6) ∧ (k2 = 1 ⇒ t3_6 = t2_2) ∧ (k2 = 0 ⇒ t3_7 = t2_7) ∧ (k2 = 1 ⇒ t3_7 = t2_3) ∧ (k2 = 0 ⇒ t3_8 = t2_8) ∧ (k2 = 1 ⇒ t3_8 = t2_4) ∧ (k2 = 0 ⇒ t3_9 = t2_9) ∧ (k2 = 1 ⇒ t3_9 = t2_5) ∧ (k2 = 0 ⇒ t3_10 = t2_10) ∧ (k2 = 1 ⇒ t3_10 = t2_6) ∧ (k2 = 0 ⇒ t3_11 = t2_11) ∧ (k2 = 1 ⇒ t3_11 = t2_7) ∧ (k2 = 0 ⇒ t3_12 = t2_12) ∧ (k2 = 1 ⇒ t3_12 = t2_8) ∧ (k2 = 0 ⇒ t3_13 = t2_13) ∧ (k2 = 1 ⇒ t3_13 = t2_9) ∧ (k2 = 0 ⇒ t3_14 = t2_14) ∧ (k2 = 1 ⇒ t3_14 = t2_10) ∧ (k2 = 0 ⇒ t3_15 = t2_15) ∧ (k2 = 1 ⇒ t3_15 = t2_11) ∧ (k2 = 0 ⇒ t3_16 = t2_16) ∧ (k2 = 1 ⇒ t3_16 = t2_12) ∧ (k2 = 0 ⇒ t3_17 = t2_17) ∧ (k2 = 1 ⇒ t3_17 = t2_13) ∧ (k2 = 0 ⇒ t3_18 = t2_18) ∧ (k2 = 1 ⇒ t3_18 = t2_14) ∧ (k2 = 0 ⇒ t3_19 = t2_19) ∧ (k2 = 1 ⇒ t3_19 = t2_15) ∧ (k2 = 0 ⇒ t3_20 = t2_20) ∧ (k2 = 1 ⇒ t3_20 = t2_16) ∧ (k2 = 0 ⇒ t3_21 = t2_21) ∧ (k2 = 1 ⇒ t3_21 = t2_17) ∧ (k2 = 0 ⇒ t3_22 = t2_22) ∧ (k2 = 1 ⇒ t3_22 = t2_18) ∧ (k2 = 0 ⇒ t3_23 = t2_23) ∧ (k2 = 1 ⇒ t3_23 = t2_19) ∧ (k2 = 0 ⇒ t3_24 = t2_24) ∧ (k2 = 1 ⇒ t3_24 = t2_20) ∧ (k2 = 0 ⇒ t3_25 = t2_25) ∧ (k2 = 1 ⇒ t3_25 = t2_21) ∧ (k2 = 0 ⇒ t3_26 = t2_26) ∧ (k2 = 1 ⇒ t3_26 = t2_22) ∧ (k2 = 0 ⇒ t3_27 = t2_27) ∧ (k2 = 1 ⇒ t3_27 = t2_23) ∧ (k2 = 0 ⇒ t3_28 = t2_28) ∧ (k2 = 1 ⇒ t3_28 = t2_24) ∧ (k2 = 0 ⇒ t3_29 = t2_29) ∧ (k2 = 1 ⇒ t3_29 = t2_25) ∧ (k2 = 0 ⇒ t3_30 = t2_30) ∧ (k2 = 1 ⇒ t3_30 = t2_26) ∧ (k2 = 0 ⇒ t3_31 = t2_31) ∧ (k2 = 1 ⇒ t3_31 = t2_27)"/>
+<org.eventb.core.guard name="g7" org.eventb.core.label="stage3" org.eventb.core.predicate="(k3 = 0 ⇒ t4_0 = t3_0) ∧ (k3 = 1 ⇒ t4_0 = 0) ∧ (k3 = 0 ⇒ t4_1 = t3_1) ∧ (k3 = 1 ⇒ t4_1 = 0) ∧ (k3 = 0 ⇒ t4_2 = t3_2) ∧ (k3 = 1 ⇒ t4_2 = 0) ∧ (k3 = 0 ⇒ t4_3 = t3_3) ∧ (k3 = 1 ⇒ t4_3 = 0) ∧ (k3 = 0 ⇒ t4_4 = t3_4) ∧ (k3 = 1 ⇒ t4_4 = 0) ∧ (k3 = 0 ⇒ t4_5 = t3_5) ∧ (k3 = 1 ⇒ t4_5 = 0) ∧ (k3 = 0 ⇒ t4_6 = t3_6) ∧ (k3 = 1 ⇒ t4_6 = 0) ∧ (k3 = 0 ⇒ t4_7 = t3_7) ∧ (k3 = 1 ⇒ t4_7 = 0) ∧ (k3 = 0 ⇒ t4_8 = t3_8) ∧ (k3 = 1 ⇒ t4_8 = t3_0) ∧ (k3 = 0 ⇒ t4_9 = t3_9) ∧ (k3 = 1 ⇒ t4_9 = t3_1) ∧ (k3 = 0 ⇒ t4_10 = t3_10) ∧ (k3 = 1 ⇒ t4_10 = t3_2) ∧ (k3 = 0 ⇒ t4_11 = t3_11) ∧ (k3 = 1 ⇒ t4_11 = t3_3) ∧ (k3 = 0 ⇒ t4_12 = t3_12) ∧ (k3 = 1 ⇒ t4_12 = t3_4) ∧ (k3 = 0 ⇒ t4_13 = t3_13) ∧ (k3 = 1 ⇒ t4_13 = t3_5) ∧ (k3 = 0 ⇒ t4_14 = t3_14) ∧ (k3 = 1 ⇒ t4_14 = t3_6) ∧ (k3 = 0 ⇒ t4_15 = t3_15) ∧ (k3 = 1 ⇒ t4_15 = t3_7) ∧ (k3 = 0 ⇒ t4_16 = t3_16) ∧ (k3 = 1 ⇒ t4_16 = t3_8) ∧ (k3 = 0 ⇒ t4_17 = t3_17) ∧ (k3 = 1 ⇒ t4_17 = t3_9) ∧ (k3 = 0 ⇒ t4_18 = t3_18) ∧ (k3 = 1 ⇒ t4_18 = t3_10) ∧ (k3 = 0 ⇒ t4_19 = t3_19) ∧ (k3 = 1 ⇒ t4_19 = t3_11) ∧ (k3 = 0 ⇒ t4_20 = t3_20) ∧ (k3 = 1 ⇒ t4_20 = t3_12) ∧ (k3 = 0 ⇒ t4_21 = t3_21) ∧ (k3 = 1 ⇒ t4_21 = t3_13) ∧ (k3 = 0 ⇒ t4_22 = t3_22) ∧ (k3 = 1 ⇒ t4_22 = t3_14) ∧ (k3 = 0 ⇒ t4_23 = t3_23) ∧ (k3 = 1 ⇒ t4_23 = t3_15) ∧ (k3 = 0 ⇒ t4_24 = t3_24) ∧ (k3 = 1 ⇒ t4_24 = t3_16) ∧ (k3 = 0 ⇒ t4_25 = t3_25) ∧ (k3 = 1 ⇒ t4_25 = t3_17) ∧ (k3 = 0 ⇒ t4_26 = t3_26) ∧ (k3 = 1 ⇒ t4_26 = t3_18) ∧ (k3 = 0 ⇒ t4_27 = t3_27) ∧ (k3 = 1 ⇒ t4_27 = t3_19) ∧ (k3 = 0 ⇒ t4_28 = t3_28) ∧ (k3 = 1 ⇒ t4_28 = t3_20) ∧ (k3 = 0 ⇒ t4_29 = t3_29) ∧ (k3 = 1 ⇒ t4_29 = t3_21) ∧ (k3 = 0 ⇒ t4_30 = t3_30) ∧ (k3 = 1 ⇒ t4_30 = t3_22) ∧ (k3 = 0 ⇒ t4_31 = t3_31) ∧ (k3 = 1 ⇒ t4_31 = t3_23)"/>
+<org.eventb.core.guard name="g8" org.eventb.core.label="stage4" org.eventb.core.predicate="(k4 = 0 ⇒ t5_0 = t4_0) ∧ (k4 = 1 ⇒ t5_0 = 0) ∧ (k4 = 0 ⇒ t5_1 = t4_1) ∧ (k4 = 1 ⇒ t5_1 = 0) ∧ (k4 = 0 ⇒ t5_2 = t4_2) ∧ (k4 = 1 ⇒ t5_2 = 0) ∧ (k4 = 0 ⇒ t5_3 = t4_3) ∧ (k4 = 1 ⇒ t5_3 = 0) ∧ (k4 = 0 ⇒ t5_4 = t4_4) ∧ (k4 = 1 ⇒ t5_4 = 0) ∧ (k4 = 0 ⇒ t5_5 = t4_5) ∧ (k4 = 1 ⇒ t5_5 = 0) ∧ (k4 = 0 ⇒ t5_6 = t4_6) ∧ (k4 = 1 ⇒ t5_6 = 0) ∧ (k4 = 0 ⇒ t5_7 = t4_7) ∧ (k4 = 1 ⇒ t5_7 = 0) ∧ (k4 = 0 ⇒ t5_8 = t4_8) ∧ (k4 = 1 ⇒ t5_8 = 0) ∧ (k4 = 0 ⇒ t5_9 = t4_9) ∧ (k4 = 1 ⇒ t5_9 = 0) ∧ (k4 = 0 ⇒ t5_10 = t4_10) ∧ (k4 = 1 ⇒ t5_10 = 0) ∧ (k4 = 0 ⇒ t5_11 = t4_11) ∧ (k4 = 1 ⇒ t5_11 = 0) ∧ (k4 = 0 ⇒ t5_12 = t4_12) ∧ (k4 = 1 ⇒ t5_12 = 0) ∧ (k4 = 0 ⇒ t5_13 = t4_13) ∧ (k4 = 1 ⇒ t5_13 = 0) ∧ (k4 = 0 ⇒ t5_14 = t4_14) ∧ (k4 = 1 ⇒ t5_14 = 0) ∧ (k4 = 0 ⇒ t5_15 = t4_15) ∧ (k4 = 1 ⇒ t5_15 = 0) ∧ (k4 = 0 ⇒ t5_16 = t4_16) ∧ (k4 = 1 ⇒ t5_16 = t4_0) ∧ (k4 = 0 ⇒ t5_17 = t4_17) ∧ (k4 = 1 ⇒ t5_17 = t4_1) ∧ (k4 = 0 ⇒ t5_18 = t4_18) ∧ (k4 = 1 ⇒ t5_18 = t4_2) ∧ (k4 = 0 ⇒ t5_19 = t4_19) ∧ (k4 = 1 ⇒ t5_19 = t4_3) ∧ (k4 = 0 ⇒ t5_20 = t4_20) ∧ (k4 = 1 ⇒ t5_20 = t4_4) ∧ (k4 = 0 ⇒ t5_21 = t4_21) ∧ (k4 = 1 ⇒ t5_21 = t4_5) ∧ (k4 = 0 ⇒ t5_22 = t4_22) ∧ (k4 = 1 ⇒ t5_22 = t4_6) ∧ (k4 = 0 ⇒ t5_23 = t4_23) ∧ (k4 = 1 ⇒ t5_23 = t4_7) ∧ (k4 = 0 ⇒ t5_24 = t4_24) ∧ (k4 = 1 ⇒ t5_24 = t4_8) ∧ (k4 = 0 ⇒ t5_25 = t4_25) ∧ (k4 = 1 ⇒ t5_25 = t4_9) ∧ (k4 = 0 ⇒ t5_26 = t4_26) ∧ (k4 = 1 ⇒ t5_26 = t4_10) ∧ (k4 = 0 ⇒ t5_27 = t4_27) ∧ (k4 = 1 ⇒ t5_27 = t4_11) ∧ (k4 = 0 ⇒ t5_28 = t4_28) ∧ (k4 = 1 ⇒ t5_28 = t4_12) ∧ (k4 = 0 ⇒ t5_29 = t4_29) ∧ (k4 = 1 ⇒ t5_29 = t4_13) ∧ (k4 = 0 ⇒ t5_30 = t4_30) ∧ (k4 = 1 ⇒ t5_30 = t4_14) ∧ (k4 = 0 ⇒ t5_31 = t4_31) ∧ (k4 = 1 ⇒ t5_31 = t4_15)"/>
+<org.eventb.core.action name="a0" org.eventb.core.label="act1" org.eventb.core.assignment="z ≔ t5_0 + t5_1 ∗ 2 + t5_2 ∗ 4 + t5_3 ∗ 8 + t5_4 ∗ 16 + t5_5 ∗ 32 + t5_6 ∗ 64 + t5_7 ∗ 128 + t5_8 ∗ 256 + t5_9 ∗ 512 + t5_10 ∗ 1024 + t5_11 ∗ 2048 + t5_12 ∗ 4096 + t5_13 ∗ 8192 + t5_14 ∗ 16384 + t5_15 ∗ 32768 + t5_16 ∗ 65536 + t5_17 ∗ 131072 + t5_18 ∗ 262144 + t5_19 ∗ 524288 + t5_20 ∗ 1048576 + t5_21 ∗ 2097152 + t5_22 ∗ 4194304 + t5_23 ∗ 8388608 + t5_24 ∗ 16777216 + t5_25 ∗ 33554432 + t5_26 ∗ 67108864 + t5_27 ∗ 134217728 + t5_28 ∗ 268435456 + t5_29 ∗ 536870912 + t5_30 ∗ 1073741824 + t5_31 ∗ 2147483648"/>
 </org.eventb.core.event>
 <org.eventb.core.event name="e3" org.eventb.core.convergence="0" org.eventb.core.extended="false" org.eventb.core.label="srl">
 <org.eventb.core.refinesEvent name="r1" org.eventb.core.target="srl"/>
 <org.eventb.core.parameter name="p0" org.eventb.core.identifier="k"/>
-<org.eventb.core.parameter name="p1" org.eventb.core.identifier="hi"/>
-<org.eventb.core.parameter name="p2" org.eventb.core.identifier="lo"/>
-<org.eventb.core.parameter name="p3" org.eventb.core.identifier="r"/>
-<org.eventb.core.parameter name="p4" org.eventb.core.identifier="k0"/>
-<org.eventb.core.parameter name="p5" org.eventb.core.identifier="k1"/>
-<org.eventb.core.parameter name="p6" org.eventb.core.identifier="k2"/>
-<org.eventb.core.parameter name="p7" org.eventb.core.identifier="k3"/>
-<org.eventb.core.parameter name="p8" org.eventb.core.identifier="k4"/>
-<org.eventb.core.parameter name="p9" org.eventb.core.identifier="t1"/>
-<org.eventb.core.parameter name="p10" org.eventb.core.identifier="t2"/>
-<org.eventb.core.parameter name="p11" org.eventb.core.identifier="t3"/>
-<org.eventb.core.parameter name="p12" org.eventb.core.identifier="t4"/>
-<org.eventb.core.parameter name="p13" org.eventb.core.identifier="t5"/>
-<org.eventb.core.parameter name="p14" org.eventb.core.identifier="x0"/>
-<org.eventb.core.parameter name="p15" org.eventb.core.identifier="x1"/>
-<org.eventb.core.parameter name="p16" org.eventb.core.identifier="x2"/>
-<org.eventb.core.parameter name="p17" org.eventb.core.identifier="x3"/>
-<org.eventb.core.parameter name="p18" org.eventb.core.identifier="x4"/>
+<org.eventb.core.parameter name="p1" org.eventb.core.identifier="a0"/>
+<org.eventb.core.parameter name="p2" org.eventb.core.identifier="a1"/>
+<org.eventb.core.parameter name="p3" org.eventb.core.identifier="a2"/>
+<org.eventb.core.parameter name="p4" org.eventb.core.identifier="a3"/>
+<org.eventb.core.parameter name="p5" org.eventb.core.identifier="a4"/>
+<org.eventb.core.parameter name="p6" org.eventb.core.identifier="a5"/>
+<org.eventb.core.parameter name="p7" org.eventb.core.identifier="a6"/>
+<org.eventb.core.parameter name="p8" org.eventb.core.identifier="a7"/>
+<org.eventb.core.parameter name="p9" org.eventb.core.identifier="a8"/>
+<org.eventb.core.parameter name="p10" org.eventb.core.identifier="a9"/>
+<org.eventb.core.parameter name="p11" org.eventb.core.identifier="a10"/>
+<org.eventb.core.parameter name="p12" org.eventb.core.identifier="a11"/>
+<org.eventb.core.parameter name="p13" org.eventb.core.identifier="a12"/>
+<org.eventb.core.parameter name="p14" org.eventb.core.identifier="a13"/>
+<org.eventb.core.parameter name="p15" org.eventb.core.identifier="a14"/>
+<org.eventb.core.parameter name="p16" org.eventb.core.identifier="a15"/>
+<org.eventb.core.parameter name="p17" org.eventb.core.identifier="a16"/>
+<org.eventb.core.parameter name="p18" org.eventb.core.identifier="a17"/>
+<org.eventb.core.parameter name="p19" org.eventb.core.identifier="a18"/>
+<org.eventb.core.parameter name="p20" org.eventb.core.identifier="a19"/>
+<org.eventb.core.parameter name="p21" org.eventb.core.identifier="a20"/>
+<org.eventb.core.parameter name="p22" org.eventb.core.identifier="a21"/>
+<org.eventb.core.parameter name="p23" org.eventb.core.identifier="a22"/>
+<org.eventb.core.parameter name="p24" org.eventb.core.identifier="a23"/>
+<org.eventb.core.parameter name="p25" org.eventb.core.identifier="a24"/>
+<org.eventb.core.parameter name="p26" org.eventb.core.identifier="a25"/>
+<org.eventb.core.parameter name="p27" org.eventb.core.identifier="a26"/>
+<org.eventb.core.parameter name="p28" org.eventb.core.identifier="a27"/>
+<org.eventb.core.parameter name="p29" org.eventb.core.identifier="a28"/>
+<org.eventb.core.parameter name="p30" org.eventb.core.identifier="a29"/>
+<org.eventb.core.parameter name="p31" org.eventb.core.identifier="a30"/>
+<org.eventb.core.parameter name="p32" org.eventb.core.identifier="a31"/>
+<org.eventb.core.parameter name="p33" org.eventb.core.identifier="k0"/>
+<org.eventb.core.parameter name="p34" org.eventb.core.identifier="k1"/>
+<org.eventb.core.parameter name="p35" org.eventb.core.identifier="k2"/>
+<org.eventb.core.parameter name="p36" org.eventb.core.identifier="k3"/>
+<org.eventb.core.parameter name="p37" org.eventb.core.identifier="k4"/>
+<org.eventb.core.parameter name="p38" org.eventb.core.identifier="t1_0"/>
+<org.eventb.core.parameter name="p39" org.eventb.core.identifier="t1_1"/>
+<org.eventb.core.parameter name="p40" org.eventb.core.identifier="t1_2"/>
+<org.eventb.core.parameter name="p41" org.eventb.core.identifier="t1_3"/>
+<org.eventb.core.parameter name="p42" org.eventb.core.identifier="t1_4"/>
+<org.eventb.core.parameter name="p43" org.eventb.core.identifier="t1_5"/>
+<org.eventb.core.parameter name="p44" org.eventb.core.identifier="t1_6"/>
+<org.eventb.core.parameter name="p45" org.eventb.core.identifier="t1_7"/>
+<org.eventb.core.parameter name="p46" org.eventb.core.identifier="t1_8"/>
+<org.eventb.core.parameter name="p47" org.eventb.core.identifier="t1_9"/>
+<org.eventb.core.parameter name="p48" org.eventb.core.identifier="t1_10"/>
+<org.eventb.core.parameter name="p49" org.eventb.core.identifier="t1_11"/>
+<org.eventb.core.parameter name="p50" org.eventb.core.identifier="t1_12"/>
+<org.eventb.core.parameter name="p51" org.eventb.core.identifier="t1_13"/>
+<org.eventb.core.parameter name="p52" org.eventb.core.identifier="t1_14"/>
+<org.eventb.core.parameter name="p53" org.eventb.core.identifier="t1_15"/>
+<org.eventb.core.parameter name="p54" org.eventb.core.identifier="t1_16"/>
+<org.eventb.core.parameter name="p55" org.eventb.core.identifier="t1_17"/>
+<org.eventb.core.parameter name="p56" org.eventb.core.identifier="t1_18"/>
+<org.eventb.core.parameter name="p57" org.eventb.core.identifier="t1_19"/>
+<org.eventb.core.parameter name="p58" org.eventb.core.identifier="t1_20"/>
+<org.eventb.core.parameter name="p59" org.eventb.core.identifier="t1_21"/>
+<org.eventb.core.parameter name="p60" org.eventb.core.identifier="t1_22"/>
+<org.eventb.core.parameter name="p61" org.eventb.core.identifier="t1_23"/>
+<org.eventb.core.parameter name="p62" org.eventb.core.identifier="t1_24"/>
+<org.eventb.core.parameter name="p63" org.eventb.core.identifier="t1_25"/>
+<org.eventb.core.parameter name="p64" org.eventb.core.identifier="t1_26"/>
+<org.eventb.core.parameter name="p65" org.eventb.core.identifier="t1_27"/>
+<org.eventb.core.parameter name="p66" org.eventb.core.identifier="t1_28"/>
+<org.eventb.core.parameter name="p67" org.eventb.core.identifier="t1_29"/>
+<org.eventb.core.parameter name="p68" org.eventb.core.identifier="t1_30"/>
+<org.eventb.core.parameter name="p69" org.eventb.core.identifier="t1_31"/>
+<org.eventb.core.parameter name="p70" org.eventb.core.identifier="t2_0"/>
+<org.eventb.core.parameter name="p71" org.eventb.core.identifier="t2_1"/>
+<org.eventb.core.parameter name="p72" org.eventb.core.identifier="t2_2"/>
+<org.eventb.core.parameter name="p73" org.eventb.core.identifier="t2_3"/>
+<org.eventb.core.parameter name="p74" org.eventb.core.identifier="t2_4"/>
+<org.eventb.core.parameter name="p75" org.eventb.core.identifier="t2_5"/>
+<org.eventb.core.parameter name="p76" org.eventb.core.identifier="t2_6"/>
+<org.eventb.core.parameter name="p77" org.eventb.core.identifier="t2_7"/>
+<org.eventb.core.parameter name="p78" org.eventb.core.identifier="t2_8"/>
+<org.eventb.core.parameter name="p79" org.eventb.core.identifier="t2_9"/>
+<org.eventb.core.parameter name="p80" org.eventb.core.identifier="t2_10"/>
+<org.eventb.core.parameter name="p81" org.eventb.core.identifier="t2_11"/>
+<org.eventb.core.parameter name="p82" org.eventb.core.identifier="t2_12"/>
+<org.eventb.core.parameter name="p83" org.eventb.core.identifier="t2_13"/>
+<org.eventb.core.parameter name="p84" org.eventb.core.identifier="t2_14"/>
+<org.eventb.core.parameter name="p85" org.eventb.core.identifier="t2_15"/>
+<org.eventb.core.parameter name="p86" org.eventb.core.identifier="t2_16"/>
+<org.eventb.core.parameter name="p87" org.eventb.core.identifier="t2_17"/>
+<org.eventb.core.parameter name="p88" org.eventb.core.identifier="t2_18"/>
+<org.eventb.core.parameter name="p89" org.eventb.core.identifier="t2_19"/>
+<org.eventb.core.parameter name="p90" org.eventb.core.identifier="t2_20"/>
+<org.eventb.core.parameter name="p91" org.eventb.core.identifier="t2_21"/>
+<org.eventb.core.parameter name="p92" org.eventb.core.identifier="t2_22"/>
+<org.eventb.core.parameter name="p93" org.eventb.core.identifier="t2_23"/>
+<org.eventb.core.parameter name="p94" org.eventb.core.identifier="t2_24"/>
+<org.eventb.core.parameter name="p95" org.eventb.core.identifier="t2_25"/>
+<org.eventb.core.parameter name="p96" org.eventb.core.identifier="t2_26"/>
+<org.eventb.core.parameter name="p97" org.eventb.core.identifier="t2_27"/>
+<org.eventb.core.parameter name="p98" org.eventb.core.identifier="t2_28"/>
+<org.eventb.core.parameter name="p99" org.eventb.core.identifier="t2_29"/>
+<org.eventb.core.parameter name="p100" org.eventb.core.identifier="t2_30"/>
+<org.eventb.core.parameter name="p101" org.eventb.core.identifier="t2_31"/>
+<org.eventb.core.parameter name="p102" org.eventb.core.identifier="t3_0"/>
+<org.eventb.core.parameter name="p103" org.eventb.core.identifier="t3_1"/>
+<org.eventb.core.parameter name="p104" org.eventb.core.identifier="t3_2"/>
+<org.eventb.core.parameter name="p105" org.eventb.core.identifier="t3_3"/>
+<org.eventb.core.parameter name="p106" org.eventb.core.identifier="t3_4"/>
+<org.eventb.core.parameter name="p107" org.eventb.core.identifier="t3_5"/>
+<org.eventb.core.parameter name="p108" org.eventb.core.identifier="t3_6"/>
+<org.eventb.core.parameter name="p109" org.eventb.core.identifier="t3_7"/>
+<org.eventb.core.parameter name="p110" org.eventb.core.identifier="t3_8"/>
+<org.eventb.core.parameter name="p111" org.eventb.core.identifier="t3_9"/>
+<org.eventb.core.parameter name="p112" org.eventb.core.identifier="t3_10"/>
+<org.eventb.core.parameter name="p113" org.eventb.core.identifier="t3_11"/>
+<org.eventb.core.parameter name="p114" org.eventb.core.identifier="t3_12"/>
+<org.eventb.core.parameter name="p115" org.eventb.core.identifier="t3_13"/>
+<org.eventb.core.parameter name="p116" org.eventb.core.identifier="t3_14"/>
+<org.eventb.core.parameter name="p117" org.eventb.core.identifier="t3_15"/>
+<org.eventb.core.parameter name="p118" org.eventb.core.identifier="t3_16"/>
+<org.eventb.core.parameter name="p119" org.eventb.core.identifier="t3_17"/>
+<org.eventb.core.parameter name="p120" org.eventb.core.identifier="t3_18"/>
+<org.eventb.core.parameter name="p121" org.eventb.core.identifier="t3_19"/>
+<org.eventb.core.parameter name="p122" org.eventb.core.identifier="t3_20"/>
+<org.eventb.core.parameter name="p123" org.eventb.core.identifier="t3_21"/>
+<org.eventb.core.parameter name="p124" org.eventb.core.identifier="t3_22"/>
+<org.eventb.core.parameter name="p125" org.eventb.core.identifier="t3_23"/>
+<org.eventb.core.parameter name="p126" org.eventb.core.identifier="t3_24"/>
+<org.eventb.core.parameter name="p127" org.eventb.core.identifier="t3_25"/>
+<org.eventb.core.parameter name="p128" org.eventb.core.identifier="t3_26"/>
+<org.eventb.core.parameter name="p129" org.eventb.core.identifier="t3_27"/>
+<org.eventb.core.parameter name="p130" org.eventb.core.identifier="t3_28"/>
+<org.eventb.core.parameter name="p131" org.eventb.core.identifier="t3_29"/>
+<org.eventb.core.parameter name="p132" org.eventb.core.identifier="t3_30"/>
+<org.eventb.core.parameter name="p133" org.eventb.core.identifier="t3_31"/>
+<org.eventb.core.parameter name="p134" org.eventb.core.identifier="t4_0"/>
+<org.eventb.core.parameter name="p135" org.eventb.core.identifier="t4_1"/>
+<org.eventb.core.parameter name="p136" org.eventb.core.identifier="t4_2"/>
+<org.eventb.core.parameter name="p137" org.eventb.core.identifier="t4_3"/>
+<org.eventb.core.parameter name="p138" org.eventb.core.identifier="t4_4"/>
+<org.eventb.core.parameter name="p139" org.eventb.core.identifier="t4_5"/>
+<org.eventb.core.parameter name="p140" org.eventb.core.identifier="t4_6"/>
+<org.eventb.core.parameter name="p141" org.eventb.core.identifier="t4_7"/>
+<org.eventb.core.parameter name="p142" org.eventb.core.identifier="t4_8"/>
+<org.eventb.core.parameter name="p143" org.eventb.core.identifier="t4_9"/>
+<org.eventb.core.parameter name="p144" org.eventb.core.identifier="t4_10"/>
+<org.eventb.core.parameter name="p145" org.eventb.core.identifier="t4_11"/>
+<org.eventb.core.parameter name="p146" org.eventb.core.identifier="t4_12"/>
+<org.eventb.core.parameter name="p147" org.eventb.core.identifier="t4_13"/>
+<org.eventb.core.parameter name="p148" org.eventb.core.identifier="t4_14"/>
+<org.eventb.core.parameter name="p149" org.eventb.core.identifier="t4_15"/>
+<org.eventb.core.parameter name="p150" org.eventb.core.identifier="t4_16"/>
+<org.eventb.core.parameter name="p151" org.eventb.core.identifier="t4_17"/>
+<org.eventb.core.parameter name="p152" org.eventb.core.identifier="t4_18"/>
+<org.eventb.core.parameter name="p153" org.eventb.core.identifier="t4_19"/>
+<org.eventb.core.parameter name="p154" org.eventb.core.identifier="t4_20"/>
+<org.eventb.core.parameter name="p155" org.eventb.core.identifier="t4_21"/>
+<org.eventb.core.parameter name="p156" org.eventb.core.identifier="t4_22"/>
+<org.eventb.core.parameter name="p157" org.eventb.core.identifier="t4_23"/>
+<org.eventb.core.parameter name="p158" org.eventb.core.identifier="t4_24"/>
+<org.eventb.core.parameter name="p159" org.eventb.core.identifier="t4_25"/>
+<org.eventb.core.parameter name="p160" org.eventb.core.identifier="t4_26"/>
+<org.eventb.core.parameter name="p161" org.eventb.core.identifier="t4_27"/>
+<org.eventb.core.parameter name="p162" org.eventb.core.identifier="t4_28"/>
+<org.eventb.core.parameter name="p163" org.eventb.core.identifier="t4_29"/>
+<org.eventb.core.parameter name="p164" org.eventb.core.identifier="t4_30"/>
+<org.eventb.core.parameter name="p165" org.eventb.core.identifier="t4_31"/>
+<org.eventb.core.parameter name="p166" org.eventb.core.identifier="t5_0"/>
+<org.eventb.core.parameter name="p167" org.eventb.core.identifier="t5_1"/>
+<org.eventb.core.parameter name="p168" org.eventb.core.identifier="t5_2"/>
+<org.eventb.core.parameter name="p169" org.eventb.core.identifier="t5_3"/>
+<org.eventb.core.parameter name="p170" org.eventb.core.identifier="t5_4"/>
+<org.eventb.core.parameter name="p171" org.eventb.core.identifier="t5_5"/>
+<org.eventb.core.parameter name="p172" org.eventb.core.identifier="t5_6"/>
+<org.eventb.core.parameter name="p173" org.eventb.core.identifier="t5_7"/>
+<org.eventb.core.parameter name="p174" org.eventb.core.identifier="t5_8"/>
+<org.eventb.core.parameter name="p175" org.eventb.core.identifier="t5_9"/>
+<org.eventb.core.parameter name="p176" org.eventb.core.identifier="t5_10"/>
+<org.eventb.core.parameter name="p177" org.eventb.core.identifier="t5_11"/>
+<org.eventb.core.parameter name="p178" org.eventb.core.identifier="t5_12"/>
+<org.eventb.core.parameter name="p179" org.eventb.core.identifier="t5_13"/>
+<org.eventb.core.parameter name="p180" org.eventb.core.identifier="t5_14"/>
+<org.eventb.core.parameter name="p181" org.eventb.core.identifier="t5_15"/>
+<org.eventb.core.parameter name="p182" org.eventb.core.identifier="t5_16"/>
+<org.eventb.core.parameter name="p183" org.eventb.core.identifier="t5_17"/>
+<org.eventb.core.parameter name="p184" org.eventb.core.identifier="t5_18"/>
+<org.eventb.core.parameter name="p185" org.eventb.core.identifier="t5_19"/>
+<org.eventb.core.parameter name="p186" org.eventb.core.identifier="t5_20"/>
+<org.eventb.core.parameter name="p187" org.eventb.core.identifier="t5_21"/>
+<org.eventb.core.parameter name="p188" org.eventb.core.identifier="t5_22"/>
+<org.eventb.core.parameter name="p189" org.eventb.core.identifier="t5_23"/>
+<org.eventb.core.parameter name="p190" org.eventb.core.identifier="t5_24"/>
+<org.eventb.core.parameter name="p191" org.eventb.core.identifier="t5_25"/>
+<org.eventb.core.parameter name="p192" org.eventb.core.identifier="t5_26"/>
+<org.eventb.core.parameter name="p193" org.eventb.core.identifier="t5_27"/>
+<org.eventb.core.parameter name="p194" org.eventb.core.identifier="t5_28"/>
+<org.eventb.core.parameter name="p195" org.eventb.core.identifier="t5_29"/>
+<org.eventb.core.parameter name="p196" org.eventb.core.identifier="t5_30"/>
+<org.eventb.core.parameter name="p197" org.eventb.core.identifier="t5_31"/>
 <org.eventb.core.guard name="g0" org.eventb.core.label="amount" org.eventb.core.predicate="k ∈ 0 ‥ 31"/>
-<org.eventb.core.guard name="g1" org.eventb.core.label="parts" org.eventb.core.predicate="hi ∈ ℕ ∧ lo ∈ ℕ"/>
-<org.eventb.core.guard name="g2" org.eventb.core.label="table" org.eventb.core.predicate="(k = 0 ∧ a = hi ∗ 1 + lo ∧ lo ∈ 0 ‥ 0 ∧ r = hi) ∨ (k = 1 ∧ a = hi ∗ 2 + lo ∧ lo ∈ 0 ‥ 1 ∧ r = hi) ∨ (k = 2 ∧ a = hi ∗ 4 + lo ∧ lo ∈ 0 ‥ 3 ∧ r = hi) ∨ (k = 3 ∧ a = hi ∗ 8 + lo ∧ lo ∈ 0 ‥ 7 ∧ r = hi) ∨ (k = 4 ∧ a = hi ∗ 16 + lo ∧ lo ∈ 0 ‥ 15 ∧ r = hi) ∨ (k = 5 ∧ a = hi ∗ 32 + lo ∧ lo ∈ 0 ‥ 31 ∧ r = hi) ∨ (k = 6 ∧ a = hi ∗ 64 + lo ∧ lo ∈ 0 ‥ 63 ∧ r = hi) ∨ (k = 7 ∧ a = hi ∗ 128 + lo ∧ lo ∈ 0 ‥ 127 ∧ r = hi) ∨ (k = 8 ∧ a = hi ∗ 256 + lo ∧ lo ∈ 0 ‥ 255 ∧ r = hi) ∨ (k = 9 ∧ a = hi ∗ 512 + lo ∧ lo ∈ 0 ‥ 511 ∧ r = hi) ∨ (k = 10 ∧ a = hi ∗ 1024 + lo ∧ lo ∈ 0 ‥ 1023 ∧ r = hi) ∨ (k = 11 ∧ a = hi ∗ 2048 + lo ∧ lo ∈ 0 ‥ 2047 ∧ r = hi) ∨ (k = 12 ∧ a = hi ∗ 4096 + lo ∧ lo ∈ 0 ‥ 4095 ∧ r = hi) ∨ (k = 13 ∧ a = hi ∗ 8192 + lo ∧ lo ∈ 0 ‥ 8191 ∧ r = hi) ∨ (k = 14 ∧ a = hi ∗ 16384 + lo ∧ lo ∈ 0 ‥ 16383 ∧ r = hi) ∨ (k = 15 ∧ a = hi ∗ 32768 + lo ∧ lo ∈ 0 ‥ 32767 ∧ r = hi) ∨ (k = 16 ∧ a = hi ∗ 65536 + lo ∧ lo ∈ 0 ‥ 65535 ∧ r = hi) ∨ (k = 17 ∧ a = hi ∗ 131072 + lo ∧ lo ∈ 0 ‥ 131071 ∧ r = hi) ∨ (k = 18 ∧ a = hi ∗ 262144 + lo ∧ lo ∈ 0 ‥ 262143 ∧ r = hi) ∨ (k = 19 ∧ a = hi ∗ 524288 + lo ∧ lo ∈ 0 ‥ 524287 ∧ r = hi) ∨ (k = 20 ∧ a = hi ∗ 1048576 + lo ∧ lo ∈ 0 ‥ 1048575 ∧ r = hi) ∨ (k = 21 ∧ a = hi ∗ 2097152 + lo ∧ lo ∈ 0 ‥ 2097151 ∧ r = hi) ∨ (k = 22 ∧ a = hi ∗ 4194304 + lo ∧ lo ∈ 0 ‥ 4194303 ∧ r = hi) ∨ (k = 23 ∧ a = hi ∗ 8388608 + lo ∧ lo ∈ 0 ‥ 8388607 ∧ r = hi) ∨ (k = 24 ∧ a = hi ∗ 16777216 + lo ∧ lo ∈ 0 ‥ 16777215 ∧ r = hi) ∨ (k = 25 ∧ a = hi ∗ 33554432 + lo ∧ lo ∈ 0 ‥ 33554431 ∧ r = hi) ∨ (k = 26 ∧ a = hi ∗ 67108864 + lo ∧ lo ∈ 0 ‥ 67108863 ∧ r = hi) ∨ (k = 27 ∧ a = hi ∗ 134217728 + lo ∧ lo ∈ 0 ‥ 134217727 ∧ r = hi) ∨ (k = 28 ∧ a = hi ∗ 268435456 + lo ∧ lo ∈ 0 ‥ 268435455 ∧ r = hi) ∨ (k = 29 ∧ a = hi ∗ 536870912 + lo ∧ lo ∈ 0 ‥ 536870911 ∧ r = hi) ∨ (k = 30 ∧ a = hi ∗ 1073741824 + lo ∧ lo ∈ 0 ‥ 1073741823 ∧ r = hi) ∨ (k = 31 ∧ a = hi ∗ 2147483648 + lo ∧ lo ∈ 0 ‥ 2147483647 ∧ r = hi)"/>
-<org.eventb.core.guard name="g3" org.eventb.core.label="bits" org.eventb.core.predicate="k0 ∈ 0 ‥ 1 ∧ k1 ∈ 0 ‥ 1 ∧ k2 ∈ 0 ‥ 1 ∧ k3 ∈ 0 ‥ 1 ∧ k4 ∈ 0 ‥ 1 ∧ k = k0 + 2 ∗ k1 + 4 ∗ k2 + 8 ∗ k3 + 16 ∗ k4"/>
-<org.eventb.core.guard name="g4" org.eventb.core.label="wires" org.eventb.core.predicate="t1 ∈ 0 ‥ 8589934591 ∧ t2 ∈ 0 ‥ 8589934591 ∧ t3 ∈ 0 ‥ 8589934591 ∧ t4 ∈ 0 ‥ 8589934591 ∧ t5 ∈ 0 ‥ 8589934591"/>
-<org.eventb.core.guard name="g5" org.eventb.core.label="stage0" org.eventb.core.predicate="(k0 = 0 ⇒ t1 = a ∧ x0 = 0) ∧ (k0 = 1 ⇒ a = t1 ∗ 2 + x0 ∧ x0 ∈ 0 ‥ 1)"/>
-<org.eventb.core.guard name="g6" org.eventb.core.label="stage1" org.eventb.core.predicate="(k1 = 0 ⇒ t2 = t1 ∧ x1 = 0) ∧ (k1 = 1 ⇒ t1 = t2 ∗ 4 + x1 ∧ x1 ∈ 0 ‥ 3)"/>
-<org.eventb.core.guard name="g7" org.eventb.core.label="stage2" org.eventb.core.predicate="(k2 = 0 ⇒ t3 = t2 ∧ x2 = 0) ∧ (k2 = 1 ⇒ t2 = t3 ∗ 16 + x2 ∧ x2 ∈ 0 ‥ 15)"/>
-<org.eventb.core.guard name="g8" org.eventb.core.label="stage3" org.eventb.core.predicate="(k3 = 0 ⇒ t4 = t3 ∧ x3 = 0) ∧ (k3 = 1 ⇒ t3 = t4 ∗ 256 + x3 ∧ x3 ∈ 0 ‥ 255)"/>
-<org.eventb.core.guard name="g9" org.eventb.core.label="stage4" org.eventb.core.predicate="(k4 = 0 ⇒ t5 = t4 ∧ x4 = 0) ∧ (k4 = 1 ⇒ t4 = t5 ∗ 65536 + x4 ∧ x4 ∈ 0 ‥ 65535)"/>
-<org.eventb.core.action name="a0" org.eventb.core.label="act1" org.eventb.core.assignment="z ≔ t5"/>
+<org.eventb.core.guard name="g1" org.eventb.core.label="abits" org.eventb.core.predicate="a0 ∈ 0 ‥ 1 ∧ a1 ∈ 0 ‥ 1 ∧ a2 ∈ 0 ‥ 1 ∧ a3 ∈ 0 ‥ 1 ∧ a4 ∈ 0 ‥ 1 ∧ a5 ∈ 0 ‥ 1 ∧ a6 ∈ 0 ‥ 1 ∧ a7 ∈ 0 ‥ 1 ∧ a8 ∈ 0 ‥ 1 ∧ a9 ∈ 0 ‥ 1 ∧ a10 ∈ 0 ‥ 1 ∧ a11 ∈ 0 ‥ 1 ∧ a12 ∈ 0 ‥ 1 ∧ a13 ∈ 0 ‥ 1 ∧ a14 ∈ 0 ‥ 1 ∧ a15 ∈ 0 ‥ 1 ∧ a16 ∈ 0 ‥ 1 ∧ a17 ∈ 0 ‥ 1 ∧ a18 ∈ 0 ‥ 1 ∧ a19 ∈ 0 ‥ 1 ∧ a20 ∈ 0 ‥ 1 ∧ a21 ∈ 0 ‥ 1 ∧ a22 ∈ 0 ‥ 1 ∧ a23 ∈ 0 ‥ 1 ∧ a24 ∈ 0 ‥ 1 ∧ a25 ∈ 0 ‥ 1 ∧ a26 ∈ 0 ‥ 1 ∧ a27 ∈ 0 ‥ 1 ∧ a28 ∈ 0 ‥ 1 ∧ a29 ∈ 0 ‥ 1 ∧ a30 ∈ 0 ‥ 1 ∧ a31 ∈ 0 ‥ 1 ∧ a = a0 + a1 ∗ 2 + a2 ∗ 4 + a3 ∗ 8 + a4 ∗ 16 + a5 ∗ 32 + a6 ∗ 64 + a7 ∗ 128 + a8 ∗ 256 + a9 ∗ 512 + a10 ∗ 1024 + a11 ∗ 2048 + a12 ∗ 4096 + a13 ∗ 8192 + a14 ∗ 16384 + a15 ∗ 32768 + a16 ∗ 65536 + a17 ∗ 131072 + a18 ∗ 262144 + a19 ∗ 524288 + a20 ∗ 1048576 + a21 ∗ 2097152 + a22 ∗ 4194304 + a23 ∗ 8388608 + a24 ∗ 16777216 + a25 ∗ 33554432 + a26 ∗ 67108864 + a27 ∗ 134217728 + a28 ∗ 268435456 + a29 ∗ 536870912 + a30 ∗ 1073741824 + a31 ∗ 2147483648"/>
+<org.eventb.core.guard name="g2" org.eventb.core.label="kbits" org.eventb.core.predicate="k0 ∈ 0 ‥ 1 ∧ k1 ∈ 0 ‥ 1 ∧ k2 ∈ 0 ‥ 1 ∧ k3 ∈ 0 ‥ 1 ∧ k4 ∈ 0 ‥ 1 ∧ k = k0 + k1 ∗ 2 + k2 ∗ 4 + k3 ∗ 8 + k4 ∗ 16"/>
+<org.eventb.core.guard name="g3" org.eventb.core.label="wires" org.eventb.core.predicate="t1_0 ∈ 0 ‥ 1 ∧ t1_1 ∈ 0 ‥ 1 ∧ t1_2 ∈ 0 ‥ 1 ∧ t1_3 ∈ 0 ‥ 1 ∧ t1_4 ∈ 0 ‥ 1 ∧ t1_5 ∈ 0 ‥ 1 ∧ t1_6 ∈ 0 ‥ 1 ∧ t1_7 ∈ 0 ‥ 1 ∧ t1_8 ∈ 0 ‥ 1 ∧ t1_9 ∈ 0 ‥ 1 ∧ t1_10 ∈ 0 ‥ 1 ∧ t1_11 ∈ 0 ‥ 1 ∧ t1_12 ∈ 0 ‥ 1 ∧ t1_13 ∈ 0 ‥ 1 ∧ t1_14 ∈ 0 ‥ 1 ∧ t1_15 ∈ 0 ‥ 1 ∧ t1_16 ∈ 0 ‥ 1 ∧ t1_17 ∈ 0 ‥ 1 ∧ t1_18 ∈ 0 ‥ 1 ∧ t1_19 ∈ 0 ‥ 1 ∧ t1_20 ∈ 0 ‥ 1 ∧ t1_21 ∈ 0 ‥ 1 ∧ t1_22 ∈ 0 ‥ 1 ∧ t1_23 ∈ 0 ‥ 1 ∧ t1_24 ∈ 0 ‥ 1 ∧ t1_25 ∈ 0 ‥ 1 ∧ t1_26 ∈ 0 ‥ 1 ∧ t1_27 ∈ 0 ‥ 1 ∧ t1_28 ∈ 0 ‥ 1 ∧ t1_29 ∈ 0 ‥ 1 ∧ t1_30 ∈ 0 ‥ 1 ∧ t1_31 ∈ 0 ‥ 1 ∧ t2_0 ∈ 0 ‥ 1 ∧ t2_1 ∈ 0 ‥ 1 ∧ t2_2 ∈ 0 ‥ 1 ∧ t2_3 ∈ 0 ‥ 1 ∧ t2_4 ∈ 0 ‥ 1 ∧ t2_5 ∈ 0 ‥ 1 ∧ t2_6 ∈ 0 ‥ 1 ∧ t2_7 ∈ 0 ‥ 1 ∧ t2_8 ∈ 0 ‥ 1 ∧ t2_9 ∈ 0 ‥ 1 ∧ t2_10 ∈ 0 ‥ 1 ∧ t2_11 ∈ 0 ‥ 1 ∧ t2_12 ∈ 0 ‥ 1 ∧ t2_13 ∈ 0 ‥ 1 ∧ t2_14 ∈ 0 ‥ 1 ∧ t2_15 ∈ 0 ‥ 1 ∧ t2_16 ∈ 0 ‥ 1 ∧ t2_17 ∈ 0 ‥ 1 ∧ t2_18 ∈ 0 ‥ 1 ∧ t2_19 ∈ 0 ‥ 1 ∧ t2_20 ∈ 0 ‥ 1 ∧ t2_21 ∈ 0 ‥ 1 ∧ t2_22 ∈ 0 ‥ 1 ∧ t2_23 ∈ 0 ‥ 1 ∧ t2_24 ∈ 0 ‥ 1 ∧ t2_25 ∈ 0 ‥ 1 ∧ t2_26 ∈ 0 ‥ 1 ∧ t2_27 ∈ 0 ‥ 1 ∧ t2_28 ∈ 0 ‥ 1 ∧ t2_29 ∈ 0 ‥ 1 ∧ t2_30 ∈ 0 ‥ 1 ∧ t2_31 ∈ 0 ‥ 1 ∧ t3_0 ∈ 0 ‥ 1 ∧ t3_1 ∈ 0 ‥ 1 ∧ t3_2 ∈ 0 ‥ 1 ∧ t3_3 ∈ 0 ‥ 1 ∧ t3_4 ∈ 0 ‥ 1 ∧ t3_5 ∈ 0 ‥ 1 ∧ t3_6 ∈ 0 ‥ 1 ∧ t3_7 ∈ 0 ‥ 1 ∧ t3_8 ∈ 0 ‥ 1 ∧ t3_9 ∈ 0 ‥ 1 ∧ t3_10 ∈ 0 ‥ 1 ∧ t3_11 ∈ 0 ‥ 1 ∧ t3_12 ∈ 0 ‥ 1 ∧ t3_13 ∈ 0 ‥ 1 ∧ t3_14 ∈ 0 ‥ 1 ∧ t3_15 ∈ 0 ‥ 1 ∧ t3_16 ∈ 0 ‥ 1 ∧ t3_17 ∈ 0 ‥ 1 ∧ t3_18 ∈ 0 ‥ 1 ∧ t3_19 ∈ 0 ‥ 1 ∧ t3_20 ∈ 0 ‥ 1 ∧ t3_21 ∈ 0 ‥ 1 ∧ t3_22 ∈ 0 ‥ 1 ∧ t3_23 ∈ 0 ‥ 1 ∧ t3_24 ∈ 0 ‥ 1 ∧ t3_25 ∈ 0 ‥ 1 ∧ t3_26 ∈ 0 ‥ 1 ∧ t3_27 ∈ 0 ‥ 1 ∧ t3_28 ∈ 0 ‥ 1 ∧ t3_29 ∈ 0 ‥ 1 ∧ t3_30 ∈ 0 ‥ 1 ∧ t3_31 ∈ 0 ‥ 1 ∧ t4_0 ∈ 0 ‥ 1 ∧ t4_1 ∈ 0 ‥ 1 ∧ t4_2 ∈ 0 ‥ 1 ∧ t4_3 ∈ 0 ‥ 1 ∧ t4_4 ∈ 0 ‥ 1 ∧ t4_5 ∈ 0 ‥ 1 ∧ t4_6 ∈ 0 ‥ 1 ∧ t4_7 ∈ 0 ‥ 1 ∧ t4_8 ∈ 0 ‥ 1 ∧ t4_9 ∈ 0 ‥ 1 ∧ t4_10 ∈ 0 ‥ 1 ∧ t4_11 ∈ 0 ‥ 1 ∧ t4_12 ∈ 0 ‥ 1 ∧ t4_13 ∈ 0 ‥ 1 ∧ t4_14 ∈ 0 ‥ 1 ∧ t4_15 ∈ 0 ‥ 1 ∧ t4_16 ∈ 0 ‥ 1 ∧ t4_17 ∈ 0 ‥ 1 ∧ t4_18 ∈ 0 ‥ 1 ∧ t4_19 ∈ 0 ‥ 1 ∧ t4_20 ∈ 0 ‥ 1 ∧ t4_21 ∈ 0 ‥ 1 ∧ t4_22 ∈ 0 ‥ 1 ∧ t4_23 ∈ 0 ‥ 1 ∧ t4_24 ∈ 0 ‥ 1 ∧ t4_25 ∈ 0 ‥ 1 ∧ t4_26 ∈ 0 ‥ 1 ∧ t4_27 ∈ 0 ‥ 1 ∧ t4_28 ∈ 0 ‥ 1 ∧ t4_29 ∈ 0 ‥ 1 ∧ t4_30 ∈ 0 ‥ 1 ∧ t4_31 ∈ 0 ‥ 1 ∧ t5_0 ∈ 0 ‥ 1 ∧ t5_1 ∈ 0 ‥ 1 ∧ t5_2 ∈ 0 ‥ 1 ∧ t5_3 ∈ 0 ‥ 1 ∧ t5_4 ∈ 0 ‥ 1 ∧ t5_5 ∈ 0 ‥ 1 ∧ t5_6 ∈ 0 ‥ 1 ∧ t5_7 ∈ 0 ‥ 1 ∧ t5_8 ∈ 0 ‥ 1 ∧ t5_9 ∈ 0 ‥ 1 ∧ t5_10 ∈ 0 ‥ 1 ∧ t5_11 ∈ 0 ‥ 1 ∧ t5_12 ∈ 0 ‥ 1 ∧ t5_13 ∈ 0 ‥ 1 ∧ t5_14 ∈ 0 ‥ 1 ∧ t5_15 ∈ 0 ‥ 1 ∧ t5_16 ∈ 0 ‥ 1 ∧ t5_17 ∈ 0 ‥ 1 ∧ t5_18 ∈ 0 ‥ 1 ∧ t5_19 ∈ 0 ‥ 1 ∧ t5_20 ∈ 0 ‥ 1 ∧ t5_21 ∈ 0 ‥ 1 ∧ t5_22 ∈ 0 ‥ 1 ∧ t5_23 ∈ 0 ‥ 1 ∧ t5_24 ∈ 0 ‥ 1 ∧ t5_25 ∈ 0 ‥ 1 ∧ t5_26 ∈ 0 ‥ 1 ∧ t5_27 ∈ 0 ‥ 1 ∧ t5_28 ∈ 0 ‥ 1 ∧ t5_29 ∈ 0 ‥ 1 ∧ t5_30 ∈ 0 ‥ 1 ∧ t5_31 ∈ 0 ‥ 1"/>
+<org.eventb.core.guard name="g4" org.eventb.core.label="stage0" org.eventb.core.predicate="(k0 = 0 ⇒ t1_0 = a0) ∧ (k0 = 1 ⇒ t1_0 = a1) ∧ (k0 = 0 ⇒ t1_1 = a1) ∧ (k0 = 1 ⇒ t1_1 = a2) ∧ (k0 = 0 ⇒ t1_2 = a2) ∧ (k0 = 1 ⇒ t1_2 = a3) ∧ (k0 = 0 ⇒ t1_3 = a3) ∧ (k0 = 1 ⇒ t1_3 = a4) ∧ (k0 = 0 ⇒ t1_4 = a4) ∧ (k0 = 1 ⇒ t1_4 = a5) ∧ (k0 = 0 ⇒ t1_5 = a5) ∧ (k0 = 1 ⇒ t1_5 = a6) ∧ (k0 = 0 ⇒ t1_6 = a6) ∧ (k0 = 1 ⇒ t1_6 = a7) ∧ (k0 = 0 ⇒ t1_7 = a7) ∧ (k0 = 1 ⇒ t1_7 = a8) ∧ (k0 = 0 ⇒ t1_8 = a8) ∧ (k0 = 1 ⇒ t1_8 = a9) ∧ (k0 = 0 ⇒ t1_9 = a9) ∧ (k0 = 1 ⇒ t1_9 = a10) ∧ (k0 = 0 ⇒ t1_10 = a10) ∧ (k0 = 1 ⇒ t1_10 = a11) ∧ (k0 = 0 ⇒ t1_11 = a11) ∧ (k0 = 1 ⇒ t1_11 = a12) ∧ (k0 = 0 ⇒ t1_12 = a12) ∧ (k0 = 1 ⇒ t1_12 = a13) ∧ (k0 = 0 ⇒ t1_13 = a13) ∧ (k0 = 1 ⇒ t1_13 = a14) ∧ (k0 = 0 ⇒ t1_14 = a14) ∧ (k0 = 1 ⇒ t1_14 = a15) ∧ (k0 = 0 ⇒ t1_15 = a15) ∧ (k0 = 1 ⇒ t1_15 = a16) ∧ (k0 = 0 ⇒ t1_16 = a16) ∧ (k0 = 1 ⇒ t1_16 = a17) ∧ (k0 = 0 ⇒ t1_17 = a17) ∧ (k0 = 1 ⇒ t1_17 = a18) ∧ (k0 = 0 ⇒ t1_18 = a18) ∧ (k0 = 1 ⇒ t1_18 = a19) ∧ (k0 = 0 ⇒ t1_19 = a19) ∧ (k0 = 1 ⇒ t1_19 = a20) ∧ (k0 = 0 ⇒ t1_20 = a20) ∧ (k0 = 1 ⇒ t1_20 = a21) ∧ (k0 = 0 ⇒ t1_21 = a21) ∧ (k0 = 1 ⇒ t1_21 = a22) ∧ (k0 = 0 ⇒ t1_22 = a22) ∧ (k0 = 1 ⇒ t1_22 = a23) ∧ (k0 = 0 ⇒ t1_23 = a23) ∧ (k0 = 1 ⇒ t1_23 = a24) ∧ (k0 = 0 ⇒ t1_24 = a24) ∧ (k0 = 1 ⇒ t1_24 = a25) ∧ (k0 = 0 ⇒ t1_25 = a25) ∧ (k0 = 1 ⇒ t1_25 = a26) ∧ (k0 = 0 ⇒ t1_26 = a26) ∧ (k0 = 1 ⇒ t1_26 = a27) ∧ (k0 = 0 ⇒ t1_27 = a27) ∧ (k0 = 1 ⇒ t1_27 = a28) ∧ (k0 = 0 ⇒ t1_28 = a28) ∧ (k0 = 1 ⇒ t1_28 = a29) ∧ (k0 = 0 ⇒ t1_29 = a29) ∧ (k0 = 1 ⇒ t1_29 = a30) ∧ (k0 = 0 ⇒ t1_30 = a30) ∧ (k0 = 1 ⇒ t1_30 = a31) ∧ (k0 = 0 ⇒ t1_31 = a31) ∧ (k0 = 1 ⇒ t1_31 = 0)"/>
+<org.eventb.core.guard name="g5" org.eventb.core.label="stage1" org.eventb.core.predicate="(k1 = 0 ⇒ t2_0 = t1_0) ∧ (k1 = 1 ⇒ t2_0 = t1_2) ∧ (k1 = 0 ⇒ t2_1 = t1_1) ∧ (k1 = 1 ⇒ t2_1 = t1_3) ∧ (k1 = 0 ⇒ t2_2 = t1_2) ∧ (k1 = 1 ⇒ t2_2 = t1_4) ∧ (k1 = 0 ⇒ t2_3 = t1_3) ∧ (k1 = 1 ⇒ t2_3 = t1_5) ∧ (k1 = 0 ⇒ t2_4 = t1_4) ∧ (k1 = 1 ⇒ t2_4 = t1_6) ∧ (k1 = 0 ⇒ t2_5 = t1_5) ∧ (k1 = 1 ⇒ t2_5 = t1_7) ∧ (k1 = 0 ⇒ t2_6 = t1_6) ∧ (k1 = 1 ⇒ t2_6 = t1_8) ∧ (k1 = 0 ⇒ t2_7 = t1_7) ∧ (k1 = 1 ⇒ t2_7 = t1_9) ∧ (k1 = 0 ⇒ t2_8 = t1_8) ∧ (k1 = 1 ⇒ t2_8 = t1_10) ∧ (k1 = 0 ⇒ t2_9 = t1_9) ∧ (k1 = 1 ⇒ t2_9 = t1_11) ∧ (k1 = 0 ⇒ t2_10 = t1_10) ∧ (k1 = 1 ⇒ t2_10 = t1_12) ∧ (k1 = 0 ⇒ t2_11 = t1_11) ∧ (k1 = 1 ⇒ t2_11 = t1_13) ∧ (k1 = 0 ⇒ t2_12 = t1_12) ∧ (k1 = 1 ⇒ t2_12 = t1_14) ∧ (k1 = 0 ⇒ t2_13 = t1_13) ∧ (k1 = 1 ⇒ t2_13 = t1_15) ∧ (k1 = 0 ⇒ t2_14 = t1_14) ∧ (k1 = 1 ⇒ t2_14 = t1_16) ∧ (k1 = 0 ⇒ t2_15 = t1_15) ∧ (k1 = 1 ⇒ t2_15 = t1_17) ∧ (k1 = 0 ⇒ t2_16 = t1_16) ∧ (k1 = 1 ⇒ t2_16 = t1_18) ∧ (k1 = 0 ⇒ t2_17 = t1_17) ∧ (k1 = 1 ⇒ t2_17 = t1_19) ∧ (k1 = 0 ⇒ t2_18 = t1_18) ∧ (k1 = 1 ⇒ t2_18 = t1_20) ∧ (k1 = 0 ⇒ t2_19 = t1_19) ∧ (k1 = 1 ⇒ t2_19 = t1_21) ∧ (k1 = 0 ⇒ t2_20 = t1_20) ∧ (k1 = 1 ⇒ t2_20 = t1_22) ∧ (k1 = 0 ⇒ t2_21 = t1_21) ∧ (k1 = 1 ⇒ t2_21 = t1_23) ∧ (k1 = 0 ⇒ t2_22 = t1_22) ∧ (k1 = 1 ⇒ t2_22 = t1_24) ∧ (k1 = 0 ⇒ t2_23 = t1_23) ∧ (k1 = 1 ⇒ t2_23 = t1_25) ∧ (k1 = 0 ⇒ t2_24 = t1_24) ∧ (k1 = 1 ⇒ t2_24 = t1_26) ∧ (k1 = 0 ⇒ t2_25 = t1_25) ∧ (k1 = 1 ⇒ t2_25 = t1_27) ∧ (k1 = 0 ⇒ t2_26 = t1_26) ∧ (k1 = 1 ⇒ t2_26 = t1_28) ∧ (k1 = 0 ⇒ t2_27 = t1_27) ∧ (k1 = 1 ⇒ t2_27 = t1_29) ∧ (k1 = 0 ⇒ t2_28 = t1_28) ∧ (k1 = 1 ⇒ t2_28 = t1_30) ∧ (k1 = 0 ⇒ t2_29 = t1_29) ∧ (k1 = 1 ⇒ t2_29 = t1_31) ∧ (k1 = 0 ⇒ t2_30 = t1_30) ∧ (k1 = 1 ⇒ t2_30 = 0) ∧ (k1 = 0 ⇒ t2_31 = t1_31) ∧ (k1 = 1 ⇒ t2_31 = 0)"/>
+<org.eventb.core.guard name="g6" org.eventb.core.label="stage2" org.eventb.core.predicate="(k2 = 0 ⇒ t3_0 = t2_0) ∧ (k2 = 1 ⇒ t3_0 = t2_4) ∧ (k2 = 0 ⇒ t3_1 = t2_1) ∧ (k2 = 1 ⇒ t3_1 = t2_5) ∧ (k2 = 0 ⇒ t3_2 = t2_2) ∧ (k2 = 1 ⇒ t3_2 = t2_6) ∧ (k2 = 0 ⇒ t3_3 = t2_3) ∧ (k2 = 1 ⇒ t3_3 = t2_7) ∧ (k2 = 0 ⇒ t3_4 = t2_4) ∧ (k2 = 1 ⇒ t3_4 = t2_8) ∧ (k2 = 0 ⇒ t3_5 = t2_5) ∧ (k2 = 1 ⇒ t3_5 = t2_9) ∧ (k2 = 0 ⇒ t3_6 = t2_6) ∧ (k2 = 1 ⇒ t3_6 = t2_10) ∧ (k2 = 0 ⇒ t3_7 = t2_7) ∧ (k2 = 1 ⇒ t3_7 = t2_11) ∧ (k2 = 0 ⇒ t3_8 = t2_8) ∧ (k2 = 1 ⇒ t3_8 = t2_12) ∧ (k2 = 0 ⇒ t3_9 = t2_9) ∧ (k2 = 1 ⇒ t3_9 = t2_13) ∧ (k2 = 0 ⇒ t3_10 = t2_10) ∧ (k2 = 1 ⇒ t3_10 = t2_14) ∧ (k2 = 0 ⇒ t3_11 = t2_11) ∧ (k2 = 1 ⇒ t3_11 = t2_15) ∧ (k2 = 0 ⇒ t3_12 = t2_12) ∧ (k2 = 1 ⇒ t3_12 = t2_16) ∧ (k2 = 0 ⇒ t3_13 = t2_13) ∧ (k2 = 1 ⇒ t3_13 = t2_17) ∧ (k2 = 0 ⇒ t3_14 = t2_14) ∧ (k2 = 1 ⇒ t3_14 = t2_18) ∧ (k2 = 0 ⇒ t3_15 = t2_15) ∧ (k2 = 1 ⇒ t3_15 = t2_19) ∧ (k2 = 0 ⇒ t3_16 = t2_16) ∧ (k2 = 1 ⇒ t3_16 = t2_20) ∧ (k2 = 0 ⇒ t3_17 = t2_17) ∧ (k2 = 1 ⇒ t3_17 = t2_21) ∧ (k2 = 0 ⇒ t3_18 = t2_18) ∧ (k2 = 1 ⇒ t3_18 = t2_22) ∧ (k2 = 0 ⇒ t3_19 = t2_19) ∧ (k2 = 1 ⇒ t3_19 = t2_23) ∧ (k2 = 0 ⇒ t3_20 = t2_20) ∧ (k2 = 1 ⇒ t3_20 = t2_24) ∧ (k2 = 0 ⇒ t3_21 = t2_21) ∧ (k2 = 1 ⇒ t3_21 = t2_25) ∧ (k2 = 0 ⇒ t3_22 = t2_22) ∧ (k2 = 1 ⇒ t3_22 = t2_26) ∧ (k2 = 0 ⇒ t3_23 = t2_23) ∧ (k2 = 1 ⇒ t3_23 = t2_27) ∧ (k2 = 0 ⇒ t3_24 = t2_24) ∧ (k2 = 1 ⇒ t3_24 = t2_28) ∧ (k2 = 0 ⇒ t3_25 = t2_25) ∧ (k2 = 1 ⇒ t3_25 = t2_29) ∧ (k2 = 0 ⇒ t3_26 = t2_26) ∧ (k2 = 1 ⇒ t3_26 = t2_30) ∧ (k2 = 0 ⇒ t3_27 = t2_27) ∧ (k2 = 1 ⇒ t3_27 = t2_31) ∧ (k2 = 0 ⇒ t3_28 = t2_28) ∧ (k2 = 1 ⇒ t3_28 = 0) ∧ (k2 = 0 ⇒ t3_29 = t2_29) ∧ (k2 = 1 ⇒ t3_29 = 0) ∧ (k2 = 0 ⇒ t3_30 = t2_30) ∧ (k2 = 1 ⇒ t3_30 = 0) ∧ (k2 = 0 ⇒ t3_31 = t2_31) ∧ (k2 = 1 ⇒ t3_31 = 0)"/>
+<org.eventb.core.guard name="g7" org.eventb.core.label="stage3" org.eventb.core.predicate="(k3 = 0 ⇒ t4_0 = t3_0) ∧ (k3 = 1 ⇒ t4_0 = t3_8) ∧ (k3 = 0 ⇒ t4_1 = t3_1) ∧ (k3 = 1 ⇒ t4_1 = t3_9) ∧ (k3 = 0 ⇒ t4_2 = t3_2) ∧ (k3 = 1 ⇒ t4_2 = t3_10) ∧ (k3 = 0 ⇒ t4_3 = t3_3) ∧ (k3 = 1 ⇒ t4_3 = t3_11) ∧ (k3 = 0 ⇒ t4_4 = t3_4) ∧ (k3 = 1 ⇒ t4_4 = t3_12) ∧ (k3 = 0 ⇒ t4_5 = t3_5) ∧ (k3 = 1 ⇒ t4_5 = t3_13) ∧ (k3 = 0 ⇒ t4_6 = t3_6) ∧ (k3 = 1 ⇒ t4_6 = t3_14) ∧ (k3 = 0 ⇒ t4_7 = t3_7) ∧ (k3 = 1 ⇒ t4_7 = t3_15) ∧ (k3 = 0 ⇒ t4_8 = t3_8) ∧ (k3 = 1 ⇒ t4_8 = t3_16) ∧ (k3 = 0 ⇒ t4_9 = t3_9) ∧ (k3 = 1 ⇒ t4_9 = t3_17) ∧ (k3 = 0 ⇒ t4_10 = t3_10) ∧ (k3 = 1 ⇒ t4_10 = t3_18) ∧ (k3 = 0 ⇒ t4_11 = t3_11) ∧ (k3 = 1 ⇒ t4_11 = t3_19) ∧ (k3 = 0 ⇒ t4_12 = t3_12) ∧ (k3 = 1 ⇒ t4_12 = t3_20) ∧ (k3 = 0 ⇒ t4_13 = t3_13) ∧ (k3 = 1 ⇒ t4_13 = t3_21) ∧ (k3 = 0 ⇒ t4_14 = t3_14) ∧ (k3 = 1 ⇒ t4_14 = t3_22) ∧ (k3 = 0 ⇒ t4_15 = t3_15) ∧ (k3 = 1 ⇒ t4_15 = t3_23) ∧ (k3 = 0 ⇒ t4_16 = t3_16) ∧ (k3 = 1 ⇒ t4_16 = t3_24) ∧ (k3 = 0 ⇒ t4_17 = t3_17) ∧ (k3 = 1 ⇒ t4_17 = t3_25) ∧ (k3 = 0 ⇒ t4_18 = t3_18) ∧ (k3 = 1 ⇒ t4_18 = t3_26) ∧ (k3 = 0 ⇒ t4_19 = t3_19) ∧ (k3 = 1 ⇒ t4_19 = t3_27) ∧ (k3 = 0 ⇒ t4_20 = t3_20) ∧ (k3 = 1 ⇒ t4_20 = t3_28) ∧ (k3 = 0 ⇒ t4_21 = t3_21) ∧ (k3 = 1 ⇒ t4_21 = t3_29) ∧ (k3 = 0 ⇒ t4_22 = t3_22) ∧ (k3 = 1 ⇒ t4_22 = t3_30) ∧ (k3 = 0 ⇒ t4_23 = t3_23) ∧ (k3 = 1 ⇒ t4_23 = t3_31) ∧ (k3 = 0 ⇒ t4_24 = t3_24) ∧ (k3 = 1 ⇒ t4_24 = 0) ∧ (k3 = 0 ⇒ t4_25 = t3_25) ∧ (k3 = 1 ⇒ t4_25 = 0) ∧ (k3 = 0 ⇒ t4_26 = t3_26) ∧ (k3 = 1 ⇒ t4_26 = 0) ∧ (k3 = 0 ⇒ t4_27 = t3_27) ∧ (k3 = 1 ⇒ t4_27 = 0) ∧ (k3 = 0 ⇒ t4_28 = t3_28) ∧ (k3 = 1 ⇒ t4_28 = 0) ∧ (k3 = 0 ⇒ t4_29 = t3_29) ∧ (k3 = 1 ⇒ t4_29 = 0) ∧ (k3 = 0 ⇒ t4_30 = t3_30) ∧ (k3 = 1 ⇒ t4_30 = 0) ∧ (k3 = 0 ⇒ t4_31 = t3_31) ∧ (k3 = 1 ⇒ t4_31 = 0)"/>
+<org.eventb.core.guard name="g8" org.eventb.core.label="stage4" org.eventb.core.predicate="(k4 = 0 ⇒ t5_0 = t4_0) ∧ (k4 = 1 ⇒ t5_0 = t4_16) ∧ (k4 = 0 ⇒ t5_1 = t4_1) ∧ (k4 = 1 ⇒ t5_1 = t4_17) ∧ (k4 = 0 ⇒ t5_2 = t4_2) ∧ (k4 = 1 ⇒ t5_2 = t4_18) ∧ (k4 = 0 ⇒ t5_3 = t4_3) ∧ (k4 = 1 ⇒ t5_3 = t4_19) ∧ (k4 = 0 ⇒ t5_4 = t4_4) ∧ (k4 = 1 ⇒ t5_4 = t4_20) ∧ (k4 = 0 ⇒ t5_5 = t4_5) ∧ (k4 = 1 ⇒ t5_5 = t4_21) ∧ (k4 = 0 ⇒ t5_6 = t4_6) ∧ (k4 = 1 ⇒ t5_6 = t4_22) ∧ (k4 = 0 ⇒ t5_7 = t4_7) ∧ (k4 = 1 ⇒ t5_7 = t4_23) ∧ (k4 = 0 ⇒ t5_8 = t4_8) ∧ (k4 = 1 ⇒ t5_8 = t4_24) ∧ (k4 = 0 ⇒ t5_9 = t4_9) ∧ (k4 = 1 ⇒ t5_9 = t4_25) ∧ (k4 = 0 ⇒ t5_10 = t4_10) ∧ (k4 = 1 ⇒ t5_10 = t4_26) ∧ (k4 = 0 ⇒ t5_11 = t4_11) ∧ (k4 = 1 ⇒ t5_11 = t4_27) ∧ (k4 = 0 ⇒ t5_12 = t4_12) ∧ (k4 = 1 ⇒ t5_12 = t4_28) ∧ (k4 = 0 ⇒ t5_13 = t4_13) ∧ (k4 = 1 ⇒ t5_13 = t4_29) ∧ (k4 = 0 ⇒ t5_14 = t4_14) ∧ (k4 = 1 ⇒ t5_14 = t4_30) ∧ (k4 = 0 ⇒ t5_15 = t4_15) ∧ (k4 = 1 ⇒ t5_15 = t4_31) ∧ (k4 = 0 ⇒ t5_16 = t4_16) ∧ (k4 = 1 ⇒ t5_16 = 0) ∧ (k4 = 0 ⇒ t5_17 = t4_17) ∧ (k4 = 1 ⇒ t5_17 = 0) ∧ (k4 = 0 ⇒ t5_18 = t4_18) ∧ (k4 = 1 ⇒ t5_18 = 0) ∧ (k4 = 0 ⇒ t5_19 = t4_19) ∧ (k4 = 1 ⇒ t5_19 = 0) ∧ (k4 = 0 ⇒ t5_20 = t4_20) ∧ (k4 = 1 ⇒ t5_20 = 0) ∧ (k4 = 0 ⇒ t5_21 = t4_21) ∧ (k4 = 1 ⇒ t5_21 = 0) ∧ (k4 = 0 ⇒ t5_22 = t4_22) ∧ (k4 = 1 ⇒ t5_22 = 0) ∧ (k4 = 0 ⇒ t5_23 = t4_23) ∧ (k4 = 1 ⇒ t5_23 = 0) ∧ (k4 = 0 ⇒ t5_24 = t4_24) ∧ (k4 = 1 ⇒ t5_24 = 0) ∧ (k4 = 0 ⇒ t5_25 = t4_25) ∧ (k4 = 1 ⇒ t5_25 = 0) ∧ (k4 = 0 ⇒ t5_26 = t4_26) ∧ (k4 = 1 ⇒ t5_26 = 0) ∧ (k4 = 0 ⇒ t5_27 = t4_27) ∧ (k4 = 1 ⇒ t5_27 = 0) ∧ (k4 = 0 ⇒ t5_28 = t4_28) ∧ (k4 = 1 ⇒ t5_28 = 0) ∧ (k4 = 0 ⇒ t5_29 = t4_29) ∧ (k4 = 1 ⇒ t5_29 = 0) ∧ (k4 = 0 ⇒ t5_30 = t4_30) ∧ (k4 = 1 ⇒ t5_30 = 0) ∧ (k4 = 0 ⇒ t5_31 = t4_31) ∧ (k4 = 1 ⇒ t5_31 = 0)"/>
+<org.eventb.core.action name="a0" org.eventb.core.label="act1" org.eventb.core.assignment="z ≔ t5_0 + t5_1 ∗ 2 + t5_2 ∗ 4 + t5_3 ∗ 8 + t5_4 ∗ 16 + t5_5 ∗ 32 + t5_6 ∗ 64 + t5_7 ∗ 128 + t5_8 ∗ 256 + t5_9 ∗ 512 + t5_10 ∗ 1024 + t5_11 ∗ 2048 + t5_12 ∗ 4096 + t5_13 ∗ 8192 + t5_14 ∗ 16384 + t5_15 ∗ 32768 + t5_16 ∗ 65536 + t5_17 ∗ 131072 + t5_18 ∗ 262144 + t5_19 ∗ 524288 + t5_20 ∗ 1048576 + t5_21 ∗ 2097152 + t5_22 ∗ 4194304 + t5_23 ∗ 8388608 + t5_24 ∗ 16777216 + t5_25 ∗ 33554432 + t5_26 ∗ 67108864 + t5_27 ∗ 134217728 + t5_28 ∗ 268435456 + t5_29 ∗ 536870912 + t5_30 ∗ 1073741824 + t5_31 ∗ 2147483648"/>
 </org.eventb.core.event>
 </org.eventb.core.machineFile>
