@@ -16,7 +16,7 @@ class PrePushTest:
     def clone(self, tmp_path):
         self.clone = tmp_path / "clone"
         subprocess.run(["git", "clone", "--quiet", str(ROOT), str(self.clone)], check=True)
-        # The hook runs make check, whose time grows with the checks of the book. The tests are
+        # The hook runs make check-full, whose time grows with the checks of the book. The tests are
         # of the hook, so the core chapter keeps only the sections before its instruction set.
         chapter = self.clone / "book" / "core" / "core.rst"
         text = chapter.read_text()
@@ -31,7 +31,7 @@ class PrePushTest:
         return subprocess.run(
             [str(HOOK)], cwd=self.clone, capture_output=True, text=True,
             input=f"refs/heads/x {sha} refs/heads/x {base}\n",
-            env={**os.environ, "PRE_PUSH_TARGETS": "check"})
+            env={**os.environ, "PRE_PUSH_TARGETS": "check-full"})
 
     def commit(self, message):
         self.git("-c", "user.name=test", "-c", "user.email=test@example.com", "commit", "--quiet", "-am", message)
@@ -50,7 +50,7 @@ class PrePushTest:
         bad = self.git("rev-parse", "HEAD")
         result = self.push(bad)
         assert result.returncode == 1
-        assert f"pre-push: make check failed on {bad}, so the push is stopped." in result.stderr
+        assert f"pre-push: make check-full failed on {bad}, so the push is stopped." in result.stderr
         assert "[one-shall] core.rotation" in result.stdout
 
     def test_uncommitted_edits_play_no_part(self):

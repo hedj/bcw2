@@ -1,6 +1,6 @@
 #!/bin/sh
 # Git runs this hook before a push. For each branch that the push sends, it
-# runs make test and make check on the pushed commit, in a temporary
+# runs make test and make check-full on the pushed commit, in a temporary
 # worktree, and stops the push if either fails. The working directory, with
 # any edits that are not committed, plays no part.
 #
@@ -8,15 +8,15 @@
 # runs through the ./dev of the pushed commit, so in the environment that
 # the commit pins.
 # PRE_PUSH_TARGETS sets the make targets. The hook's own test sets it to
-# "check", because make test would run that test again.
+# "check-full", because make test would run that test again.
 #
 # When the remote already has a commit of the branch, the hook then prints the
 # complexity measures of the pushed commit beside those of that commit, and
 # marks each measure that got worse. The table never stops a push.
-targets=${PRE_PUSH_TARGETS:-test check}
+targets=${PRE_PUSH_TARGETS:-test check-full}
 zero=0000000000000000000000000000000000000000
 
-# compare TREE BASE: print the measures of the commit in TREE, which make check
+# compare TREE BASE: print the measures of the commit in TREE, which make check-full
 # built, beside those of the commit BASE, which its own tools measure. The
 # measures need the design graph of the tangle, not the checks, so BASE runs
 # make tangle alone.
