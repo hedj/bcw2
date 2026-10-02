@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.HashSet;
@@ -63,7 +64,9 @@ import org.rodinp.core.RodinCore;
  * A goal still open then gets two searches at once. One runs every SMT solver at once on the goal
  * alone, then on the selected hypotheses, then on all of them, each attempt within the timeout. The
  * other, for a goal over a variable that a hypothesis bounds to at most bcw.split values (default 8),
- * splits the goal into one case for each value. The first search to prove the goal wins.
+ * splits the goal into one case for each value, and proves bcw.cases (default 4) cases at once,
+ * while the first search waits bcw.hold ms (default 1000). The first search to prove the goal wins.
+ * The obligations of a file are proved bcw.jobs (default 4) at once.
  *
  * Properties: bcw.timeout (ms, default 6000), bcw.first (ms that Z3 has alone first, default 700), bcw.solvers (order, default Z3,CVC3,CVC4,veriT, measured),
  * bcw.report (CSV of obligation, result, ms, prover), bcw.baseline (an earlier report to compare),
@@ -75,6 +78,9 @@ public class Build implements IApplication {
     private long timeout;
     private ITactic quick, quickAll;
     private static final int SPLIT = Integer.getInteger("bcw.split", 8);
+    private static final int CASES = Integer.getInteger("bcw.cases", 4);
+    private static final long HOLD = Long.getLong("bcw.hold", 1000);
+    private static final int JOBS = Integer.getInteger("bcw.jobs", 4);
     private List<String> solvers;
     private boolean measure;
     private ITactic rodin;
@@ -135,38 +141,62 @@ public class Build implements IApplication {
         return solver + (restricted ? "/selected" : "/all");
     }
 
-    /** Proves each obligation of the project, and returns the number left open. */
+    /** Proves each obligation of the project, bcw.jobs at once, and returns the number left open. */
     private int prove(IRodinProject project) throws Exception {
         int open = 0;
         for (IPSRoot root : project.getRootElementsOfType(IPSRoot.ELEMENT_TYPE)) {
             IProofComponent component = EventBPlugin.getProofManager().getProofComponent(root);
-            for (IPSStatus status : root.getStatuses()) {
-                String name = project.getElementName() + "/" + root.getElementName() + "/" + status.getElementName();
-                long begin = System.nanoTime();
-                IProofAttempt attempt = component.createProofAttempt(status.getElementName(), "bcw", NONE);
-                IProofTreeNode top = attempt.getProofTree().getRoot();
-                rodin.apply(top, null);
-                // The provers that closed the goals, each with the number of goals that it closed.
-                Map<String, Integer> closers = new LinkedHashMap<>();
-                if (top.isClosed()) closers.put("rodin", 1);
-                for (IProofTreeNode node : top.getOpenDescendants()) {
-                    String closer = smt(name, node);
-                    if (closer == null) break;
-                    closers.merge(closer, 1, Integer::sum);
-                }
-                StringBuilder prover = new StringBuilder();
-                closers.forEach((p, n) -> prover.append(prover.length() > 0 ? " " : "").append(n > 1 ? p + "×" + n : p));
-                boolean closed = attempt.getProofTree().isClosed();
-                if (closed) attempt.commit(true, NONE);
-                attempt.dispose();
-                long ms = (System.nanoTime() - begin) / 1000000;
-                if (!closed) open++;
-                report.add(name + "," + (closed ? "proved" : "open") + "," + ms + "," + (closed ? prover : ""));
-                System.out.printf("%s %s %d ms %s%n", closed ? "PROVED" : "OPEN  ", name, ms, closed ? prover : "");
+            IPSStatus[] statuses = root.getStatuses();
+            String[] lines = new String[statuses.length];
+            ExecutorService pool = Executors.newFixedThreadPool(measure ? 1 : JOBS);
+            List<Future<Boolean>> closed = new ArrayList<>();
+            for (int i = 0; i < statuses.length; i++) {
+                int k = i;
+                closed.add(pool.submit(() -> prove(project, root, component, statuses[k], lines, k)));
             }
+            try {
+                for (Future<Boolean> one : closed) if (!one.get()) open++;
+            } catch (ExecutionException e) {
+                throw new IllegalStateException(e.getCause());
+            } finally {
+                pool.shutdown();
+            }
+            report.addAll(Arrays.asList(lines));
             component.save(NONE, true);
         }
         return open;
+    }
+
+    /** Proves one obligation and writes its report line; returns whether it is closed. */
+    private boolean prove(IRodinProject project, IPSRoot root, IProofComponent component, IPSStatus status,
+                          String[] lines, int k) throws Exception {
+        String name = project.getElementName() + "/" + root.getElementName() + "/" + status.getElementName();
+        long begin = System.nanoTime();
+        IProofAttempt attempt;
+        synchronized (component) {
+            attempt = component.createProofAttempt(status.getElementName(), "bcw", NONE);
+        }
+        IProofTreeNode top = attempt.getProofTree().getRoot();
+        rodin.apply(top, null);
+        // The provers that closed the goals, each with the number of goals that it closed.
+        Map<String, Integer> closers = new LinkedHashMap<>();
+        if (top.isClosed()) closers.put("rodin", 1);
+        for (IProofTreeNode node : top.getOpenDescendants()) {
+            String closer = smt(name, node);
+            if (closer == null) break;
+            closers.merge(closer, 1, Integer::sum);
+        }
+        StringBuilder prover = new StringBuilder();
+        closers.forEach((p, n) -> prover.append(prover.length() > 0 ? " " : "").append(n > 1 ? p + "×" + n : p));
+        boolean closed = attempt.getProofTree().isClosed();
+        synchronized (component) {
+            if (closed) attempt.commit(true, NONE);
+            attempt.dispose();
+        }
+        long ms = (System.nanoTime() - begin) / 1000000;
+        lines[k] = name + "," + (closed ? "proved" : "open") + "," + ms + "," + (closed ? prover : "");
+        System.out.printf("%s %s %d ms %s%n", closed ? "PROVED" : "OPEN  ", name, ms, closed ? prover : "");
+        return closed;
     }
 
     /** Closes the goal by the first solver to prove it; returns that solver, or null. */
@@ -210,7 +240,11 @@ public class Build implements IApplication {
         Stop stop = new Stop(null);
         ExecutorService pool = Executors.newFixedThreadPool(2);
         CompletionService<Proof> done = new ExecutorCompletionService<>(pool);
-        done.submit(() -> sets(sequent, stop));
+        done.submit(() -> {
+            // A split wins most goals that it applies to, so the sets wait a moment and leave it the cores.
+            if (range != null) hold(stop);
+            return sets(sequent, stop);
+        });
         if (range != null) done.submit(() -> split(sequent, range, stop));
         try {
             for (int i = 0; i < (range == null ? 1 : 2); i++) {
@@ -294,10 +328,9 @@ public class Build implements IApplication {
     }
 
     /**
-     * Rodin's case rule on a copy of the goal, one case for each value of the variable. Each case gets
-     * Rodin's tactics, then short attempts by Z3, and only then the sets of solvers.
+     * Rodin's case rule on a copy of the goal, one case for each value of the variable.
      */
-    private Proof split(IProverSequent sequent, Range range, Stop stop) throws InterruptedException {
+    private Proof split(IProverSequent sequent, Range range, Stop outer) throws InterruptedException {
         IProofTree copy = ProverFactory.makeProofTree(sequent, null);
         IProofTreeNode rest = copy.getRoot();
         for (int value = range.low(); value <= range.high(); value++) {
@@ -305,16 +338,51 @@ public class Build implements IApplication {
             IProofTreeNode[] children = rest.getChildNodes();
             rest = children[children.length - 1];   // The case in which the variable is not this value.
         }
-        for (IProofTreeNode leaf : copy.getRoot().getOpenDescendants()) {
-            rodin.apply(leaf, null);
-            for (IProofTreeNode goal : leaf.getOpenDescendants()) {
-                if (stop.isCanceled()) return null;
-                if (quick.apply(goal, stop) == null || quickAll.apply(goal, stop) == null) continue;
-                Proof proof = sets(goal.getSequent(), stop);
-                if (proof == null || !ProofBuilder.reuse(goal, proof.tree().getRoot(), null) || !goal.isClosed()) return null;
+        // Each case is proved on its own copy, bcw.cases at once, and then grafted back onto its leaf.
+        IProofTreeNode[] leaves = copy.getRoot().getOpenDescendants();
+        Stop stop = new Stop(outer);
+        ExecutorService pool = Executors.newFixedThreadPool(CASES);
+        try {
+            List<Future<IProofTree>> cases = new ArrayList<>();
+            for (IProofTreeNode leaf : leaves) {
+                IProverSequent one = leaf.getSequent();
+                cases.add(pool.submit(() -> proveCase(one, stop)));
+            }
+            for (int i = 0; i < leaves.length; i++) {
+                IProofTree proved = cases.get(i).get();
+                if (proved == null || !ProofBuilder.reuse(leaves[i], proved.getRoot(), null) || !leaves[i].isClosed())
+                    return null;
+            }
+            return new Proof(copy, "split(" + range.variable() + ")");
+        } catch (ExecutionException e) {
+            throw new IllegalStateException(e.getCause());
+        } finally {
+            stop.setCanceled(true);
+            pool.shutdown();
+            pool.awaitTermination(1, TimeUnit.MINUTES);
+        }
+    }
+
+    /** One case of a split: Rodin's tactics, short attempts by Z3, and only then the sets of solvers. */
+    private IProofTree proveCase(IProverSequent sequent, Stop stop) throws InterruptedException {
+        IProofTree tree = ProverFactory.makeProofTree(sequent, null);
+        rodin.apply(tree.getRoot(), null);
+        for (IProofTreeNode goal : tree.getRoot().getOpenDescendants()) {
+            if (stop.isCanceled()) return null;
+            if (quick.apply(goal, stop) == null || quickAll.apply(goal, stop) == null) continue;
+            Proof proof = sets(goal.getSequent(), stop);
+            if (proof == null || !ProofBuilder.reuse(goal, proof.tree().getRoot(), null) || !goal.isClosed()) {
+                stop.setCanceled(true);   // One open case fails the split, so the other cases stop.
+                return null;
             }
         }
-        return new Proof(copy, "split(" + range.variable() + ")");
+        return tree;
+    }
+
+    /** Waits bcw.hold milliseconds, or less if the search is stopped. */
+    private static void hold(Stop stop) throws InterruptedException {
+        long end = System.nanoTime() + HOLD * 1000000L;
+        while (!stop.isCanceled() && System.nanoTime() < end) Thread.sleep(20);
     }
 
     /** Tells the solvers that are still running to stop. */
