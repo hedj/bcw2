@@ -29,6 +29,9 @@
             pkgs.yosys
             pkgs.sby
             pkgs.yices
+            # The Event-B probe (probes/eventb) proves with this cvc5 and the z3 above, so
+            # that its solvers come from the same release as the other tools.
+            pkgs.cvc5
             # The FPGA tools for the ECP5: nextpnr places and routes, and ecppack of
             # trellis writes the bitstream.
             pkgs.nextpnr
