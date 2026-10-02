@@ -12,10 +12,11 @@
 #   SWI    a SWI-Prolog 10 installation (its bin/ holds swipl)
 #   RTL    the tangled RTL of the book (build/rtl of a worktree after make)
 #   WORK   an empty directory for the models, the netlists and the reports
+#   Z3     a Z3 4.16 binary, and CVC5 a cvc5 1.4 binary, as in the pinned nixpkgs: the default solvers
 # Run it from the root of the repository, so that ./dev gives yosys.
 set -eu
 here=$(cd "$(dirname "$0")" && pwd)
-for v in RODIN JDK PROB SWI RTL WORK; do [ -e "${!v}" ] || { echo "$v: no such path: ${!v}" >&2; exit 2; }; done
+for v in RODIN JDK PROB SWI RTL WORK Z3 CVC5; do [ -e "${!v}" ] || { echo "$v: no such path: ${!v}" >&2; exit 2; }; done
 variants="ring wrap6 wrongrec reset control"
 for m in $variants; do
     src=$here/ring.v; rot=$RTL/core/core_rotate.v
@@ -25,7 +26,7 @@ for m in $variants; do
     python3 "$here/gen.py" "$WORK/models" "$WORK/ring_$m.json" "Slice_$m"
 done
 start=$SECONDS
-"$JDK/bin/java" -Xmx4g -Dbcw.report="$WORK/rodin.csv" -Dstdout.encoding=UTF-8 --add-modules=ALL-SYSTEM \
+"$JDK/bin/java" -Xmx4g -Dbcw.z3new="$Z3" -Dbcw.cvc5="$CVC5" -Dbcw.report="$WORK/rodin.csv" -Dstdout.encoding=UTF-8 --add-modules=ALL-SYSTEM \
     -jar "$RODIN"/plugins/org.eclipse.equinox.launcher_*.jar -clean -nosplash -data "$WORK/workspace" \
     -application bcw.rodin.build $(for m in $variants; do echo "$WORK/models/Slice_$m"; done) > "$WORK/rodin.raw" 2>&1 || true
 echo "rodin: $((SECONDS - start)) s"

@@ -64,18 +64,18 @@ import org.rodinp.core.RodinCore;
 
 /**
  * Imports each project directory named on the command line, builds it in full, and proves each
- * obligation: Rodin's default tactics, then the first solver (Z3 by default) alone for a short time on the selected hypotheses.
+ * obligation: Rodin's default tactics, then the first solver (z3new by default) alone for a short time on the selected hypotheses.
  * A goal still open then gets two searches at once. One runs every SMT solver at once on the goal
  * alone, then on the selected hypotheses, then on all of them, each attempt within the timeout. The
  * other, for a goal over a variable that a hypothesis bounds to at most bcw.split values (default 8),
  * splits the goal into one case for each value. The first search to prove the goal wins.
  * The obligations of a file are proved bcw.jobs (default 4) at once.
  *
- * Properties: bcw.timeout (ms, default 6000), bcw.first (ms that the first solver has alone first, default 700), bcw.solvers (order, default Z3,CVC3,CVC4,veriT, measured),
+ * Properties: bcw.timeout (ms, default 6000), bcw.first (ms that the first solver has alone first, default 700), bcw.solvers (order, default z3new,z3a2,cvc5,veriT),
  * bcw.report (CSV of obligation, result, ms, prover), bcw.baseline (an earlier report to compare),
  * bcw.measure (try every solver on every open goal, and report each attempt), bcw.cvc5 and bcw.z3new (the paths
- * of a cvc5 and a newer Z3 binary, to name as solvers cvc5, z3new and z3a2, the newer Z3 with its
- * older arithmetic solver, in bcw.solvers).
+ * of a cvc5 and a newer Z3 binary, else the cvc5 and z3 on PATH, which become the solvers cvc5, z3new
+ * and z3a2, the newer Z3 with its older arithmetic solver).
  */
 public class Build implements IApplication {
     private static final NullProgressMonitor NONE = new NullProgressMonitor();
@@ -93,14 +93,22 @@ public class Build implements IApplication {
 
     public Object start(IApplicationContext context) throws Exception {
         timeout = Long.getLong("bcw.timeout", 6000);
-        String cvc5 = System.getProperty("bcw.cvc5"), z3new = System.getProperty("bcw.z3new");
+        String cvc5 = System.getProperty("bcw.cvc5", onPath("cvc5")), z3new = System.getProperty("bcw.z3new", onPath("z3"));
+        System.out.println("SOLVERS z3new=" + z3new + " cvc5=" + cvc5);
         if (cvc5 != null) addSolver("cvc5", SolverKind.CVC4, cvc5, System.getProperty("bcw.cvc5args", "--finite-model-find"));
         if (z3new != null) {
             addSolver("z3new", SolverKind.Z3, z3new, System.getProperty("bcw.z3newargs", ""));
             // The arithmetic solvers of Z3 4.16 prove different goals, so the older one is a second solver.
             addSolver("z3a2", SolverKind.Z3, z3new, "smt.arith.solver=2");
         }
-        solvers = List.of(System.getProperty("bcw.solvers", "Z3,CVC3,CVC4,veriT").split(","));
+        solvers = List.of(System.getProperty("bcw.solvers", "z3new,z3a2,cvc5,veriT").split(","));
+        Set<String> known = new HashSet<>();
+        for (IConfigDescriptor config : SMTCore.getConfigurations()) known.add(config.getName());
+        for (String solver : solvers)
+            if (!known.contains(solver)) {
+                System.out.println("ERROR the solver " + solver + " is not available: name its binary with bcw.z3new or bcw.cvc5, or put z3 and cvc5 on PATH");
+                return Integer.valueOf(2);
+            }
         measure = System.getProperty("bcw.measure") != null;
         rodin = EventBPlugin.getAutoPostTacticManager().getAutoTacticPreference().getDefaultDescriptor().getTacticInstance();
         IAutoTacticRegistry registry = SequentProver.getAutoTacticRegistry();
@@ -153,6 +161,15 @@ public class Build implements IApplication {
      * configuration that cvc5 keeps; bcw.cvc5args replaces the options. bcw.z3new names a newer Z3, and bcw.z3newargs
      * gives its options.
      */
+    /** The absolute path of the program name in a directory of PATH, or null. */
+    private static String onPath(String name) {
+        for (String directory : System.getenv().getOrDefault("PATH", "").split(File.pathSeparator)) {
+            File file = new File(directory, name);
+            if (file.canExecute()) return file.getAbsolutePath();
+        }
+        return null;
+    }
+
     private static void addSolver(String name, SolverKind kind, String path, String args) {
         List<ISolverDescriptor> solvers = new ArrayList<>(Arrays.asList(SMTCore.getSolvers()));
         solvers.add(SMTCore.newSolverDescriptor(name, kind, new org.eclipse.core.runtime.Path(path)));
