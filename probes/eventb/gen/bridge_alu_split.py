@@ -16,9 +16,9 @@ def table(shifted):
     return out
 
 
-Z, TT = [f"r{i}" for i in range(32)], [f"t{i}" for i in range(32)]
+Z = [f"r{i}" for i in range(32)]
 R = total((i, f"r{i}") for i in range(32))
-GATE = {op: (Z + (TT if op == "xor" else []), [(f"{op}_bits", bridge2.gate_guard(op, A, B, Z, TT))]) for op in ("and", "or", "xor")}
+GATE = {op: (Z, [(f"{op}_bits", bridge2.gate_guard(op, A, B, Z))]) for op in ("and", "or", "xor")}
 SPEC = {   # op: (guard, y)
     "add": ("f3 = 0 ∧ alt = 0", ite(f"a + b < {W}", "a + b", f"a + b − {W}")),
     "sub": ("f3 = 0 ∧ alt = 1", ite("a ≥ b", "a − b", f"a − b + {W}")),
@@ -30,12 +30,6 @@ SPEC = {   # op: (guard, y)
     "sra": ("f3 = 5 ∧ alt = 1", table(lambda s: total((i, f"a{i + s}") for i in range(32 - s)) + f" + a31 ∗ {W - 2 ** (32 - s)}")),
     "or": ("f3 = 6", R),
     "and": ("f3 = 7", R),
-}
-AND = lambda i: ite(f"a{i} = 1 ∧ b{i} = 1", 1, 0)
-DEFINE = {   # the value that the specification gives each gate parameter, for a witness when the netlist has no such gate
-    "and": {"r": AND},
-    "or": {"r": lambda i: ite(f"a{i} = 1 ∨ b{i} = 1", 1, 0)},
-    "xor": {"r": lambda i: f"a{i} + b{i} − 2 ∗ {AND(i)}", "t": AND},
 }
 common = [("ranges", "f3 ∈ 0 ‥ 7 ∧ alt ∈ 0 ‥ 1"),
           ("abits", " ∧ ".join(f"{x} ∈ 0 ‥ 1" for x in A) + " ∧ a = " + total((i, f"a{i}") for i in range(32))),
@@ -53,8 +47,13 @@ events = [init]
 for (f3, alt), op in sorted(OP.items()):
     n = bridge2.Netlist(f"{netlist}/alu_{f3}_{alt}.json", f"alu_{f3}_{alt}", ["a", "b"])
     rtl = n.translate()["y"]
+    # Each parameter of the specification is a bit that the netlist names, so it needs no witness;
+    # the bits of the output port of a gate are r0 … r31.
     missing = [x for x in GATE.get(op, ([], []))[0] if x not in n.params]
+    if missing:
+        raise SystemExit(f"{op}_{f3}_{alt}: the netlist has no bit {missing[0]} of the specification "
+                         f"({len(missing)} missing): the output must come from a {op} gate")
     events.append((f"{op}_{f3}_{alt}", params + n.params, common + [("control", f"f3 = {f3} ∧ alt = {alt}")] + n.guards,
-                   [("act1", f"y ≔ {rtl}")], op, [(x, f"{x} = {DEFINE[op][x[0]](int(x[1:]))}") for x in missing]))
+                   [("act1", f"y ≔ {rtl}")], op))
 rx.machine(d, "M1", ["y"], [], events, refines="M0")
 print(name, "ok:", {f.name: f.stat().st_size // 1024 for f in d.glob("*.bum")}, "KB")

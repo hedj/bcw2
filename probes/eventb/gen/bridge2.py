@@ -18,17 +18,16 @@ def total(terms):
 
 
 GATES = {
-    "and": lambda z, a, b, t: f"{z} ≤ {a} ∧ {z} ≤ {b} ∧ {a} + {b} ≤ 1 + {z}",
-    "or": lambda z, a, b, t: f"{a} ≤ {z} ∧ {b} ≤ {z} ∧ {z} ≤ {a} + {b}",
-    "xor": lambda z, a, b, t: f"{GATES['and'](t, a, b, None)} ∧ {z} = {a} + {b} − 2 ∗ {t}",
+    "and": lambda z, a, b: f"{z} ≤ {a} ∧ {z} ≤ {b} ∧ {a} + {b} ≤ 1 + {z}",
+    "or": lambda z, a, b: f"{a} ≤ {z} ∧ {b} ≤ {z} ∧ {z} ≤ {a} + {b}",
+    "xor": lambda z, a, b: f"{a} − {b} ≤ {z} ∧ {b} − {a} ≤ {z} ∧ {z} ≤ {a} + {b} ∧ {z} ≤ 2 − {a} − {b}",
 }
 
 
-def gate_guard(kind, a, b, z, t):
-    """The guard that fixes the result bits z (and, for xor, the carry bits t) of a bitwise gate."""
-    names = z + (t if kind == "xor" else [])
-    ranges = " ∧ ".join(f"{n} ∈ 0 ‥ 1" for n in names)
-    return ranges + " ∧ " + " ∧ ".join(GATES[kind](zi, ai, bi, ti) for zi, ai, bi, ti in zip(z, a, b, t))
+def gate_guard(kind, a, b, z):
+    """The guard that fixes the result bits z of a bitwise gate."""
+    ranges = " ∧ ".join(f"{n} ∈ 0 ‥ 1" for n in z)
+    return ranges + " ∧ " + " ∧ ".join(GATES[kind](zi, ai, bi) for zi, ai, bi in zip(z, a, b))
 
 
 class Netlist:
@@ -101,9 +100,9 @@ class Netlist:
             out = [n for n, q in self.ports.items() if tuple(q["bits"]) == tuple(x["Y"])]
             prefix = "r" if out else f"w{len(self.guards)}_"
             w = len(x["Y"])
-            z, carry = [f"{prefix}{i}" for i in range(w)], [f"t{i}" if out else f"{prefix}t{i}" for i in range(w)]
-            self.guards.append((f"{t[1:]}_bits", gate_guard(t[1:], self.bits(x["A"]), self.bits(x["B"]), z, carry)))
-            self.params += z + (carry if t == "$xor" else [])
+            z = [f"{prefix}{i}" for i in range(w)]
+            self.guards.append((f"{t[1:]}_bits", gate_guard(t[1:], self.bits(x["A"]), self.bits(x["B"]), z)))
+            self.params += z
             return total(enumerate(z))
         if t == "$mux":
             return ite(f"{self.value(x['S'])} = 1", self.value(x["B"]), self.value(x["A"]))

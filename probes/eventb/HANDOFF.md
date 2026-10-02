@@ -108,12 +108,12 @@ which refines a hand-written machine, and Rodin proves the refinement.
 |---|---|
 | Choice, `$mux`, compare | `({TRUE ↦ x, FALSE ↦ y})(bool(c))` |
 | `$add`, `$sub` of width w | The choice that adds or subtracts `2^w` on overflow |
-| `$and`, `$or`, `$xor` | Gate parameters in 0 ‥ 1 with linear constraints (the `GATES` table); xor has an AND term `t` |
+| `$and`, `$or`, `$xor` | Gate parameters in 0 ‥ 1 with linear constraints (the `GATES` table); xor is four inequalities, with no helper term |
 | `$pmux` | A one-hot side condition |
 | `$shl`, `$shr`, `$sshr` | A case table over the shift amount |
 | `$scopeinfo` | Skipped |
 | `$dff` | Each named wire that registers drive is a state variable; its D input is its next value. One event for each value of the reset input; at power-up each register takes any value of its width |
-| A gate the netlist lacks | The witness is the value that the specification gives it; without one, Rodin's default witness `⊤` makes the obligation false for any netlist |
+| A parameter of the specification | Must be a bit that the netlist names, so it needs no witness: the bits of a gate on the output port are `r0` … `r31`. Else the generator stops and names the parameter; there is no witness table, and no default witness `⊤` |
 
 `core_alu` is proved per (f3, alt): a wrapper `alu/alu_F_T.v` fixes the controls and yosys
 propagates them, so each netlist holds one operation. `alu/netlists.sh` rebuilds the 16 netlists.
@@ -131,7 +131,11 @@ propagates them, so each netlist holds one operation. `alu/netlists.sh` rebuilds
 | The lowest machine named as the RTL names its registers | — |
 
 The lowest machine mirrors the structure of the RTL. A correct XOR built as `(a | b) − (a & b)`
-was neither proved nor killed: the bridge is sound but not complete.
+(`alu/ctl_xor`) is not proved: the bridge is sound but not complete. Its output comes from `$sub`,
+so the netlist names no bit `r0` … `r31` of the specification, and the generator stops with that
+message. Before, a table of the specification's values gave the witnesses, and the refinement goal
+stayed open with no counterexample from ProB. With linear forms for `$sub` and for those
+witnesses, it still stayed open at 6 s: it needs case reasoning on each of the 32 bits.
 
 ## Measurements
 
