@@ -329,6 +329,10 @@ Before the cause was found, two other changes were tried:
    output), the live set with event-level sections, and the belief edges from `prHyps`. A solver
    records every hypothesis it was given, so a proof with all hypotheses inflates that measure.
 4. Pinning: Rodin, the SMT plug-in and ProB are downloads, not Nix packages yet.
+5. Bitvectors: Event-B has no bitvector type, and the SMT plug-in sends only integer logic
+   (`AUFLIA`, `QF_AUFLIA`), so Z3 and cvc5 never use their bitvector solvers. Bits are integers,
+   and the bit-level goals (Shift `sll`, `FieldInt` extract, `DecodeInt` decode) are the slowest.
+   Watch them as the models grow towards a chapter.
 
 ## Pitfalls met
 
