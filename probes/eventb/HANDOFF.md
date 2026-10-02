@@ -292,8 +292,10 @@ those goals by itself; two were left to the solvers, both from the witness of `v
 INITIALISATION: `init_val` SIM and `val'` WFIS. Only veriT proved `init_val` SIM.
 
 So after Rodin's default tactic, `unprime` in `Build.java` renames each primed name by Rodin's own
-rule (`Tactics.abstrExprThenEq`: a fresh name, such as `ae5`, and its equation, used to rewrite every
-occurrence), and hides the equations, which still hold the primed names. Each step is a rule of
+rule (`Tactics.abstrExprThenEq` with the input `val_prime = val'`: a fresh name and its equation,
+used to rewrite every occurrence), and hides the equations, which still hold the primed names. The
+proofs show `val_prime`, the name that `prob/po_extract.py` gives ProB; without a chosen name, Rodin
+picks `ae`, `ae0`, and so on. Each step is a rule of
 Rodin's prover, recorded in the proof tree; hiding a hypothesis only weakens what the solvers see.
 Each renaming also leaves the goal ⊤, which Rodin's default tactic closes; the renaming skips those
 goals, else the goals double with each name (1,024 goals and 55 s for `init_val` SIM).

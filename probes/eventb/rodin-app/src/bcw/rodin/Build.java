@@ -244,8 +244,8 @@ public class Build implements IApplication {
     }
 
     /**
-     * Renames each after-value, such as val', by Rodin's rules, and hides the equation that links the
-     * two names. The SMT plug-in writes the name val' bare, which is not SMT-LIB, and Z3 4.16 and
+     * Renames each after-value, such as val', to a fresh name such as val_prime by Rodin's rules, and
+     * hides the equation that links the two names. The SMT plug-in writes the name val' bare, which is not SMT-LIB, and Z3 4.16 and
      * cvc5 reject the whole input.
      */
     private void unprime(IProofTreeNode top) {
@@ -256,7 +256,7 @@ public class Build implements IApplication {
         // Each renaming also leaves the goal ⊤; renaming in those too would double the goals each time.
         for (String name : primed)
             for (IProofTreeNode node : top.getOpenDescendants())
-                if (node.getSequent().goal().getTag() != Formula.BTRUE) Tactics.abstrExprThenEq(name).apply(node, null);
+                if (node.getSequent().goal().getTag() != Formula.BTRUE) Tactics.abstrExprThenEq(name.substring(0, name.length() - 1) + "_prime = " + name).apply(node, null);
         for (IProofTreeNode node : top.getOpenDescendants()) {
             if (node.getSequent().goal().getTag() == Formula.BTRUE) {
                 rodin.apply(node, null);
