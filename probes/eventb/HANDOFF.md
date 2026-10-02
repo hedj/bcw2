@@ -173,6 +173,7 @@ in a 32-way case table on `k`, against five barrel stages. Run directly:
 | cvc5 1.4.0, no options, 120 s | no answer |
 | cvc5 with each of `--finite-model-find`, `--dio-decomps`, `--dio-turns=100`, `--cut-all-bounded`, `--arith-eq-solver`, `--arith-rewrite-equalities`, `--miplib-trick`, `--arith-static-learning`, `--no-arith-brab`, `--decision=justification`, `--simplification=none`, `--ite-simp`, `--learned-rewrite`, `--pb-rewrites`, `--restrict-pivots`, `--unate-lemmas=none`, and four pairs of them, 20 s | no answer |
 | cvc5, four of those, 120 s; and `--no-dio-solver`, 120 s | no answer |
+| cvc5 with each of the 183 switches in its own `--help` (output and unrelated theories left out), 5 s (`reports/cvc5/sweep-5s.tsv`) | no answer; `--preprocess-only` stops before solving |
 | With `0 ≤ a ≤ 2³³ − 1` added (an invariant that the selected hypotheses leave out): CVC3 / cvc5 with five option sets, 60 s | `unsat` in 2.1 s / no answer |
 
 The two solvers decide integer arithmetic differently. CVC3 eliminates integer variables exactly
@@ -185,7 +186,13 @@ and it writes a shift as division with remainder. The bridge writes shifts as ca
 sums, and `BridgeAluGates` proves its shifts without CVC3. A `Shift` model in the bridge's form might
 let cvc5 replace both CVC3 and CVC4; that is not tested.
 
-So cvc5 can replace CVC4 but not CVC3. The default stays Z3, CVC3, CVC4 and veriT.
+So cvc5 can replace CVC4 but not CVC3.
+
+CVC4 itself proves nothing that the others do not. In `reports/measure.csv`, CVC4 proves 134 goals
+that CVC3 does not, and Z3 proves all 134. CVC3 proves 7 goals that CVC4 does not; two of them
+(Shift `sll` SIM and one goal of `DecodeInt` decode GRD) nothing else proves. The one goal that
+only CVC3 and CVC4 prove (`RotLaps/M1/wrap/glue/INV`) CVC3 proves alone. So on the measured goals,
+Z3, CVC3 and veriT prove all that the four solvers prove.
 
 ## Open questions
 
