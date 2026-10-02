@@ -347,22 +347,41 @@ public class Build implements IApplication {
     private record Range(String variable, int low, int high) {}
 
     private static Range smallRange(IProverSequent sequent) {
-        Set<String> inGoal = new HashSet<>();
-        for (FreeIdentifier identifier : sequent.goal().getFreeIdentifiers()) inGoal.add(identifier.getName());
+        Set<String> inGoal = names(sequent.goal());
+        // A variable can decide the goal through a hypothesis, as rot' decides val' through a witness.
+        Set<String> linked = new HashSet<>();
         for (Predicate hypothesis : sequent.visibleHypIterable()) {
-            if (hypothesis.getTag() != Formula.IN) continue;
-            RelationalPredicate in = (RelationalPredicate) hypothesis;
-            if (in.getLeft().getTag() != Formula.FREE_IDENT || in.getRight().getTag() != Formula.UPTO) continue;
-            BinaryExpression range = (BinaryExpression) in.getRight();
-            if (range.getLeft().getTag() != Formula.INTLIT || range.getRight().getTag() != Formula.INTLIT) continue;
-            String variable = ((FreeIdentifier) in.getLeft()).getName();
-            BigInteger low = ((IntegerLiteral) range.getLeft()).getValue();
-            BigInteger high = ((IntegerLiteral) range.getRight()).getValue();
-            // A register's range, such as 0 ‥ 4294967295, is far too wide to split, and too wide for an int.
-            if (inGoal.contains(variable) && high.subtract(low).compareTo(BigInteger.valueOf(SPLIT)) < 0)
-                return new Range(variable, low.intValueExact(), high.intValueExact());
+            Set<String> names = names(hypothesis);
+            if (names.stream().anyMatch(inGoal::contains)) linked.addAll(names);
         }
+        Map<String, Range> ranges = new LinkedHashMap<>();
+        for (Predicate hypothesis : sequent.visibleHypIterable()) {
+            Range range = range(hypothesis);
+            if (range != null) ranges.putIfAbsent(range.variable(), range);
+        }
+        for (Range range : ranges.values()) if (inGoal.contains(range.variable())) return range;
+        for (Range range : ranges.values()) if (linked.contains(range.variable())) return range;
         return null;
+    }
+
+    private static Set<String> names(Predicate predicate) {
+        Set<String> names = new HashSet<>();
+        for (FreeIdentifier identifier : predicate.getFreeIdentifiers()) names.add(identifier.getName());
+        return names;
+    }
+
+    /** The range of a hypothesis "x ∈ low ‥ high", when it has at most SPLIT values. */
+    private static Range range(Predicate hypothesis) {
+        if (hypothesis.getTag() != Formula.IN) return null;
+        RelationalPredicate in = (RelationalPredicate) hypothesis;
+        if (in.getLeft().getTag() != Formula.FREE_IDENT || in.getRight().getTag() != Formula.UPTO) return null;
+        BinaryExpression range = (BinaryExpression) in.getRight();
+        if (range.getLeft().getTag() != Formula.INTLIT || range.getRight().getTag() != Formula.INTLIT) return null;
+        BigInteger low = ((IntegerLiteral) range.getLeft()).getValue();
+        BigInteger high = ((IntegerLiteral) range.getRight()).getValue();
+        // A register's range, such as 0 ‥ 4294967295, is far too wide to split, and too wide for an int.
+        if (high.subtract(low).compareTo(BigInteger.valueOf(SPLIT)) >= 0) return null;
+        return new Range(((FreeIdentifier) in.getLeft()).getName(), low.intValueExact(), high.intValueExact());
     }
 
     /**
