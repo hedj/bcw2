@@ -191,8 +191,19 @@ So cvc5 can replace CVC4 but not CVC3.
 CVC4 itself proves nothing that the others do not. In `reports/measure.csv`, CVC4 proves 134 goals
 that CVC3 does not, and Z3 proves all 134. CVC3 proves 7 goals that CVC4 does not; two of them
 (Shift `sll` SIM and one goal of `DecodeInt` decode GRD) nothing else proves. The one goal that
-only CVC3 and CVC4 prove (`RotLaps/M1/wrap/glue/INV`) CVC3 proves alone. So on the measured goals,
-Z3, CVC3 and veriT prove all that the four solvers prove.
+only CVC3 and CVC4 prove (`RotLaps/M1/wrap/glue/INV`) CVC3 proves alone. But `measure.csv`
+predates the slice, and the slice needs CVC4 or cvc5 (`reports/cvc5/`, one run each):
+
+| Solvers | Seven models (74) | Slice (144) |
+|---|---|---|
+| Z3, CVC3, CVC4, veriT (default) | 74, 23.6 s | 144, 16.9 s |
+| Z3, CVC3, veriT | 74, 19.6 s | 139: 5 `where_r` open, 47.0 s |
+| Z3, CVC4, veriT | not run (Shift `sll` needs CVC3) | 144, 13.6 s |
+| Z3, CVC3, cvc5, veriT | 74, 20.3 s | 144, 14.8 s |
+
+So cvc5 replaces CVC4 on every measured obligation, and CVC3 stays for Shift `sll`. Z3, CVC3, cvc5
+and veriT is the candidate default; it needs `bcw.cvc5` to name the binary, so the default in
+`Build.java` stays Z3, CVC3, CVC4 and veriT.
 
 ## Open questions
 
