@@ -74,7 +74,8 @@ import org.rodinp.core.RodinCore;
  * Properties: bcw.timeout (ms, default 6000), bcw.first (ms that the first solver has alone first, default 700), bcw.solvers (order, default Z3,CVC3,CVC4,veriT, measured),
  * bcw.report (CSV of obligation, result, ms, prover), bcw.baseline (an earlier report to compare),
  * bcw.measure (try every solver on every open goal, and report each attempt), bcw.cvc5 and bcw.z3new (the paths
- * of a cvc5 and a newer Z3 binary, to name as solvers cvc5 and z3new in bcw.solvers).
+ * of a cvc5 and a newer Z3 binary, to name as solvers cvc5, z3new and z3a2, the newer Z3 with its
+ * older arithmetic solver, in bcw.solvers).
  */
 public class Build implements IApplication {
     private static final NullProgressMonitor NONE = new NullProgressMonitor();
@@ -94,7 +95,11 @@ public class Build implements IApplication {
         timeout = Long.getLong("bcw.timeout", 6000);
         String cvc5 = System.getProperty("bcw.cvc5"), z3new = System.getProperty("bcw.z3new");
         if (cvc5 != null) addSolver("cvc5", SolverKind.CVC4, cvc5, System.getProperty("bcw.cvc5args", "--finite-model-find"));
-        if (z3new != null) addSolver("z3new", SolverKind.Z3, z3new, "");
+        if (z3new != null) {
+            addSolver("z3new", SolverKind.Z3, z3new, System.getProperty("bcw.z3newargs", ""));
+            // The arithmetic solvers of Z3 4.16 prove different goals, so the older one is a second solver.
+            addSolver("z3a2", SolverKind.Z3, z3new, "smt.arith.solver=2");
+        }
         solvers = List.of(System.getProperty("bcw.solvers", "Z3,CVC3,CVC4,veriT").split(","));
         measure = System.getProperty("bcw.measure") != null;
         rodin = EventBPlugin.getAutoPostTacticManager().getAutoTacticPreference().getDefaultDescriptor().getTacticInstance();
@@ -145,7 +150,8 @@ public class Build implements IApplication {
     /**
      * Registers the binary at path as the solver and configuration name, of the plug-in's kind. The
      * plug-in has no kind for cvc5, so cvc5 runs as a CVC4, by default with the one option of the CVC4
-     * configuration that cvc5 keeps; bcw.cvc5args replaces the options. bcw.z3new names a newer Z3.
+     * configuration that cvc5 keeps; bcw.cvc5args replaces the options. bcw.z3new names a newer Z3, and bcw.z3newargs
+     * gives its options.
      */
     private static void addSolver(String name, SolverKind kind, String path, String args) {
         List<ISolverDescriptor> solvers = new ArrayList<>(Arrays.asList(SMTCore.getSolvers()));

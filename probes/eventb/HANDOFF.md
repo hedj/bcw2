@@ -246,6 +246,34 @@ trade-off: the seven models take 48.8 s, against 33.3 s with the four solvers. T
 is itself slower than the original (seven models 33.3 s, against 23.6 s). The default in
 `Build.java` stays Z3, CVC3, CVC4, veriT and 6 s, since cvc5 needs `bcw.cvc5` to name the binary.
 
+## A newer Z3
+
+The plug-in bundles Z3 4.5.0 (2016); the pinned nixpkgs has Z3 4.16.0. `bcw.z3new` registers the
+newer binary as the solver `z3new`, and also as `z3a2`, the same binary with
+`smt.arith.solver=2`, its older arithmetic solver; `bcw.z3newargs` gives `z3new` other options.
+The quick attempt and the split's short attempts use the first solver of `bcw.solvers`. With the
+original models (`reports/z3new/`, one run each):
+
+| Solvers | Seven models (74) | Slice (144) |
+|---|---|---|
+| Z3 4.5 alone | 71, 39.6 s: open `RotLaps` glue, `DecodeInt` decode GRD, Shift `sll` SIM | 135, 37.9 s: 8 `where_r` and `init_val` SIM open |
+| Z3 4.16 alone | 72, 30.1 s: open `RotLaps` glue, `FieldInt` extract GRD | 136, 39.1 s: 7 `where_r` and `init_val` SIM open |
+| Z3 4.16 with `smt.arith.solver=2` alone | 71, 34.2 s: as Z3 4.5 | not run |
+| Z3 4.16, CVC3, CVC4, veriT | 74, 21.0 s | 144, 15.4 s |
+| Z3 4.16, cvc5, veriT | 73, 30.0 s: `FieldInt` extract GRD open | 144, 14.6 s |
+| Z3 4.5, Z3 4.16, cvc5, veriT | 74, 24.9 s | 144, 14.8 s |
+| **Z3 4.16, `z3a2`, cvc5, veriT** | **74, 25.4 s** | **144, 15.3 s** |
+| Z3 4.16, `z3a2`, cvc5 | 74, 24.6 s | 143: `init_val` SIM open (veriT proves it) |
+| Z3 4.5, CVC3, CVC4, veriT (default) | 74, 23.6 s | 144, 16.9 s |
+
+The two arithmetic solvers of Z3 4.16 prove different goals: the default proves Shift `sll` SIM,
+which before only CVC3 proved, and one goal of `DecodeInt` decode GRD; the older one (as in Z3
+4.5) proves `FieldInt` extract GRD. So Z3 4.16 in both modes, cvc5 and veriT prove every measured
+obligation, without CVC3, CVC4 or the bundled Z3, in about the time of the default set. veriT,
+still bundled, is the one solver that this set does not pin. The default in `Build.java` stays
+Z3, CVC3, CVC4, veriT, since the new solvers need `bcw.z3new` and `bcw.cvc5` to name their
+binaries.
+
 ## Open questions
 
 1. Non-interference: a property of two runs, so it needs a self-composed machine.
