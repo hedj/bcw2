@@ -364,7 +364,11 @@ multiplier, the divider, registers at bit level, mutants at bit level.
 ## Open questions
 
 1. Non-interference: a property of two runs, so it needs a self-composed machine.
-2. The multiplier: products are nonlinear for the open solvers.
+2. The multiplier. The plug-in declares a linear logic (`AUFLIA`), in which Z3 and cvc5 reject any
+   product of two variables without trying it. cvc5 now runs with `--force-logic=ALL` by default
+   and tries them; Z3 has no such option, so cvc5 is the one solver for products. With it, cvc5
+   proves small nonlinear steps, such as `Σ_j (b(j) ∗ a) ∗ 2^j = a ∗ b` at 32 bits in under 1 s,
+   but not `a ∗ b` against hundreds of gate bits in one goal: a multiplier needs refinement steps.
 3. A whole chapter: audit time (the hand-written machines count, the generated ones are tool
    output), the live set with event-level sections, and the belief edges from `prHyps`. A solver
    records every hypothesis it was given, so a proof with all hypotheses inflates that measure.

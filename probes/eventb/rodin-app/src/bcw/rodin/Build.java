@@ -96,7 +96,8 @@ public class Build implements IApplication {
         timeout = Long.getLong("bcw.timeout", 6000);
         String cvc5 = System.getProperty("bcw.cvc5", onPath("cvc5")), z3new = System.getProperty("bcw.z3new", onPath("z3"));
         System.out.println("SOLVERS z3new=" + z3new + " cvc5=" + cvc5);
-        if (cvc5 != null) addSolver("cvc5", SolverKind.CVC4, cvc5, System.getProperty("bcw.cvc5args", "--finite-model-find"));
+        // The plug-in declares a linear logic, in which cvc5 rejects any product of two variables without trying it.
+        if (cvc5 != null) addSolver("cvc5", SolverKind.CVC4, cvc5, System.getProperty("bcw.cvc5args", "--finite-model-find --force-logic=ALL"));
         if (z3new != null) {
             addSolver("z3new", SolverKind.Z3, z3new, System.getProperty("bcw.z3newargs", ""));
             // The arithmetic solvers of Z3 4.16 prove different goals, so the older one is a second solver.
@@ -159,7 +160,7 @@ public class Build implements IApplication {
     /**
      * Registers the binary at path as the solver and configuration name, of the plug-in's kind. The
      * plug-in has no kind for cvc5, so cvc5 runs as a CVC4, by default with the one option of the CVC4
-     * configuration that cvc5 keeps; bcw.cvc5args replaces the options. bcw.z3new names a newer Z3, and bcw.z3newargs
+     * configuration that cvc5 keeps and with any logic; bcw.cvc5args replaces the options. bcw.z3new names a newer Z3, and bcw.z3newargs
      * gives its options.
      */
     /** The absolute path of the program name in a directory of PATH, or null. */
