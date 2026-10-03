@@ -361,6 +361,23 @@ machine is not for reading; the rules are: the gate constraints, the ripple map,
 one theorem form for each kind of operation. Not yet tried: sub, the compares, the shifts, the
 multiplier, the divider, registers at bit level, mutants at bit level.
 
+## The earlier handoff
+
+[`HANDOFF-2026-10-01.md`](HANDOFF-2026-10-01.md) records an earlier session's measurements of
+Event-B's reading structure. Its rule `doc.dependencies-first` (commit `47670bc`) is not on this
+branch, so its figures for the book describe another branch. Against its open questions:
+
+| Question | Status |
+|---|---|
+| A bridge from the Verilog to the model ("the main risk") | Answered: the generated lowest machine (`gen/`, `slice/`), sound but not complete; at bit level (`bits/`) the control xor and the adder prove. The multiplier is not proved. |
+| An analogue of mutants and of `doc.proof-meaning` | Answered for the slice: `slice/mutant_check.sh` kills a mutant only by a ProB counterexample, and a correct control is not killed |
+| Headless Rodin in the toolchain | Answered: `rodin-app/`, with Z3 and cvc5 from the pinned nixpkgs. Rodin, the SMT plug-in and ProB are not yet pinned |
+| `core.rotation` end to end | Answered by the slice: M0, M1, and M2 from `ring.v` |
+| Live set with each event a section | Open: not measured on these models |
+| Belief edges from proofs | Open: not measured; the all-hypotheses attempt of the build application overstates them |
+| A stamp that ties the English to the formulas | Open |
+| Whether proofs and generated machines count toward audit time | Open |
+
 ## Open questions
 
 1. Non-interference: a property of two runs, so it needs a self-composed machine.
@@ -399,3 +416,4 @@ multiplier, the divider, registers at bit level, mutants at bit level.
 | `prob/` | `po_extract.py` and the SMT debug options |
 | `bits/` | The bit-level probe: `netlists.sh` (yosys `techmap`), `ripple.v` (the ripple carry map) and `gen_bits.py` (the lowest machines) |
 | `reports/` | The CSV reports and verdicts quoted above |
+| `HANDOFF-2026-10-01.md` | The earlier handoff on Event-B's reading structure, as received |
