@@ -464,6 +464,48 @@ the bitstream sets the switches (PIPs) that make those connections. No tool here
 back into a netlist; Project Trellis's database could. The proof also assumes the cell models,
 nextpnr's own netlist writer, and yosys's equivalence passes.
 
+### The core
+
+`netlist/core.sh` checks the core of the book (`build/rtl`, top `core_top`) the same way, module by
+module, against the netlist that `prep; opt -full` makes. Both netlists keep the hierarchy
+(`synth_ecp5 -noflatten`). `module_check.sh` makes each module's check combinational:
+
+1. Each instance of another module becomes ports on both sides (`expose -evert`): its inputs are
+   checked, and its outputs are shared.
+2. Each flip-flop bit becomes a pair of ports (`evert_regs.py`): the state as an input, the next
+   state as an output. Both sides name the ports after the gold netlist's register nets, so the
+   ports pair by name, and `miter` refuses to run if any register is unpaired.
+3. A one-step miter must give equal outputs and equal next state. From equal power-up states, this
+   gives equal runs by induction.
+
+yosys's own `equiv_induct` left 671 signals of the module `core` unproven, even against a netlist
+with no optimisation, so the probe does not use it. All 3,403 register bits of `core` pair by name;
+synthesis neither merges nor duplicates any.
+
+SAT does not prove a multiplier: 15 minutes for part of one module. `cut_mul.py` cuts each `$mul`
+into ports instead: its operands are checked, its product is shared, and both sides' multipliers
+must have identical parameters after `opt -full; wreduce`. `mult18x18d.v` models the DSP block in
+its combinational configuration only. yosys has no model of it; this one is trusted, like the
+others.
+
+| Case | Expected | Result |
+|---|---|---|
+| 21 modules (`core`, 3,403 flip-flops and 2,801 LUTs, the longest at 21 s) | Proved | Proved |
+| `core_regfile` (two `DP16KD` block RAMs) | Open | Open: a memory needs its own argument |
+| `core` with one LUT bit inverted | Killed | Counterexample |
+| `core_mul_part` with two DSP operand bits exchanged | Killed | Counterexample |
+
+The 24 cases take 27 s. They check `-noflatten` synthesis, which `make timing` does not use. With
+3 seeds, out of context, at `core.clock` (85 MHz):
+
+| Synthesis | Fmax (MHz) | Logic cells | Flip-flops |
+|---|---|---|---|
+| Flat (`make timing`) | 90.7, 91.4, 92.7 | 4,867 | 3,387 |
+| `-noflatten` (checked) | 86.1, 88.9, 89.4 | 6,593 (+35%) | 3,481 |
+
+Not yet tried for the core: the routed netlist, which needs models of nextpnr's packed RAM and DSP
+cells, and the flat netlist.
+
 ## The earlier handoff
 
 [`HANDOFF-2026-10-01.md`](HANDOFF-2026-10-01.md) records an earlier session's measurements of
@@ -517,7 +559,7 @@ branch, so its figures for the book describe another branch. Against its open qu
 | `alu/` | The 16 wrappers, the ALU variants of the mutant check, and `netlists.sh` |
 | `slice/` | `ring.v`, `spec.py` (M0, M1), `gen.py` (M2), the mutants, and `mutant_check.sh`, which runs the whole slice and the mutant check |
 | `prob/` | `po_extract.py` and the SMT debug options |
-| `netlist/` | The check below the bridge: `check.sh`, `powerup.py`, `routed_cells.v` (the trusted models of the routed cells), `mutate.py` and `run.sh` |
+| `netlist/` | The check below the bridge: `check.sh`, `powerup.py`, `routed_cells.v` (the trusted models of the routed cells), `mutate.py` and `run.sh`; for the core, `core.sh`, `module_check.sh`, `evert_regs.py`, `cut_mul.py` and `mult18x18d.v` |
 | `bits/` | The bit-level probe: `netlists.sh` (yosys `techmap`), `ripple.v` (the ripple carry map) and `gen_bits.py` (the lowest machines) |
 | `reports/` | The CSV reports and verdicts quoted above |
 | `HANDOFF-2026-10-01.md` | The earlier handoff on Event-B's reading structure, as received |
