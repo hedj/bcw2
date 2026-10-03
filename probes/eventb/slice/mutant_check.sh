@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # The slice and its mutant check, from the RTL to the verdicts.
 #
-# For the ring and for each variant: yosys writes the netlist, gen.py writes the machines M0, M1
-# and M2, and Rodin (with the bcw.rodin bundle) proves them. ProB then looks for a counterexample to
-# each obligation left open. A variant is killed only if ProB finds one.
+# For the ring, for each variant and for the ring that eventb2v.py writes from M1: yosys writes the
+# netlist, gen.py writes the machines M0, M1 and M2, and Rodin (with the bcw.rodin bundle) proves
+# them. ProB then looks for a counterexample to each obligation left open. A variant is killed only
+# if ProB finds one.
 #
 # Environment (no defaults; each must name an existing directory or file):
 #   RODIN  the Rodin 3.10 directory, with the SMT Solvers plug-in and dropins/bcw.rodin_1.0.0.jar
@@ -25,6 +26,13 @@ for m in $variants; do
     ./dev sh -c "yosys -q -p 'read_verilog -sv $RTL/bcw_params.sv $rot $src; prep -top ring -flatten; opt -full; dffunmap; opt_clean; write_json $WORK/ring_$m.json'"
     python3 "$here/gen.py" "$WORK/models" "$WORK/ring_$m.json" "Slice_$m"
 done
+# The variant gen is the ring that eventb2v.py writes from M1; like ring, it must prove.
+mkdir -p "$WORK/gen"
+python3 "$here/../gen/eventb2v.py" "$WORK/models/Slice_ring/M1.bum" ring > "$WORK/gen/ring.v"
+./dev verilator --lint-only -Wall "$WORK/gen/ring.v"
+./dev sh -c "yosys -q -p 'read_verilog -sv $WORK/gen/ring.v; prep -top ring -flatten; opt -full; dffunmap; opt_clean; write_json $WORK/ring_gen.json'"
+python3 "$here/gen.py" "$WORK/models" "$WORK/ring_gen.json" Slice_gen
+variants="$variants gen"
 start=$SECONDS
 "$JDK/bin/java" -Xmx4g -Dbcw.z3new="$Z3" -Dbcw.cvc5="$CVC5" -Dbcw.report="$WORK/rodin.csv" -Dstdout.encoding=UTF-8 --add-modules=ALL-SYSTEM \
     -jar "$RODIN"/plugins/org.eclipse.equinox.launcher_*.jar -clean -nosplash -data "$WORK/workspace" \

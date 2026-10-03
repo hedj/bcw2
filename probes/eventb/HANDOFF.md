@@ -11,7 +11,9 @@ Event-B in Rodin can replace the ad-hoc formal system of bcw2 (twins, `equiv`, `
 enforce a top-down exposition, with open solvers only and no weaker proofs. A vertical slice
 proved, with no proof written by hand, from a top machine (threads, a fixed rotation, isolation)
 down to sequential RTL: 144 of 144 obligations in 17 s. A mutant check killed each of three
-seeded faults with a concrete counterexample, and kept a correct variant.
+seeded faults with a concrete counterexample, and kept a correct variant. Verilog generated from
+the slice's lowest machine proves the same obligations through the same bridge, and synthesises to
+the same netlist as the hand-written ring.
 
 Not probed: non-interference, the multiplier, a whole chapter's audit time and live set.
 
@@ -361,6 +363,61 @@ machine is not for reading; the rules are: the gate constraints, the ripple map,
 one theorem form for each kind of operation. Not yet tried: sub, the compares, the shifts, the
 multiplier, the divider, registers at bit level, mutants at bit level.
 
+## Verilog generated from the lowest machine (`gen/eventb2v.py`)
+
+The author prefers Verilog generated from a proved machine to hand-written RTL. `gen/eventb2v.py`
+(280 lines) writes a synchronous module from a machine in a small subset. The generator need not
+be trusted: the bridge reads its netlist back into M2, and Rodin proves that M2 refines the
+machine (translation validation). `slice/mutant_check.sh` runs this for the slice as the variant
+`gen`, which must prove: with it, the whole check proves `ring`, `control` and `gen` 144 of 144
+and kills the three mutants, in 81 s (Rodin 63 s).
+
+The subset, with any other form stopping the generator with a message that names it:
+
+* Each variable has an invariant `x ∈ 0 ‥ n` and becomes a register of the bits of `n`, which
+  powers up in any value (`INITIALISATION` gives `x :∈ 0 ‥ n`).
+* The event `reset` has no parameters or guards and fires while `rst_n` is 0. One other event, the
+  step, fires while `rst_n` is 1. Each of its parameters has one guard `p ∈ 0 ‥ n` and becomes an
+  input port.
+* Each event assigns every variable, `x ≔ e`, with `e` built from literals, variables, parameters,
+  `+`, `−`, `∗` by a literal, and the choice `({TRUE ↦ e1, FALSE ↦ e2})(bool(c))`; `c` is built
+  from the comparisons, `∧`, `∨` and `¬`.
+
+Two choices make the netlist one that the bridge reads:
+
+1. Each subexpression is a wire of its own width, so that no cell reads a slice of an internal
+   signal, which the bridge does not translate.
+2. A value is computed modulo 2^w at its register's width. This is exact, because the invariants
+   prove that the integer lies in the register's range. The operands of a comparison are computed
+   unsigned, at the width of their interval, so that the comparison sees the integers; an operand
+   that may be negative is outside the subset.
+
+The slice, from M1 (one run of both projects, 31 s):
+
+| Measure | `ring.v`, by hand | Generated from M1 |
+|---|---|---|
+| Source | 15 lines and `core_rotate` (4) | 62 lines, generated |
+| M2 from the netlist | — | Byte-identical to that of `ring.v` |
+| Obligations | 144 of 144 | 144 of 144 |
+| ECP5 cells (`synth_ecp5`) | 67 TRELLIS_FF, 6 LUT4, 4 CCU2C | The same |
+| Fmax, 3 seeds, static placer | 295, 298, 308 MHz | 298, 298, 304 MHz |
+
+Two faults of the kind a generator makes, seeded in the generated ring, each left one obligation
+open, and ProB found a counterexample to each:
+
+| Fault | Open obligation | Counterexample |
+|---|---|---|
+| The choice of `rot`'s next value swapped (`t1 ? t2 : 3'd0`) | `clock/rot/SIM` | `rot = 0` |
+| `f_rec` reset to 0, not 1 | `reset/reset_f_rec/SIM` | Any state |
+
+They are of the same kind as the mutants `wrap6` and `reset`, so they are not kept as files.
+
+Not yet in the subset, and needed for a core: products of two variables, bit operations (and, or,
+shifts, slices), memories, and several step events selected by guards. Each needs the bridge to
+read its cells back, which the bit-level probe (`bits/`) does for xor and add. The generated
+module has an output `x_q` for each register, since a machine does not say which variables are
+outputs; `ring.v` has only `turn` and `w`.
+
 ## The earlier handoff
 
 [`HANDOFF-2026-10-01.md`](HANDOFF-2026-10-01.md) records an earlier session's measurements of
@@ -369,7 +426,7 @@ branch, so its figures for the book describe another branch. Against its open qu
 
 | Question | Status |
 |---|---|
-| A bridge from the Verilog to the model ("the main risk") | Answered: the generated lowest machine (`gen/`, `slice/`), sound but not complete; at bit level (`bits/`) the control xor and the adder prove. The multiplier is not proved. |
+| A bridge from the Verilog to the model ("the main risk") | Answered: the generated lowest machine (`gen/`, `slice/`), sound but not complete; at bit level (`bits/`) the control xor and the adder prove. The multiplier is not proved. The other candidate, Verilog generated from the model, works for the slice (`gen/eventb2v.py`), with the bridge as the check. |
 | An analogue of mutants and of `doc.proof-meaning` | Answered for the slice: `slice/mutant_check.sh` kills a mutant only by a ProB counterexample, and a correct control is not killed |
 | Headless Rodin in the toolchain | Answered: `rodin-app/`, with Z3 and cvc5 from the pinned nixpkgs. Rodin, the SMT plug-in and ProB are not yet pinned |
 | `core.rotation` end to end | Answered by the slice: M0, M1, and M2 from `ring.v` |
@@ -409,7 +466,7 @@ branch, so its figures for the book describe another branch. Against its open qu
 | Path | Holds |
 |---|---|
 | `rodin-app/` | The build application |
-| `gen/` | The XML writer, the bridge, and the generators of the probe models; `replay.py` replays measured attempts under other orders |
+| `gen/` | The XML writer, the bridge, the generators of the probe models, and `eventb2v.py`, which writes Verilog from a machine; `replay.py` replays measured attempts under other orders |
 | `models/` | The sources (`.bum`, `.buc`) of six of the seven probe models; `BridgeAluGates` regenerates with `alu/netlists.sh` and `gen/bridge_alu_split.py` |
 | `alu/` | The 16 wrappers, the ALU variants of the mutant check, and `netlists.sh` |
 | `slice/` | `ring.v`, `spec.py` (M0, M1), `gen.py` (M2), the mutants, and `mutant_check.sh`, which runs the whole slice and the mutant check |
