@@ -21,7 +21,7 @@ def gate_bits(name, width):
 
 q_bits = {b for c in gold["cells"].values() if c["type"] == "$dff" for b in c["connections"]["Q"]}
 for name, wire in sorted(gold["netnames"].items()):
-    if wire["hide_name"] or not q_bits.intersection(wire["bits"]):
+    if wire["hide_name"] or not set(wire["bits"]) <= q_bits:
         continue
     bits = gate_bits(name, len(wire["bits"]))
     if any(b not in init for b in bits):
