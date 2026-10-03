@@ -418,6 +418,52 @@ read its cells back, which the bit-level probe (`bits/`) does for xor and add. T
 module has an output `x_q` for each register, since a machine does not say which variables are
 outputs; `ring.v` has only `turn` and `w`.
 
+## Below the bridge's netlist (`netlist/`)
+
+The bridge reads the netlist after `prep; opt -full`. The FPGA gets the one after `synth_ecp5` and
+nextpnr. `netlist/check.sh` checks a netlist of either kind against the bridge's netlist (GOLD)
+with yosys alone, in two ways:
+
+1. **Proof:** `equiv_make`, `equiv_simple` and `equiv_induct` prove, by induction, that the
+   signals with the same name stay equal. GOLD may power up in any state, so this proves that every
+   run of the gate netlist is a run of GOLD.
+2. **Counterexample search:** `sat` searches 20 cycles of a miter. GOLD starts in the gate's
+   power-up state, which `powerup.py` copies onto it. As in the mutant check, only a
+   counterexample counts as a kill.
+
+The cells become logic through yosys's models (`cells_sim.v`). The routed netlist needs three more
+facts, which `routed_cells.v` and the option `EXTRA` state. They are trusted, like `ripple.v`:
+
+* nextpnr's flip-flop takes its data from `M` when `SD` is 0, and from `DI` when `SD` is 1. In the
+  slice's routed netlist, every flip-flop with `SD = 0` has `DI` unconnected.
+* `TRELLIS_IO` with its tristate control unconnected, and `DCCA`, the clock buffer, as a wire.
+* An unconnected cell input is 1. nextpnr folds constant inputs into each LUT's `INITVAL` and
+  leaves the pin unconnected; read with 0, the adder cells compute `A`, not `A xor B`.
+
+The check found a defect in yosys 0.69's model of `TRELLIS_COMB`: in mode CCU2 it declares
+`wire FCO = …` inside a generate block. That is a new local wire, so the port `FCO` is undriven and
+every carry is lost. `routed_cells.v` replaces the model with one that assigns the port. A
+simulator that follows Verilog's scope rules would also lose the carry with yosys's model (not
+tested).
+
+`netlist/run.sh` synthesises the generated ring, places and routes it, and runs seven cases in
+7 s. `slice/mutant_check.sh` runs it on `gen`. Each case gives its expected result:
+
+| Case | Expected | Result |
+|---|---|---|
+| `synth_ecp5` netlist | Proved | Proved: 170 of 170 signals, 1.6 s |
+| One LUT bit inverted after synthesis (reset never asserted) | Killed | Counterexample, cycle 2 |
+| Routed netlist (nextpnr `--write`) | Proved | Proved: 146 of 146 signals, 1.6 s |
+| Carry-generate bit of an adder cell inverted after routing | Killed | Counterexample, cycle 14 |
+| Inputs of two flip-flops exchanged after routing | Killed | Counterexample, cycle 16 |
+| Routed, with yosys's `TRELLIS_COMB` model | Killed | Counterexample, cycle 2 |
+| Routed, with unconnected inputs read as 0 | Killed | Counterexample, cycle 17 |
+
+The gap that remains is the last one: the routed netlist states which nets connect which pins, and
+the bitstream sets the switches (PIPs) that make those connections. No tool here reads a bitstream
+back into a netlist; Project Trellis's database could. The proof also assumes the cell models,
+nextpnr's own netlist writer, and yosys's equivalence passes.
+
 ## The earlier handoff
 
 [`HANDOFF-2026-10-01.md`](HANDOFF-2026-10-01.md) records an earlier session's measurements of
@@ -471,6 +517,7 @@ branch, so its figures for the book describe another branch. Against its open qu
 | `alu/` | The 16 wrappers, the ALU variants of the mutant check, and `netlists.sh` |
 | `slice/` | `ring.v`, `spec.py` (M0, M1), `gen.py` (M2), the mutants, and `mutant_check.sh`, which runs the whole slice and the mutant check |
 | `prob/` | `po_extract.py` and the SMT debug options |
+| `netlist/` | The check below the bridge: `check.sh`, `powerup.py`, `routed_cells.v` (the trusted models of the routed cells), `mutate.py` and `run.sh` |
 | `bits/` | The bit-level probe: `netlists.sh` (yosys `techmap`), `ripple.v` (the ripple carry map) and `gen_bits.py` (the lowest machines) |
 | `reports/` | The CSV reports and verdicts quoted above |
 | `HANDOFF-2026-10-01.md` | The earlier handoff on Event-B's reading structure, as received |

@@ -33,6 +33,8 @@ python3 "$here/../gen/eventb2v.py" "$WORK/models/Slice_ring/M1.bum" ring > "$WOR
 ./dev sh -c "yosys -q -p 'read_verilog -sv $WORK/gen/ring.v; prep -top ring -flatten; opt -full; dffunmap; opt_clean; write_json $WORK/ring_gen.json'"
 python3 "$here/gen.py" "$WORK/models" "$WORK/ring_gen.json" Slice_gen
 variants="$variants gen"
+# The netlists that synthesis and place and route make of gen must equal the one the bridge read.
+./dev sh -c "bash $here/../netlist/run.sh $WORK/ring_gen.json $WORK/gen/ring.v $WORK/netlist"
 start=$SECONDS
 "$JDK/bin/java" -Xmx4g -Dbcw.z3new="$Z3" -Dbcw.cvc5="$CVC5" -Dbcw.report="$WORK/rodin.csv" -Dstdout.encoding=UTF-8 --add-modules=ALL-SYSTEM \
     -jar "$RODIN"/plugins/org.eclipse.equinox.launcher_*.jar -clean -nosplash -data "$WORK/workspace" \
