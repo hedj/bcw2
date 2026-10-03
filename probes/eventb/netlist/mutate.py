@@ -6,6 +6,7 @@ route could make it. KIND is one of:
   routed-swap  the inputs M of the first two flip-flops (by name) that take M, exchanged
   lut4         the first LUT4 (by name) with four different driven inputs, its INIT bit 0 inverted
   dsp-swap     the inputs A0 and A1 of the first MULT18X18D (by name), exchanged
+  ram-swap     the inputs DIA0 and DIA1 of the first DP16KD (by name), exchanged
 MODULE, if given, names the module to change; otherwise the one module that is not a black box.
 """
 import json
@@ -40,6 +41,9 @@ elif kind == "lut4":
 elif kind == "dsp-swap":
     c = cells[min(n for n, c in cells.items() if c["type"] == "MULT18X18D")]["connections"]
     c["A0"], c["A1"] = c["A1"], c["A0"]
+elif kind == "ram-swap":
+    c = cells[min(n for n, c in cells.items() if c["type"] == "DP16KD")]["connections"]
+    c["DIA0"], c["DIA1"] = c["DIA1"], c["DIA0"]
 else:
     raise SystemExit(f"unknown kind {kind}")
 json.dump(design, open(target, "w"))

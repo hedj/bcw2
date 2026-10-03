@@ -491,12 +491,40 @@ others.
 | Case | Expected | Result |
 |---|---|---|
 | 21 modules (`core`, 3,403 flip-flops and 2,801 LUTs, the longest at 21 s) | Proved | Proved |
-| `core_regfile` (two `DP16KD` block RAMs) | Open | Open: a memory needs its own argument |
+| `core_regfile` (two `DP16KD` block RAMs; see below) | Proved | Proved by ABC, 134 s |
 | `core` with one LUT bit inverted | Killed | Counterexample |
 | `core_mul_part` with two DSP operand bits exchanged | Killed | Counterexample |
+| `core_regfile` with two RAM data inputs exchanged | Killed | Counterexample (ABC) |
+| `core_regfile` with one LUT bit of its forwarding logic inverted | Killed | Counterexample (ABC) |
 
-The 24 cases take 27 s. They check `-noflatten` synthesis, which `make timing` does not use. With
-3 seeds, out of context, at `core.clock` (85 MHz):
+The register file needs a different argument. yosys's description of the block RAM gives no
+result for a read of the word that the other port writes in the same cycle, but the RTL reads the
+old word. So synthesis delays each write by a cycle and forwards it: 42 flip-flops hold the delayed
+`wa`, `we` and `wd`, and 32 more the forwarded data. Gold and gate state then do not pair bit by bit.
+`regfile_check.sh` checks a relation instead:
+
+1. Both memories become flip-flops (`memory_map`); the RAM through `dp16kd.v`, a trusted model of
+   `DP16KD` in this one configuration (yosys's model has no behaviour). It returns a free value on
+   that collision, so the proof also covers the forwarding.
+2. Gold's memory is a function of the gate's state: the delayed write data where the delayed write
+   enable is set and the delayed address matches, else the RAM's word (`regfile_relation.py`).
+   Gold's read registers affect only its outputs, and gold may power up in any state, so the
+   relation needs only these.
+3. One step from any gate state must keep the relation, and the outputs of the next states must
+   agree (second copies of both designs give those).
+
+yosys's `sat` timed out on this after 28 minutes. ABC's `iprove`, which merges equivalent internal
+nodes before calling SAT, proves it in under 2 minutes. Two pitfalls on the way:
+
+* `opt -full` merges the duplicated flip-flops that synthesis leaves; without it, a free state can
+  set copies of one register to different values, and the check fails spuriously. `dffunmap` then
+  undoes its sync-reset flip-flops.
+* yosys reads `x[a:b][c:d]`, a part-select of a part-select, which is not Verilog, without an error
+  and as `x[c:d]`. A generated check must index the vector once.
+
+`core.sh` runs the 26 cases (22 modules, 4 faults) in 142 s, three at a time. They check
+`-noflatten` synthesis, which `make timing` does not use. With 3 seeds, out of context, at
+`core.clock` (85 MHz):
 
 | Synthesis | Fmax (MHz) | Logic cells | Flip-flops |
 |---|---|---|---|
@@ -559,7 +587,7 @@ branch, so its figures for the book describe another branch. Against its open qu
 | `alu/` | The 16 wrappers, the ALU variants of the mutant check, and `netlists.sh` |
 | `slice/` | `ring.v`, `spec.py` (M0, M1), `gen.py` (M2), the mutants, and `mutant_check.sh`, which runs the whole slice and the mutant check |
 | `prob/` | `po_extract.py` and the SMT debug options |
-| `netlist/` | The check below the bridge: `check.sh`, `powerup.py`, `routed_cells.v` (the trusted models of the routed cells), `mutate.py` and `run.sh`; for the core, `core.sh`, `module_check.sh`, `evert_regs.py`, `cut_mul.py` and `mult18x18d.v` |
+| `netlist/` | The check below the bridge: `check.sh`, `powerup.py`, `routed_cells.v` (the trusted models of the routed cells), `mutate.py` and `run.sh`; for the core, `core.sh`, `module_check.sh`, `evert_regs.py`, `cut_mul.py`, `mult18x18d.v`, and for its register file `regfile_check.sh`, `state_ports.py`, `regfile_relation.py` and `dp16kd.v` |
 | `bits/` | The bit-level probe: `netlists.sh` (yosys `techmap`), `ripple.v` (the ripple carry map) and `gen_bits.py` (the lowest machines) |
 | `reports/` | The CSV reports and verdicts quoted above |
 | `HANDOFF-2026-10-01.md` | The earlier handoff on Event-B's reading structure, as received |
